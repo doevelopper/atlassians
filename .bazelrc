@@ -1,0 +1,8 @@
+# Bazel configuration for C++ only builds
+# Disable Go toolchains which conflict with C++ builds
+
+# Use latest Bazel configuration
+common --check_direct_dependencies=off
+
+# Disable unused languages
+build:linux --incompatible_enable_cc_toolchain_resolution

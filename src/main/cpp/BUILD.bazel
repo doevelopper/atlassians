@@ -1,224 +1,84 @@
-
-# load("@rules_license//examples/vendor/constant_gen:defs.bzl", "constant_gen")
-# load("@rules_license//rules:compliance.bzl", "licenses_used")
-# load("@rules_license//rules:license_policy_check.bzl", "license_policy_check")
-# load("@rules_license//rules:license.bzl", "license")
-
 load(
     "@rules_cc//cc:defs.bzl",
     "cc_binary",
     "cc_library"
 )
 
-load(
-    "@rules_pkg//:pkg.bzl",
-    "pkg_tar",
-    "pkg_deb",
-    "pkg_zip"
-)
-
-load(
-    "@rules_pkg//:mappings.bzl",
-    "pkg_attributes",
-    "pkg_filegroup",
-    "pkg_files",
-    "strip_prefix",
-)
-
+# Common build settings
 COMMON_DEFINES = [
     "LOG_LEVEL=1",
-    "DLOG4CXX_STATIC",
 ]
 
-COMMON_HDRS = [
+# All header files in cpp tree
+HDRS = glob(["com/**/*.hpp"])
 
-]
-
-COMMON_SRCS = [
-]
-
-#===== win32 =====
-WIN32_DEFINES = [
-    "RTX_WIN32",
-]
-WIN32_HDRS = []
-WIN32_SRCS = []
+# Platform-specific settings
+WIN32_DEFINES = ["RTX_WIN32"]
 WIN32_LINKOPTS = []
 
-# ===== linux =====
-LINUX_DEFINES = [
-    "RT_LINUX",
-]
-LINUX_HDRS = []
-LINUX_SRCS = []
+LINUX_DEFINES = ["RT_LINUX"]
 LINUX_LINKOPTS = [
     "-L/usr/local/lib",
     "-lpthread",
     "-lrt",
-    #  coometed out below because /usr/bin/gcc @bazel-out/k8-fastbuild/bin/src/main/cpp/libcom.github.doevelopper.atlassians.main.so-2.params)
-    "-luuid", #avoid having libapr-1.a(rand.o):rand.c:function apr_os_uuid_get: error: undefined reference to 'uuid_generate'
-
+    "-luuid",
 ]
 
-# ===== darwin =====
 DARWIN_DEFINES = []
-DARWIN_HDRS = []
-DARWIN_SRCS = []
 DARWIN_LINKOPTS = []
 
+# Main library containing core functionality
 cc_library(
-    # linkshared/linkstatic=True,
     name = "com.github.doevelopper.atlassians.main",
-    hdrs = [
-        "com/github/doevelopper/atlassians/API_Export.hpp",
-        "com/github/doevelopper/atlassians/CompilerDetection.hpp",
-        "com/github/doevelopper/atlassians/Poison.hpp",
-    ],
-
+    hdrs = HDRS,
     srcs = [
-        "com/github/doevelopper/atlassians/atlas/Activator.hpp",
         "com/github/doevelopper/atlassians/atlas/Activator.cpp",
-    ] + COMMON_SRCS + COMMON_HDRS + select({
-        "@bazel_tools//src/conditions:windows": WIN32_SRCS + WIN32_HDRS,
-        "@bazel_tools//src/conditions:linux_x86_64": LINUX_SRCS + LINUX_HDRS,
-        "//conditions:default": [],
-    }),
-
-    defines =  COMMON_DEFINES + select({
+    ],
+    defines = COMMON_DEFINES + select({
         "@bazel_tools//src/conditions:windows": WIN32_DEFINES,
         "@bazel_tools//src/conditions:linux_x86_64": LINUX_DEFINES,
         "//conditions:default": [],
     }),
-
-    copts = [
-        "-DLOG_LEVEL=1",
-    ] + select({
-            "@bazel_tools//src/conditions:windows": [
-                "/std:c++17"
-            ],
-            "//conditions:default": [
-            "-D_REENTRANT",
-          ],
-    }),  #+ SHARED_LIBRARY_SUPPORT + DEFAULT_COPTS,
-
+    copts = ["-DLOG_LEVEL=1"] + select({
+        "@bazel_tools//src/conditions:windows": ["/std:c++17"],
+        "//conditions:default": ["-D_REENTRANT", "-fPIC"],
+    }),
     features = select({
         "@bazel_tools//src/conditions:windows": ["windows_export_all_symbols"],
         "//conditions:default": [],
     }),
-
-# #     # Uncomment this to enable full static link.
-# #     # features = ['fully_static_link'],
-
-    includes = [
-        ".",
-    ],
-
-    linkopts = [
-    #     # "-L$$EXT_BUILD_DEPS$$/log4cxx",
-    #     # "-L$$EXT_BUILD_DEPS$$/org_apache_logging_log4cxx/copy_log4cxx/log4cxx/lib",
-    ] + select({
+    includes = ["."],
+    linkopts = select({
         "@bazel_tools//src/conditions:windows": WIN32_LINKOPTS,
         "@bazel_tools//src/conditions:linux_x86_64": LINUX_LINKOPTS,
         "@bazel_tools//src/conditions:darwin": DARWIN_LINKOPTS,
     }),
-
     deps = [
-        # "@com.github.doevelopper.rules-sdlc//src/main/resources/off_the_shelf_software/boost:boost",
-        "@boost//:algorithm",
-        "@boost//:asio",
-        "@boost//:context",
-        "@boost//:filesystem",
-        "@boost//:signals2",
-        "@boost//:program_options",
-        "@boost//:variant",
-        "@org_apache_log4cxx//:log4cxx",
-        "@com_github_Tencent_rapidjson//:rapidjson",
-    ] + select({
-        "@bazel_tools//src/conditions:windows": [],
-        "@bazel_tools//src/conditions:linux_x86_64": [],
-        "@bazel_tools//src/conditions:darwin": [],
-        "//conditions:default": [],
-    }),
-# #     # Comment this out to use system malloc runtime.
-# #     # malloc = '@com_google_tcmalloc//tcmalloc'
-
+        "//boost:variant",
+        "//_deps/log4cxx:log4cxx",
+        # TODO: Add rapidjson and other boost libs when configured
+    ],
     visibility = ["//visibility:public"],
 )
 
-
-
 cc_library(
-    # linkshared/linkstatic=True,
     name = "com.github.doevelopper.atlassians.main.atlas",
     visibility = ["//visibility:public"],
 )
 
 cc_library(
-    # linkshared/linkstatic=True,
     name = "com.github.doevelopper.atlassians.main.logging",
     visibility = ["//visibility:public"],
 )
 
-
 cc_library(
-    # linkshared/linkstatic=True,
     name = "com.github.doevelopper.atlassians.main.launcher",
     visibility = ["//visibility:public"],
 )
 
-
-# cc_library(
-#     # linkshared/linkstatic=True,
-#     name = "com.github.doevelopper.atlassians.main.canary",
-#     visibility = ["//visibility:public"],
-# )
-
-# cc_library(
-#     # linkshared/linkstatic=True,
-#     name = "com.github.doevelopper.atlassians.main.demo",
-#     visibility = ["//visibility:public"],
-# )
-
-# cc_library(
-#     # linkshared/linkstatic=True,
-#     name = "com.github.doevelopper.atlassians.main.events",
-#     visibility = ["//visibility:public"],
-# )
-
-
-# cc_library(
-#     # linkshared/linkstatic=True,
-#     name = "com.github.doevelopper.atlassians.main.licensing",
-#     visibility = ["//visibility:public"],
-# )
-
-# cc_library(
-#     # linkshared/linkstatic=True,
-#     name = "com.github.doevelopper.atlassians.main.plugin",
-#     visibility = ["//visibility:public"],
-# )
-
-# cc_library(
-#     # linkshared/linkstatic=True,
-#     name = "com.github.doevelopper.atlassians.main.semver",
-#     visibility = ["//visibility:public"],
-# )
-
-# cc_library(
-#     # linkshared/linkstatic=True,
-#     name = "com.github.doevelopper.atlassians.main.triada",
-#     visibility = ["//visibility:public"],
-# )
-
 cc_binary(
     name = "com.github.doevelopper.atlassians.main.bin",
-    srcs = [
-        "main.cpp",
-    ],
-
-    deps = [
-        ":com.github.doevelopper.atlassians.main",
-    ],
-
+    srcs = ["main.cpp"],
+    deps = [":com.github.doevelopper.atlassians.main"],
     visibility = ["//visibility:public"],
 )
