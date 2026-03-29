@@ -76,8 +76,8 @@ cc_library(
     ],
 
     srcs = [
-        "com/github/doevelopper/atlassians/guide/Dummy.cpp",
-        "com/github/doevelopper/atlassians/guide/Dummy.hpp",
+        "com/github/doevelopper/atlassians/atlas/Activator.hpp",
+        "com/github/doevelopper/atlassians/atlas/Activator.cpp",
     ] + COMMON_SRCS + COMMON_HDRS + select({
         "@bazel_tools//src/conditions:windows": WIN32_SRCS + WIN32_HDRS,
         "@bazel_tools//src/conditions:linux_x86_64": LINUX_SRCS + LINUX_HDRS,
@@ -144,6 +144,71 @@ cc_library(
 
     visibility = ["//visibility:public"],
 )
+
+
+
+cc_library(
+    # linkshared/linkstatic=True,
+    name = "com.github.doevelopper.atlassians.main.atlas",
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    # linkshared/linkstatic=True,
+    name = "com.github.doevelopper.atlassians.main.logging",
+    visibility = ["//visibility:public"],
+)
+
+
+cc_library(
+    # linkshared/linkstatic=True,
+    name = "com.github.doevelopper.atlassians.main.launcher",
+    visibility = ["//visibility:public"],
+)
+
+
+# cc_library(
+#     # linkshared/linkstatic=True,
+#     name = "com.github.doevelopper.atlassians.main.canary",
+#     visibility = ["//visibility:public"],
+# )
+
+# cc_library(
+#     # linkshared/linkstatic=True,
+#     name = "com.github.doevelopper.atlassians.main.demo",
+#     visibility = ["//visibility:public"],
+# )
+
+# cc_library(
+#     # linkshared/linkstatic=True,
+#     name = "com.github.doevelopper.atlassians.main.events",
+#     visibility = ["//visibility:public"],
+# )
+
+
+# cc_library(
+#     # linkshared/linkstatic=True,
+#     name = "com.github.doevelopper.atlassians.main.licensing",
+#     visibility = ["//visibility:public"],
+# )
+
+# cc_library(
+#     # linkshared/linkstatic=True,
+#     name = "com.github.doevelopper.atlassians.main.plugin",
+#     visibility = ["//visibility:public"],
+# )
+
+# cc_library(
+#     # linkshared/linkstatic=True,
+#     name = "com.github.doevelopper.atlassians.main.semver",
+#     visibility = ["//visibility:public"],
+# )
+
+# cc_library(
+#     # linkshared/linkstatic=True,
+#     name = "com.github.doevelopper.atlassians.main.triada",
+#     visibility = ["//visibility:public"],
+# )
 
 cc_binary(
     name = "com.github.doevelopper.atlassians.main.bin",

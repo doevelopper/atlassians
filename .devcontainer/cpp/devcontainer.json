@@ -47,7 +47,9 @@
         "ms-vscode.cmake-tools@1.22.28",
         "ms-vscode.cpptools@1.30.5",
         "sonarsource.sonarlint-vscode@4.44.0",
-        "usernamehw.errorlens@3.28.0"
+        "usernamehw.errorlens@3.28.0",
+        "BazelBuild.vscode-bazel",
+        "NVIDIA.bluebazel"
       ]
     }
   }
