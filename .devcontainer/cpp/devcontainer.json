@@ -3,6 +3,10 @@
     "dockerfile": "Dockerfile",
     "context": "../.."
   },
+  "remoteUser": "developper",
+  "runArgs": [
+    "--hostname=atlassians-dev-infra"
+  ],
   "forwardPorts": [
     6080
   ],
@@ -14,9 +18,9 @@
     "ghcr.io/devcontainers/features/github-cli:1": {},
     "ghcr.io/devcontainers/features/node:1": {}
   },
-  "postCreateCommand": "bash /workspace/.devcontainer/scripts/post-create.sh",
-  "postStartCommand": "bash /workspace/.devcontainer/scripts/post-start.sh",
-  "postAttachCommand": "bash /workspace/.devcontainer/scripts/post-attach.sh",
+  "postCreateCommand": "bash ./.devcontainer/scripts/post-create.sh",
+  "postStartCommand": "bash ./.devcontainer/scripts/post-start.sh",
+  "postAttachCommand": "bash ./.devcontainer/scripts/post-attach.sh",
   "customizations": {
     "vscode": {
       "settings": {

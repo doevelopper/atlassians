@@ -65,8 +65,12 @@ SHELL ["/bin/bash", "-Eeuo", "pipefail", "-c"]
 RUN --mount=from=downloader,target=/dl \
     --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    if ! grep -Eq '^Components:.*(^|[[:space:]])universe($|[[:space:]])' /etc/apt/sources.list.d/ubuntu.sources; then \
+        sed -i '/^Components:/ s/$/ universe/' /etc/apt/sources.list.d/ubuntu.sources; \
+    fi \
+ && \
     apt-get update \
- && apt-get install --no-install-recommends -y minisign \
+    && apt-get install --no-install-recommends -y minisign xz-utils \
  && minisign -P "${CCACHE_MINISIGN_PUBKEY}" -Vm /dl/ccache.tar.xz \
  && tar xJf /dl/ccache.tar.xz --strip-components=1 \
               "ccache-${CCACHE_VERSION}-linux-$(uname -m)-glibc/ccache" \

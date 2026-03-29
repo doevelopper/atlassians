@@ -10,6 +10,7 @@
   "dockerComposeFile": "docker-compose.yml",
   "service": "workspace",
   "workspaceFolder": "/workspace",
+  "remoteUser": "developper",
   "shutdownAction": "stopCompose",
 
   // Lifecycle hooks — scripts live in .devcontainer/scripts/
@@ -50,7 +51,7 @@
         "cortex-debug.objdumpPath": "arm-none-eabi-objdump",
 
         // ── SonarLint ───────────────────────────────────────────────────────
-        "sonarlint.pathToCompileCommands": "/root/.amp/compile_commands.json",
+        "sonarlint.pathToCompileCommands": "${userHome}/.amp/compile_commands.json",
 
         // ── Cucumber / BDD ──────────────────────────────────────────────────
         "cucumberautocomplete.steps": ["test/cpp/features/steps/*.steps.ts"],

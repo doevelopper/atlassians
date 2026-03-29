@@ -59,7 +59,11 @@ WORKDIR /
 RUN --mount=from=downloader,target=/dl \
     --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked <<EOF
-    apt-get update && apt-get install --no-install-recommends -y minisign
+    if ! grep -Eq '^Components:.*(^|[[:space:]])universe($|[[:space:]])' /etc/apt/sources.list.d/ubuntu.sources; then
+        sed -i '/^Components:/ s/$/ universe/' /etc/apt/sources.list.d/ubuntu.sources
+    fi
+
+    apt-get update && apt-get install --no-install-recommends -y minisign wget ca-certificates xz-utils
 
     ARM_GNU_TOOLCHAIN_URL="https://developer.arm.com/-/media/Files/downloads/gnu/14.2.rel1/binrel/arm-gnu-toolchain-14.2.rel1-$(uname -m)-arm-none-eabi.tar.xz"
     ARM_GNU_TOOLCHAIN_TAR="/tmp/arm-gnu-toolchain.tar.xz"
@@ -173,6 +177,19 @@ RUN --mount=type=cache,target=/var/log,sharing=locked \
  && update-alternatives --install /usr/bin/python python /usr/bin/python3 10 \
  && mkdir /root/.amp \
  && cp /etc/skel/.bashrc /root/.bashrc
+
+# Create a non-root development user used by the devcontainer terminal session
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+ apt-get update \
+ && apt-get install -y --no-install-recommends sudo \
+ && if ! id -u developper >/dev/null 2>&1; then useradd -m -s /bin/bash developper; fi \
+ && usermod -aG sudo developper \
+ && echo "developper ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/developper \
+ && chmod 0440 /etc/sudoers.d/developper \
+ && mkdir -p /home/developper/.amp \
+ && cp /etc/skel/.bashrc /home/developper/.bashrc \
+ && chown -R developper:developper /home/developper
 
 # Set up package managers CPM and Conan
 # - Install CPM.cmake to the CMake module path

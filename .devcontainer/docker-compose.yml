@@ -16,6 +16,7 @@ services:
   # so the build cache is shared between both configurations.
   # ---------------------------------------------------------------------------
   workspace:
+    hostname: atlassians-dev-infra
     build:
       # Context = repository root (one level up from .devcontainer/)
       context: ..
