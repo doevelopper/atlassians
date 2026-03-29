@@ -10,6 +10,24 @@ set -euo pipefail
 echo "post-create start"
 echo "$(date +'%Y-%m-%d %H:%M:%S')    post-create start" >> "$HOME/status"
 
+# Function to run a command and show logs only on error
+run_command() {
+    local command_to_run="$*"
+    local output
+    local exit_code
+
+    # Capture all output (stdout and stderr)
+    output=$(eval "$command_to_run" 2>&1) || exit_code=$?
+    exit_code=${exit_code:-0}
+
+    if [ $exit_code -ne 0 ]; then
+        echo -e "\033[0;31m[ERROR] Command failed (Exit Code $exit_code): $command_to_run\033[0m" >&2
+        echo -e "\033[0;31m$output\033[0m" >&2
+
+        exit $exit_code
+    fi
+}
+
 # ---------------------------------------------------------------------------
 # Git identity — read from environment variables set in devcontainer.json
 # remoteEnv or from the user's global git configuration on the host.
@@ -63,6 +81,19 @@ if [[ -f /workspace/.pre-commit-config.yaml ]] && command -v pre-commit &>/dev/n
   pre-commit install --install-hooks
   echo "  pre-commit hooks installed."
 fi
+
+echo -e "\n💎 Installing Ruby dependencies with Bundler..."
+if [ -f "Gemfile" ]; then
+    run_command "sudo bundle install"
+    echo "✅ Done"
+else
+    echo "⚠️  No Gemfile found, skipping bundle install"
+fi
+
+# Installing UV (Python package manager)
+echo -e "\n🐍 Installing UV - Python Package Manager..."
+run_command "pipx install uv"
+echo "✅ Done"
 
 echo "$(date +'%Y-%m-%d %H:%M:%S')    post-create end" >> "$HOME/status"
 echo "post-create end"

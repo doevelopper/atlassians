@@ -211,12 +211,21 @@ RUN cd /tmp \
     && cd /tmp \
     && rm -rf cppcheck
 
-RUN cd /tmp \
-    && git clone --depth=1 https://github.com/doxygen/doxygen.git  \
-    && cd doxygen \
-    && cmake -E make_directory build \
-    && cmake -E chdir build cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local  \
-    && cmake --build build --target all --clean-first > /dev/null 2>&1 \
-    && cmake --build build --target install \
-    && cd /tmp \
-    && rm -rf doxygen
+# RUN cd /tmp \
+#     && git clone --depth=1 https://github.com/doxygen/doxygen.git  \
+#     && cd doxygen \
+#     && cmake -E make_directory build \
+#     && cmake -E chdir build cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local  \
+#     && cmake --build build --target all --clean-first > /dev/null 2>&1 \
+#     && cmake --build build --target install \
+#     && cd /tmp \
+#     && rm -rf doxygen
+
+# Install bazelisk (latest release)
+RUN curl -L https://github.com/bazelbuild/bazelisk/releases/latest/download/bazelisk-linux-amd64 \
+      -o /usr/local/bin/bazelisk \
+    && chmod +x /usr/local/bin/bazelisk \
+    && ln -s /usr/local/bin/bazelisk /usr/local/bin/bazel
+
+# Install bundler for Ruby dependency management
+RUN gem install bundler
