@@ -58,6 +58,7 @@ if command_exists yamllint; then
 		"${ROOT_DIR}/.github/workflows/ci.yml"
 		"${ROOT_DIR}/.github/workflows/security.yml"
 		"${ROOT_DIR}/.github/workflows/release.yml"
+		"${ROOT_DIR}/.github/workflows/container-images.yml"
 		"${ROOT_DIR}/.gitlab-ci.yml"
 		"${ROOT_DIR}/.yamllint.yml"
 		"${ROOT_DIR}/.hadolint.yaml"
