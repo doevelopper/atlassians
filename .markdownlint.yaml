@@ -1,1 +1,4 @@
-# markdownlint placeholder
+default: true
+MD013:
+  line_length: 140
+MD033: false

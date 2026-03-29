@@ -1,1 +1,64 @@
-# CI workflow
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - developpment
+      - feature/**
+  pull_request:
+    branches:
+      - main
+      - developpment
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: bootstrap-lint-build-test-package
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install CI prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            ca-certificates \
+            git \
+            make \
+            shellcheck \
+            yamllint
+
+      - name: Run bootstrap
+        run: bash ci/pipelines/bootstrap.sh
+
+      - name: Run lint
+        run: bash ci/pipelines/lint.sh
+
+      - name: Run build
+        run: bash ci/pipelines/build.sh
+
+      - name: Run tests
+        run: bash ci/pipelines/test.sh
+
+      - name: Run package
+        run: bash ci/pipelines/package.sh
+
+      - name: Generate SBOM
+        run: bash ci/pipelines/sbom.sh
+
+      - name: Generate provenance
+        run: bash ci/pipelines/provenance.sh
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-artifacts
+          path: artifacts/
+          if-no-files-found: error

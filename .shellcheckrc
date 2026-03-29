@@ -1,1 +1,3 @@
-# shellcheck placeholder
+external-sources=true
+severity=style
+enable=require-variable-braces

@@ -1,1 +1,86 @@
-# gitlab-ci placeholder
+stages:
+  - bootstrap
+  - lint
+  - build
+  - test
+  - package
+  - security
+  - release
+
+default:
+  image: ubuntu:24.04
+  before_script:
+    - apt-get update
+    - apt-get install -y --no-install-recommends ca-certificates git make shellcheck yamllint python3 python3-pip
+
+bootstrap:
+  stage: bootstrap
+  script:
+    - bash ci/pipelines/bootstrap.sh
+  artifacts:
+    when: always
+    paths:
+      - artifacts/
+
+
+lint:
+  stage: lint
+  script:
+    - bash ci/pipelines/lint.sh
+  artifacts:
+    when: always
+    paths:
+      - artifacts/
+
+build:
+  stage: build
+  script:
+    - bash ci/pipelines/build.sh
+  artifacts:
+    when: always
+    paths:
+      - artifacts/
+
+test:
+  stage: test
+  script:
+    - bash ci/pipelines/test.sh
+  artifacts:
+    when: always
+    paths:
+      - artifacts/
+
+package:
+  stage: package
+  script:
+    - bash ci/pipelines/package.sh
+    - bash ci/pipelines/sbom.sh
+    - bash ci/pipelines/provenance.sh
+  artifacts:
+    when: always
+    paths:
+      - artifacts/
+
+security:
+  stage: security
+  script:
+    - python3 -m pip install --break-system-packages --user semgrep reuse
+    - export PATH="$HOME/.local/bin:$PATH"
+    - bash ci/pipelines/security.sh
+  artifacts:
+    when: always
+    paths:
+      - artifacts/
+
+release:
+  stage: release
+  script:
+    - bash ci/pipelines/package.sh
+    - CI_RELEASE=true bash ci/pipelines/release.sh
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^v.*/'
+    - when: manual
+  artifacts:
+    when: always
+    paths:
+      - artifacts/

@@ -1,1 +1,42 @@
-# Release workflow
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      release_mode:
+        description: "Use release mode instead of dry-run"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: release-stage
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run packaging prerequisites
+        run: bash ci/pipelines/package.sh
+
+      - name: Run release stage
+        env:
+          CI_RELEASE: ${{ startsWith(github.ref, 'refs/tags/') || (github.event_name == 'workflow_dispatch' && inputs.release_mode) }}
+          DRY_RUN: ${{ !startsWith(github.ref, 'refs/tags/') && !(github.event_name == 'workflow_dispatch' && inputs.release_mode) }}
+        run: bash ci/pipelines/release.sh
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts
+          path: artifacts/
+          if-no-files-found: error

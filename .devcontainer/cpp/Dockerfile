@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 # hadolint global ignore=DL3006
 
-ARG BASE_IMAGE=pom-scaffolding-base:edge
+ARG BASE_IMAGE=ubuntu:24.04@sha256:cd1dba651b3080c3686ecf4e3c4220f026b521fb76978881737d24f200828b2b
 # Public minisign key for verifying ccache releases,
 # taken from https://ccache.dev/minisign.pub
 ARG CCACHE_MINISIGN_PUBKEY=RWQX7yXbBedVfI4PNx6FLdFXu9GHUFsr28s4BVGxm4BeybtnX3P06saF
@@ -115,7 +115,7 @@ RUN --mount=type=bind,source=.devcontainer/cpp/apt-requirements-base.json,target
     --mount=from=extractor,target=/src <<EOF
 
     # Install the base system with all tool dependencies
-    apt-get update && jq -r 'to_entries | .[] | .key + "=" + .value' /tmp/apt-requirements-base.json | \
+    apt-get update && apt-get install -y --no-install-recommends jq && jq -r 'to_entries | .[] | .key + "=" + .value' /tmp/apt-requirements-base.json | \
         xargs apt-get install -y --no-install-recommends
 
     # Install some tools via pip to get more recent versions, clean up afterwards

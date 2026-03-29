@@ -11,11 +11,13 @@
     "NODE_EXTRA_CA_CERTS": "/usr/local/share/ca-certificates/Cisco_Umbrella_Root_CA.crt"
   },
   "features": {
-    "ghcr.io/devcontainers/features/desktop-lite:": {},
-    "ghcr.io/devcontainers/features/github-cli:": {},
+    "ghcr.io/devcontainers/features/desktop-lite:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {},
     "ghcr.io/devcontainers/features/node:1": {}
   },
-  "postCreateCommand": "npm install && npx playwright install --with-deps",
+  "postCreateCommand": "bash /workspace/.devcontainer/scripts/post-create.sh",
+  "postStartCommand": "bash /workspace/.devcontainer/scripts/post-start.sh",
+  "postAttachCommand": "bash /workspace/.devcontainer/scripts/post-attach.sh",
   "customizations": {
     "vscode": {
       "settings": {

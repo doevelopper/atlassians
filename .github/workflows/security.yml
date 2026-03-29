@@ -1,1 +1,62 @@
-# Security workflow
+name: Security
+
+on:
+  push:
+    branches:
+      - main
+      - developpment
+  pull_request:
+    branches:
+      - main
+      - developpment
+  schedule:
+    - cron: "0 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  security:
+    name: security-scans
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install base prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            ca-certificates \
+            python3 \
+            python3-pip
+
+      - name: Install security tools
+        run: |
+          python3 -m pip install --user semgrep reuse
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Setup Trivy
+        uses: aquasecurity/setup-trivy@v0.2.2
+
+      - name: Run security pipeline stage
+        run: bash ci/pipelines/security.sh
+
+      - name: Upload security artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-artifacts
+          path: |
+            artifacts/reports
+            artifacts/sbom
+          if-no-files-found: warn
+
+      - name: Upload Trivy SARIF
+        if: always() && hashFiles('artifacts/reports/trivy.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: artifacts/reports/trivy.sarif

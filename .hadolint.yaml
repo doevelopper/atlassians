@@ -1,1 +1,4 @@
-# hadolint placeholder
+ignored:
+  - DL3008
+  - DL3006
+failure-threshold: warning
