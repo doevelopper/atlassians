@@ -1,0 +1,15 @@
+# RHEL / CentOS / Rocky Linux common packages (for RPM-based CI images)
+bash-completion
+ca-certificates
+curl
+file
+git
+gnupg2
+jq
+less
+openssh-clients
+procps-ng
+tar
+unzip
+wget
+xz

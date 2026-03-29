@@ -1,0 +1,26 @@
+# Ignore all generated build outputs inside artifacts/ subdirectories.
+# .gitkeep files are explicitly allowed to keep empty directories tracked.
+
+# Build outputs
+build/**
+!build/.gitkeep
+
+# Test result files
+test/**
+!test/.gitkeep
+
+# Coverage data and reports
+coverage/**
+!coverage/.gitkeep
+
+# Generated reports (HTML, XML, JSON, etc.)
+reports/**
+!reports/.gitkeep
+
+# Software Bill of Materials outputs
+sbom/**
+!sbom/.gitkeep
+
+# Provenance and attestation bundles
+provenance/**
+!provenance/.gitkeep

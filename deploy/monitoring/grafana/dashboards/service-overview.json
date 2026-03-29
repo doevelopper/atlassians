@@ -1,0 +1,97 @@
+# Grafana dashboard — service overview.
+#
+# Import via Grafana UI: Dashboards → Import → Upload JSON.
+# Datasource variable "__DS_PROMETHEUS" maps to your Prometheus datasource.
+
+{
+  "__inputs": [
+    {
+      "name": "__DS_PROMETHEUS",
+      "label": "Prometheus",
+      "description": "",
+      "type": "datasource",
+      "pluginId": "prometheus",
+      "pluginName": "Prometheus"
+    }
+  ],
+  "__requires": [
+    { "type": "grafana", "id": "grafana", "name": "Grafana", "version": "10.0.0" },
+    { "type": "datasource", "id": "prometheus", "name": "Prometheus", "version": "1.0.0" },
+    { "type": "panel", "id": "timeseries", "name": "Time series", "version": "" },
+    { "type": "panel", "id": "stat", "name": "Stat", "version": "" }
+  ],
+  "title": "Service Overview",
+  "uid": "service-overview",
+  "version": 1,
+  "schemaVersion": 38,
+  "tags": ["service", "overview"],
+  "templating": {
+    "list": [
+      {
+        "type": "datasource",
+        "name": "datasource",
+        "pluginId": "prometheus",
+        "current": {}
+      },
+      {
+        "type": "query",
+        "name": "job",
+        "label": "Job",
+        "datasource": { "type": "prometheus", "uid": "${datasource}" },
+        "query": "label_values(up, job)",
+        "refresh": 2,
+        "current": {}
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Service Uptime",
+      "gridPos": { "x": 0, "y": 0, "w": 4, "h": 4 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "avg(up{job=\"$job\"})",
+          "legendFormat": "uptime"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Request Rate (req/s)",
+      "gridPos": { "x": 0, "y": 4, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "job:http_requests_total:rate5m{job=\"$job\"}",
+          "legendFormat": "{{ method }} {{ status }}"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "P99 Latency (s)",
+      "gridPos": { "x": 12, "y": 4, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "job:http_request_duration_seconds:p99_5m{job=\"$job\"}",
+          "legendFormat": "p99"
+        }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "5xx Error Rate",
+      "gridPos": { "x": 0, "y": 12, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "expr": "job:http_errors_total:rate5m{job=\"$job\"}",
+          "legendFormat": "error rate"
+        }
+      ]
+    }
+  ]
+}

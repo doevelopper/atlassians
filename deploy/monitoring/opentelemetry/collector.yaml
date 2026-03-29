@@ -1,0 +1,68 @@
+# OpenTelemetry Collector configuration — baseline pipeline.
+#
+# Deploy as a sidecar or daemonset. Adjust exporters for your
+# observability backend (Jaeger, Tempo, OTLP endpoint, etc.).
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: otel-collector
+          static_configs:
+            - targets: ["localhost:8888"]
+
+processors:
+  batch:
+    timeout: 10s
+    send_batch_size: 1024
+
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+    spike_limit_mib: 128
+
+  resource:
+    attributes:
+      - key: service.name
+        value: "${SERVICE_NAME}"
+        action: upsert
+      - key: service.version
+        value: "${SERVICE_VERSION}"
+        action: upsert
+      - key: deployment.environment
+        value: "${DEPLOY_ENV}"
+        action: upsert
+
+exporters:
+  # Replace with your backend (e.g., otlp/tempo, otlp/jaeger, prometheusremotewrite)
+  otlp:
+    endpoint: "${OTLP_ENDPOINT}"
+    tls:
+      insecure: false
+
+  logging:
+    verbosity: normal
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, batch]
+      exporters: [otlp, logging]
+
+    metrics:
+      receivers: [otlp, prometheus]
+      processors: [memory_limiter, resource, batch]
+      exporters: [otlp]
+
+    logs:
+      receivers: [otlp]
+      processors: [memory_limiter, resource, batch]
+      exporters: [otlp, logging]

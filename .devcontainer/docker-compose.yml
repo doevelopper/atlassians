@@ -1,0 +1,110 @@
+# =============================================================================
+# DevContainer docker-compose
+# Backs the "C++ Dev (Docker Compose)" devcontainer configuration.
+# Referenced by .devcontainer/devcontainer.json via "dockerComposeFile".
+#
+# Usage — VS Code will start this automatically when you open the repo with
+# the compose-based devcontainer selected.  You can also run it manually:
+#   docker compose -f .devcontainer/docker-compose.yml up workspace
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # workspace — primary C++ development container
+  # Builds from the same Dockerfile used by the standalone cpp devcontainer
+  # so the build cache is shared between both configurations.
+  # ---------------------------------------------------------------------------
+  workspace:
+    build:
+      # Context = repository root (one level up from .devcontainer/)
+      context: ..
+      dockerfile: .devcontainer/cpp/Dockerfile
+      args:
+        # Override to use a pre-built CI image as the base (optional):
+        #   BASE_IMAGE: ghcr.io/ORGANIZATION/REPOSITORY/ci-build:edge
+        BASE_IMAGE: pom-scaffolding-base:edge
+    volumes:
+      # Workspace source (cached for performance on macOS / Windows hosts)
+      - ..:/workspace:cached
+      # Named volumes for persistent build caches (survive container rebuilds)
+      - ccache:/cache/.ccache
+      - conan-home:/opt/conan
+      - cpm-cache:/cache/.cpm
+      - python-cache:/cache/.python
+      # Docker socket — enables "Docker-outside-of-Docker" for building CI images
+      # inside the devcontainer. Remove if not required.
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      CONTAINER_FLAVOR: cpp
+      # Forward host git identity into the container (set on your host machine):
+      #   export GIT_AUTHOR_NAME="Jane Doe"
+      #   export GIT_AUTHOR_EMAIL="jane@example.com"
+      GIT_AUTHOR_NAME:  ${GIT_AUTHOR_NAME:-}
+      GIT_AUTHOR_EMAIL: ${GIT_AUTHOR_EMAIL:-}
+      # Uncomment to forward GPG signing key ID:
+      # GPG_SIGNING_KEY_ID: ${GPG_SIGNING_KEY_ID:-}
+    # Keep the container alive so VS Code can attach
+    command: sleep infinity
+    # Required for breakpoint debugging (GDB / LLDB, sanitisers, perf)
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp:unconfined
+
+  # ---------------------------------------------------------------------------
+  # Optional sidecar services — uncomment as your project needs them.
+  # The workspace service can reach them via their service name as hostname.
+  # ---------------------------------------------------------------------------
+
+  # --- PostgreSQL (integration tests against a real database) ---------------
+  # db:
+  #   image: postgres:16-alpine
+  #   restart: unless-stopped
+  #   environment:
+  #     POSTGRES_DB:       dev_db
+  #     POSTGRES_USER:     dev_user
+  #     POSTGRES_PASSWORD: dev_pass   # TODO: use a Docker secret in production
+  #   volumes:
+  #     - postgres-data:/var/lib/postgresql/data
+  #   healthcheck:
+  #     test: ["CMD-SHELL", "pg_isready -U dev_user -d dev_db"]
+  #     interval: 10s
+  #     timeout:  5s
+  #     retries:  5
+
+  # --- Mosquitto MQTT broker (for embedded / IoT projects) ------------------
+  # mqtt:
+  #   image: eclipse-mosquitto:2-openssl
+  #   restart: unless-stopped
+  #   volumes:
+  #     - ./config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+  #   ports:
+  #     - "1883:1883"   # unencrypted (dev only)
+  #     - "8883:8883"   # TLS
+
+  # --- MinIO S3-compatible object storage (artefact / test-data staging) ----
+  # minio:
+  #   image: minio/minio:latest
+  #   restart: unless-stopped
+  #   command: server /data --console-address ":9001"
+  #   environment:
+  #     MINIO_ROOT_USER:     minioadmin
+  #     MINIO_ROOT_PASSWORD: minioadmin
+  #   volumes:
+  #     - minio-data:/data
+  #   ports:
+  #     - "9000:9000"
+  #     - "9001:9001"
+
+# ---------------------------------------------------------------------------
+# Named volumes — persisted across container restarts / rebuilds
+# ---------------------------------------------------------------------------
+volumes:
+  ccache:
+    # Tune per-host by setting CCACHE_MAXSIZE in the environment
+  conan-home:
+  cpm-cache:
+  python-cache:
+  # postgres-data:
+  # minio-data:

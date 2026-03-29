@@ -1,0 +1,17 @@
+[
+  "bash-completion",
+  "ca-certificates",
+  "curl",
+  "file",
+  "git",
+  "gnupg2",
+  "jq",
+  "less",
+  "lsb-release",
+  "openssh-client",
+  "procps",
+  "tar",
+  "unzip",
+  "wget",
+  "xz-utils"
+]

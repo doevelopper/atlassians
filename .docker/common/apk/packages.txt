@@ -1,0 +1,15 @@
+# Alpine Linux common packages (for Alpine-based CI images)
+bash
+ca-certificates
+curl
+file
+git
+gnupg
+jq
+less
+openssh-client
+procps
+tar
+unzip
+wget
+xz

@@ -1,0 +1,34 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/*.log
+.vscode/*.tmp
+
+# Env
+.env
+.env.*
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Build outputs
+/dist/
+/build/
+/out/
+/target/
+# Ruby (BDD tooling)
+/.bundle/
+/vendor/bundle/
+Gemfile.lock

@@ -1,0 +1,181 @@
+# syntax=docker/dockerfile:1
+# hadolint global ignore=DL3006
+
+ARG BASE_IMAGE=pom-scaffolding-base:edge
+# Public minisign key for verifying ccache releases,
+# taken from https://ccache.dev/minisign.pub
+ARG CCACHE_MINISIGN_PUBKEY=RWQX7yXbBedVfI4PNx6FLdFXu9GHUFsr28s4BVGxm4BeybtnX3P06saF
+ARG CCACHE_VERSION=4.13.1
+ARG XWIN_VERSION=0.8.0
+
+# Downloader stage for AMD64 architecture
+FROM scratch AS downloader-amd64
+
+ARG CCACHE_VERSION
+ARG XWIN_VERSION
+
+ADD --checksum=sha256:dd9fc188e738add3c12509063bb082b05e77a9a71fa85a20e01230044aa410f1 \
+ https://github.com/ccache/ccache/releases/download/v${CCACHE_VERSION}/ccache-${CCACHE_VERSION}-linux-x86_64-glibc.tar.xz /ccache.tar.xz
+ADD --checksum=sha256:fdf00b1eadebf437e898ca3c0c94fd3e8d03b9e2bbe4f3d74ac6df2fecbf0a74 \
+ https://github.com/ccache/ccache/releases/download/v${CCACHE_VERSION}/ccache-${CCACHE_VERSION}-linux-x86_64-glibc.tar.xz.minisig /ccache.tar.xz.minisig
+ADD --checksum=sha256:8a354e12475dd154d0a2d3084eefd2c105f872ec8062965baaa7e9f2f76fe611 \
+ https://github.com/Jake-Shadle/xwin/releases/download/${XWIN_VERSION}/xwin-${XWIN_VERSION}-x86_64-unknown-linux-musl.tar.gz /xwin.tar.gz
+
+# Downloader stage for ARM64 architecture
+FROM scratch AS downloader-arm64
+
+ARG CCACHE_VERSION
+ARG XWIN_VERSION
+
+ADD --checksum=sha256:4cf4b05d9c381b3a60f1f10189f45ad9402bbc58979dbdc4901659c7f5e42dc8 \
+ https://github.com/ccache/ccache/releases/download/v${CCACHE_VERSION}/ccache-${CCACHE_VERSION}-linux-aarch64-glibc.tar.xz /ccache.tar.xz
+ADD --checksum=sha256:24b50ebf8ce5ec9e5e56af298ddb17699a46f0d9bb035d7c824500270a5cde74 \
+ https://github.com/ccache/ccache/releases/download/v${CCACHE_VERSION}/ccache-${CCACHE_VERSION}-linux-aarch64-glibc.tar.xz.minisig /ccache.tar.xz.minisig
+ADD --checksum=sha256:fe106caefbb316664d73fd03166c28c09e580bb2a3ad65b4d50c51c67368aeab \
+ https://github.com/Jake-Shadle/xwin/releases/download/${XWIN_VERSION}/xwin-${XWIN_VERSION}-aarch64-unknown-linux-musl.tar.gz /xwin.tar.gz
+
+# Select downloader stage based on target architecture.
+# Linters don't recognize the TARGETARCH variable, so we ignore warnings here.
+# trivy:ignore:AVD-DS-0001
+FROM downloader-${TARGETARCH} AS downloader
+
+ADD --checksum=sha256:8b2a587ffd672c4687e7581dad4b2f6c1bb2ad6b480cd9771ba2ff48e0b8c75d \
+ https://apt.llvm.org/llvm-snapshot.gpg.key /llvm.gpg.key
+ADD --checksum=sha256:db2938ce5fd422f2db7a07508452772c945135d99274004c462190c323fefcf1 \
+ https://dl.cloudsmith.io/public/mull-project/mull-stable/gpg.41DB35380DE6BD6F.key /mull.gpg.key
+
+# Extractor stage using target architecture specific downloader
+FROM ${BASE_IMAGE} AS extractor
+
+ARG CCACHE_MINISIGN_PUBKEY
+ARG CCACHE_VERSION
+ARG XWIN_VERSION
+
+SHELL ["/bin/bash", "-Eeuo", "pipefail", "-c"]
+
+WORKDIR /
+
+# hadolint ignore=DL3008
+RUN --mount=from=downloader,target=/dl \
+    --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked <<EOF
+    apt-get update && apt-get install --no-install-recommends -y minisign
+
+    ARM_GNU_TOOLCHAIN_URL="https://developer.arm.com/-/media/Files/downloads/gnu/14.2.rel1/binrel/arm-gnu-toolchain-14.2.rel1-$(uname -m)-arm-none-eabi.tar.xz"
+    ARM_GNU_TOOLCHAIN_TAR="/tmp/arm-gnu-toolchain.tar.xz"
+
+    if [[ "$(uname -m)" == "x86_64" ]]; then
+        ARM_GNU_TOOLCHAIN_SHA256="62a63b981fe391a9cbad7ef51b17e49aeaa3e7b0d029b36ca1e9c3b2a9b78823"
+    elif [[ "$(uname -m)" == "aarch64" ]]; then
+        ARM_GNU_TOOLCHAIN_SHA256="87330bab085dd8749d4ed0ad633674b9dc48b237b61069e3b481abd364d0a684"
+    fi
+
+    wget --no-hsts -qO "${ARM_GNU_TOOLCHAIN_TAR}" "${ARM_GNU_TOOLCHAIN_URL}"
+    echo "${ARM_GNU_TOOLCHAIN_SHA256}  ${ARM_GNU_TOOLCHAIN_TAR}" | sha256sum -c -
+
+    minisign -P "${CCACHE_MINISIGN_PUBKEY}" -Vm /dl/ccache.tar.xz
+
+    tar xJf "${ARM_GNU_TOOLCHAIN_TAR}" --exclude="*arm-none-eabi-gdb*" --exclude="share"
+    tar xJf /dl/ccache.tar.xz --strip-components=1 "ccache-${CCACHE_VERSION}-linux-$(uname -m)-glibc/ccache"
+    tar xzf /dl/xwin.tar.gz --strip-components=1 "xwin-${XWIN_VERSION}-$(uname -m)-unknown-linux-musl/xwin"
+    cp /dl/llvm.gpg.key /llvm.gpg.key
+    cp /dl/mull.gpg.key /mull.gpg.key
+EOF
+
+# Final development container image
+FROM ${BASE_IMAGE}
+
+ARG CLANG_VERSION=20
+ARG CPM_VERSION=0.42.1
+ARG INCLUDE_WHAT_YOU_USE_VERSION=0.24
+
+ARG DEBIAN_FRONTEND=noninteractive
+
+HEALTHCHECK NONE
+
+SHELL ["/bin/bash", "-Eeuo", "pipefail", "-c"]
+
+# Set default environment options
+ENV CCACHE_DIR=/cache/.ccache \
+    CMAKE_EXPORT_COMPILE_COMMANDS="On" \
+    CMAKE_GENERATOR="Ninja" \
+    CONAN_HOME=/opt/conan \
+    CPM_SOURCE_CACHE=/cache/.cpm \
+    PATH="$PATH:/usr/lib/llvm-${CLANG_VERSION}/bin:/opt/gcc-arm-none-eabi/bin" \
+    PYTHONPYCACHEPREFIX=/cache/.python
+
+# Install the base system with all tool dependencies
+RUN --mount=type=bind,source=.devcontainer/cpp/apt-requirements-base.json,target=/tmp/apt-requirements-base.json \
+    --mount=type=bind,source=.devcontainer/cpp/apt-requirements-clang.json,target=/tmp/apt-requirements-clang.json \
+    --mount=type=bind,source=.devcontainer/cpp/requirements.txt,target=/tmp/requirements.txt \
+    --mount=type=cache,target=/cache,sharing=locked \
+    --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    --mount=type=cache,target=/var/log,sharing=locked \
+    --mount=from=extractor,target=/src <<EOF
+
+    # Install the base system with all tool dependencies
+    apt-get update && jq -r 'to_entries | .[] | .key + "=" + .value' /tmp/apt-requirements-base.json | \
+        xargs apt-get install -y --no-install-recommends
+
+    # Install some tools via pip to get more recent versions, clean up afterwards
+    python3 -m pip install --break-system-packages --require-hashes --no-cache-dir --no-compile -r /tmp/requirements.txt
+    find / -regex '^.*\(__pycache__\|\.py[co]\)$' -delete
+    rm -rf "$(pip cache dir)"
+
+    # Install ccache and xwin
+    cp /src/ccache /usr/local/bin/ccache
+    cp /src/xwin /usr/local/bin/xwin
+
+    # Install clang toolchain and mull mutation testing framework
+    cat /src/llvm.gpg.key | gpg --dearmor -o /usr/share/keyrings/llvm-snapshot-keyring.gpg
+    cat /src/mull.gpg.key | gpg --dearmor -o /usr/share/keyrings/mull-project-mull-stable-archive-keyring.gpg
+
+    UBUNTU_CODENAME=$(grep '^UBUNTU_CODENAME=' /etc/os-release | cut -d= -f2)
+    echo "deb [signed-by=/usr/share/keyrings/llvm-snapshot-keyring.gpg] http://apt.llvm.org/${UBUNTU_CODENAME}/ llvm-toolchain-${UBUNTU_CODENAME}-${CLANG_VERSION} main" | tee /etc/apt/sources.list.d/llvm-snapshot.list > /dev/null
+    echo "deb [signed-by=/usr/share/keyrings/mull-project-mull-stable-archive-keyring.gpg] https://dl.cloudsmith.io/public/mull-project/mull-stable/deb/ubuntu ${UBUNTU_CODENAME} main" | tee /etc/apt/sources.list.d/mull-project-mull-stable.list > /dev/null
+    echo -e 'Package: *\nPin: origin "apt.llvm.org"\nPin-Priority: 1000' > /etc/apt/preferences
+    apt-get update && jq -r 'to_entries | .[] | .key + "=" + .value' /tmp/apt-requirements-clang.json | \
+        xargs apt-get install -y --no-install-recommends
+
+    # Install arm-gcc toolchain
+    cp -a /src/arm-gnu-toolchain-*-arm-none-eabi /opt/gcc-arm-none-eabi
+EOF
+
+# Install include-what-you-use (iwyu) from source
+# hadolint ignore=DL3008
+RUN --mount=type=cache,target=/cache,sharing=locked \
+    --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+ apt-get update && apt-get install -y --no-install-recommends libclang-${CLANG_VERSION}-dev llvm-${CLANG_VERSION}-dev \
+ && wget --no-hsts -qO - https://github.com/include-what-you-use/include-what-you-use/archive/refs/tags/${INCLUDE_WHAT_YOU_USE_VERSION}.tar.gz | tar xz -C /tmp \
+ && CC=clang CXX=clang++ cmake -S /tmp/include-what-you-use-${INCLUDE_WHAT_YOU_USE_VERSION} -B /tmp/include-what-you-use-${INCLUDE_WHAT_YOU_USE_VERSION}/build \
+ && cmake --build /tmp/include-what-you-use-${INCLUDE_WHAT_YOU_USE_VERSION}/build --target install \
+ && rm -rf /tmp/include-what-you-use-${INCLUDE_WHAT_YOU_USE_VERSION} \
+ && apt-get purge -y libclang-${CLANG_VERSION}-dev llvm-${CLANG_VERSION}-dev \
+ && apt-get autoremove -y \
+ && apt-get clean
+
+# Update all tool alternatives to the correct version
+# and patch root's bashrc to include bash-completion
+RUN --mount=type=cache,target=/var/log,sharing=locked \
+ update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 10 \
+                        --slave /usr/bin/g++ g++ /usr/bin/g++-14 \
+                        --slave /usr/bin/gcov gcov /usr/bin/gcov-14 \
+ && update-alternatives --install /usr/bin/cc cc /usr/bin/gcc-14 10 \
+                        --slave /usr/bin/c++ c++ /usr/bin/g++-14 \
+ && update-alternatives --install /usr/bin/iwyu iwyu /usr/local/bin/include-what-you-use 10 \
+ && update-alternatives --install /usr/bin/mull-runner mull-runner /usr/bin/mull-runner-${CLANG_VERSION} 10 \
+                        --slave /usr/bin/mull-reporter mull-reporter /usr/bin/mull-reporter-${CLANG_VERSION} \
+                        --slave /usr/lib/mull-ir-frontend mull-ir-frontend /usr/lib/mull-ir-frontend-${CLANG_VERSION} \
+ && update-alternatives --install /usr/bin/python python /usr/bin/python3 10 \
+ && mkdir /root/.amp \
+ && cp /etc/skel/.bashrc /root/.bashrc
+
+# Set up package managers CPM and Conan
+# - Install CPM.cmake to the CMake module path
+# - Configure a default profile for Conan and set the CMake generator to Ninja
+RUN --mount=type=cache,target=/cache,sharing=locked \
+ wget --no-hsts -qP /usr/local/lib/python*/dist-packages/cmake/data/share/cmake-*/Modules/ https://github.com/cpm-cmake/CPM.cmake/releases/download/v${CPM_VERSION}/CPM.cmake \
+ && conan profile detect \
+ && echo -e "\n[conf]\ntools.cmake.cmaketoolchain:generator=Ninja" >> "$(conan profile path default)"

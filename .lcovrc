@@ -1,0 +1,32 @@
+# LCOV configuration for coverage exclusions
+# This file ensures consistent exclusions across all coverage tools
+
+# Exclude system headers
+lcov_excl_line = LCOV_EXCL_LINE
+lcov_excl_br_line = LCOV_EXCL_BR_LINE
+
+# Exclude patterns (these are applied automatically)
+# Test files
+geninfo_exclude = */src/test/*
+geninfo_exclude = */src/it/*
+geninfo_exclude = */test/*
+geninfo_exclude = */tests/*
+
+# Third-party/vendor code
+geninfo_exclude = */vendor/*
+geninfo_exclude = */gtest/*
+geninfo_exclude = */googletest/*
+geninfo_exclude = */include/gtest/*
+
+# Build artifacts
+geninfo_exclude = */target/*
+geninfo_exclude = */build/*
+
+# System includes
+geninfo_exclude = /usr/*
+
+# Test file patterns
+geninfo_exclude = *_test.cpp
+geninfo_exclude = *_test.c
+geninfo_exclude = *Test.cpp
+geninfo_exclude = *Test.c

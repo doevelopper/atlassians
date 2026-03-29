@@ -1,0 +1,42 @@
+{
+  "$schema": "https://raw.githubusercontent.com/devcontainers/spec/main/schemas/devContainer.schema.json",
+  "name": "Base Dev (minimal)",
+
+  "build": {
+    "dockerfile": "Dockerfile",
+    // Context must be the repository root so Dockerfile bind-mounts resolve
+    "context": "../.."
+  },
+
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached",
+  "workspaceFolder": "/workspace",
+
+  "postCreateCommand": "bash /workspace/.devcontainer/scripts/post-create.sh",
+  "postStartCommand":  "bash /workspace/.devcontainer/scripts/post-start.sh",
+  "postAttachCommand": "bash /workspace/.devcontainer/scripts/post-attach.sh",
+
+  "remoteEnv": {
+    "CONTAINER_FLAVOR": "base"
+  },
+
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "editor.formatOnSave": true,
+        "files.insertFinalNewline": true,
+        "files.trimTrailingWhitespace": true,
+        "terminal.integrated.defaultProfile.linux": "bash"
+      },
+      "extensions": [
+        "mhutchie.git-graph@1.30.0",
+        "github.copilot@1.388.0",
+        "ms-azuretools.vscode-docker@2.0.0",
+        "usernamehw.errorlens@3.28.0"
+      ]
+    }
+  }
+}

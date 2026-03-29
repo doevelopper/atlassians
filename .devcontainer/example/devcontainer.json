@@ -1,0 +1,48 @@
+{
+  "$schema": "https://raw.githubusercontent.com/devcontainers/spec/main/schemas/devContainer.schema.json",
+  "name": "Dev image with direnv and Bazel",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "workspaceMount": "source=${localWorkspaceFolder},target=/home/developer/workspace,type=bind",
+  "workspaceFolder": "/home/developer/workspace",
+  "mounts": [
+    "source=/mnt/nas/,target=/mnt/nas/,type=bind"
+  ],
+  "remoteUser": "developer",
+  "containerUser": "developer",
+  "updateRemoteUserUID": true,
+  "containerEnv": {
+    "HOME": "/home/developer"
+  },  
+  "postCreateCommand": [
+    "direnv allow; bazel run tools:bazel_env || true",
+    "sudo apt-get update -qq && sudo apt-get install -y -qq libsecret-1-0 xdg-utils",
+    "echo 'post-create complete'"
+  ],
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "python.defaultInterpreterPath": "/opt/conda/bin/python",
+        "python.terminal.activateEnvironment": true,
+        "python.linting.enabled": true,
+        "python.linting.pylintEnabled": false,
+        "python.linting.flake8Enabled": true,
+        "python.formatting.provider": "black",
+        "python.formatting.blackArgs": ["--line-length=88"],
+        "jupyter.askForKernelRestart": false,
+        "git.autofetch": true,
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.organizeImports": true
+        }
+      },
+      "extensions": [
+        "ms-python.python",
+        "ms-toolsai.jupyter",
+        "ms-toolsai.jupyter-keymap",
+        "ms-toolsai.jupyter-renderers"
+      ]
+    }
+  } 
+}

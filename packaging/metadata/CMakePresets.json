@@ -1,0 +1,82 @@
+{
+    "$schema": "https://cmake.org/cmake/help/latest/_downloads/3e52b6f36bce3a29acd3491f7b1e22b7/schema.json",
+    "version": 6,
+    "configurePresets": [
+        {
+            "name": "base",
+            "hidden": true,
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "installDir": "${sourceDir}/install/${presetName}",
+            "cacheVariables": {
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            }
+        },
+        {
+            "name": "debug",
+            "displayName": "Debug",
+            "inherits": "base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "BUILD_TESTING": "ON",
+                "ENABLE_COVERAGE": "ON"
+            }
+        },
+        {
+            "name": "release",
+            "displayName": "Release",
+            "inherits": "base",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "BUILD_TESTING": "OFF",
+                "ENABLE_COVERAGE": "OFF"
+            }
+        },
+        {
+            "name": "asan",
+            "displayName": "AddressSanitizer",
+            "inherits": "debug",
+            "cacheVariables": {
+                "CMAKE_CXX_FLAGS": "-fsanitize=address,undefined -fno-omit-frame-pointer"
+            }
+        },
+        {
+            "name": "tsan",
+            "displayName": "ThreadSanitizer",
+            "inherits": "debug",
+            "cacheVariables": {
+                "CMAKE_CXX_FLAGS": "-fsanitize=thread"
+            }
+        },
+        {
+            "name": "ci",
+            "displayName": "CI",
+            "inherits": "release",
+            "cacheVariables": {
+                "BUILD_TESTING": "ON",
+                "ENABLE_COVERAGE": "ON"
+            }
+        }
+    ],
+    "buildPresets": [
+        { "name": "debug",   "configurePreset": "debug" },
+        { "name": "release", "configurePreset": "release" },
+        { "name": "asan",    "configurePreset": "asan" },
+        { "name": "tsan",    "configurePreset": "tsan" },
+        { "name": "ci",      "configurePreset": "ci" }
+    ],
+    "testPresets": [
+        {
+            "name": "debug",
+            "configurePreset": "debug",
+            "output": { "outputOnFailure": true },
+            "execution": { "noTestsAction": "error", "stopOnFailure": false }
+        },
+        {
+            "name": "ci",
+            "configurePreset": "ci",
+            "output": { "outputOnFailure": true, "junit": "artifacts/reports/ctest-results.xml" },
+            "execution": { "noTestsAction": "error", "stopOnFailure": false }
+        }
+    ]
+}

@@ -1,0 +1,97 @@
+{
+  "$schema": "https://raw.githubusercontent.com/devcontainers/spec/main/schemas/devContainer.schema.json",
+  "name": "C++ Dev (Docker Compose)",
+
+  // Use the docker-compose file in the same directory.
+  // VS Code will present all devcontainer.json files as selectable options:
+  //   • "C++ Dev (Docker Compose)"  ← this file (compose-backed, with optional sidecars)
+  //   • ".devcontainer/cpp"         ← single-container, fast iteration
+  //   • ".devcontainer/base"        ← minimal environment for shell tooling
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "workspace",
+  "workspaceFolder": "/workspace",
+  "shutdownAction": "stopCompose",
+
+  // Lifecycle hooks — scripts live in .devcontainer/scripts/
+  "postCreateCommand": "bash /workspace/.devcontainer/scripts/post-create.sh",
+  "postStartCommand":  "bash /workspace/.devcontainer/scripts/post-start.sh",
+  "postAttachCommand": "bash /workspace/.devcontainer/scripts/post-attach.sh",
+
+  "remoteEnv": {
+    "CONTAINER_FLAVOR": "cpp",
+    // Forward the NODE_EXTRA_CA_CERTS so npm/node trusts corporate CAs
+    "NODE_EXTRA_CA_CERTS": "/usr/local/share/ca-certificates/Cisco_Umbrella_Root_CA.crt"
+  },
+
+  "features": {
+    // GitHub CLI — use `gh auth login` once inside the container
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    // Node.js LTS — required for Playwright / npm-based BDD test tooling
+    "ghcr.io/devcontainers/features/node:1": {}
+  },
+
+  "customizations": {
+    "vscode": {
+      "settings": {
+        // ── Editor ──────────────────────────────────────────────────────────
+        "editor.formatOnSave": true,
+        "editor.rulers": [100],
+        "files.insertFinalNewline": true,
+        "files.trimTrailingWhitespace": true,
+
+        // ── C / C++ ─────────────────────────────────────────────────────────
+        "C_Cpp.intelliSenseEngine": "disabled",
+        "clangd.arguments": [
+          "--query-driver=/opt/**/arm-none-eabi-*",
+          "--compile-commands-dir=${userHome}/.amp"
+        ],
+        "cmake.copyCompileCommands": "${userHome}/.amp/compile_commands.json",
+
+        // ── Cortex-Debug (ARM embedded) ──────────────────────────────────────
+        "cortex-debug.gdbPath": "gdb-multiarch",
+        "cortex-debug.objdumpPath": "arm-none-eabi-objdump",
+
+        // ── SonarLint ───────────────────────────────────────────────────────
+        "sonarlint.pathToCompileCommands": "/root/.amp/compile_commands.json",
+
+        // ── Cucumber / BDD ──────────────────────────────────────────────────
+        "cucumberautocomplete.steps": ["test/cpp/features/steps/*.steps.ts"],
+        "cucumberautocomplete.strictGherkinCompletion": false,
+        "cucumberautocomplete.smartSnippets": true,
+        "cucumberautocomplete.onTypeFormat": true,
+
+        // ── Language defaults ────────────────────────────────────────────────
+        "[c]":   { "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd" },
+        "[cpp]": { "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd" }
+      },
+      "extensions": [
+        // C++ tooling
+        "llvm-vs-code-extensions.vscode-clangd@0.2.0",
+        "ms-vscode.cmake-tools@1.22.28",
+        "ms-vscode.cpptools@1.30.5",
+        // Embedded / cross-compilation
+        "marus25.cortex-debug@1.12.1",
+        // Test frameworks
+        "matepek.vscode-catch2-test-adapter@4.17.6",
+        "jetmartin.bats@0.1.10",
+        "kherring.bats-test-runner@0.1.3",
+        "ms-playwright.playwright@1.1.17",
+        // BDD / Gherkin
+        "alexkrechik.cucumberautocomplete@3.1.0",
+        // Static analysis / quality
+        "sonarsource.sonarlint-vscode@4.44.0",
+        "usernamehw.errorlens@3.28.0",
+        // Docker & containers
+        "ms-azuretools.vscode-docker@2.0.0",
+        // GitHub
+        "github.copilot@1.388.0",
+        "github.vscode-github-actions@0.31.0",
+        "github.vscode-pull-request-github@0.132.0",
+        // Git
+        "mhutchie.git-graph@1.30.0",
+        // Live collaboration
+        "ms-vsliveshare.vsliveshare@1.0.5959"
+      ]
+    }
+  }
+}
