@@ -1,1 +1,99 @@
-{}
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "doctor",
+			"type": "shell",
+			"command": "bash scripts/doctor.sh",
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "bootstrap",
+			"type": "shell",
+			"command": "bash scripts/bootstrap.sh",
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "lint",
+			"type": "shell",
+			"command": "bash scripts/lint.sh",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "build",
+			"type": "shell",
+			"command": "bash ci/pipelines/build.sh",
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "test",
+			"type": "shell",
+			"command": "bash scripts/test.sh",
+			"group": "test",
+			"problemMatcher": []
+		},
+		{
+			"label": "security",
+			"type": "shell",
+			"command": "bash ci/pipelines/security.sh",
+			"problemMatcher": []
+		},
+		{
+			"label": "package",
+			"type": "shell",
+			"command": "bash scripts/package.sh",
+			"problemMatcher": []
+		},
+		{
+			"label": "make: ci",
+			"type": "shell",
+			"command": "make ci",
+			"group": "build",
+			"problemMatcher": []
+		},
+		{
+			"label": "make: security",
+			"type": "shell",
+			"command": "make security",
+			"problemMatcher": []
+		},
+		{
+			"label": "bazel: build //...",
+			"type": "shell",
+			"command": "bazel build //...",
+			"group": "build",
+			"problemMatcher": [
+				"$gcc"
+			]
+		},
+		{
+			"label": "bazel: test //...",
+			"type": "shell",
+			"command": "bazel test //...",
+			"group": "test",
+			"problemMatcher": [
+				"$gcc"
+			]
+		},
+		{
+			"label": "bazel: run target",
+			"type": "shell",
+			"command": "bazel run ${input:bazelTarget}",
+			"problemMatcher": [
+				"$gcc"
+			]
+		}
+	],
+	"inputs": [
+		{
+			"id": "bazelTarget",
+			"type": "promptString",
+			"description": "Bazel target to run (example: //src/main/cpp:app)",
+			"default": "//src/main/cpp:app"
+		}
+	]
+}

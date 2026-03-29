@@ -1,1 +1,70 @@
-{}
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "C++: Launch Bazel Binary",
+			"type": "cppdbg",
+			"request": "launch",
+			"program": "${workspaceFolder}/${input:cppProgramPath}",
+			"args": [],
+			"cwd": "${workspaceFolder}",
+			"stopAtEntry": false,
+			"environment": [],
+			"externalConsole": false,
+			"MIMode": "gdb",
+			"miDebuggerPath": "/usr/bin/gdb",
+			"preLaunchTask": "bazel: build //..."
+		},
+		{
+			"name": "C++: Attach (gdb)",
+			"type": "cppdbg",
+			"request": "attach",
+			"program": "${workspaceFolder}/${input:cppProgramPath}",
+			"processId": "${command:pickProcess}",
+			"MIMode": "gdb",
+			"miDebuggerPath": "/usr/bin/gdb"
+		},
+		{
+			"name": "Python: Debug Pytest (src/it)",
+			"type": "debugpy",
+			"request": "launch",
+			"module": "pytest",
+			"args": [
+				"-q",
+				"src/it",
+				"-k",
+				"${input:pytestFilter}"
+			],
+			"cwd": "${workspaceFolder}",
+			"console": "integratedTerminal",
+			"justMyCode": false
+		},
+		{
+			"name": "Python: Debug Current Test File",
+			"type": "debugpy",
+			"request": "launch",
+			"module": "pytest",
+			"args": [
+				"-q",
+				"${file}"
+			],
+			"cwd": "${workspaceFolder}",
+			"console": "integratedTerminal",
+			"justMyCode": false
+		}
+	],
+	"inputs": [
+		{
+			"id": "cppProgramPath",
+			"type": "promptString",
+			"description": "Path to built binary, relative to workspace",
+			"default": "bazel-bin/src/main/cpp/main"
+		},
+		{
+			"id": "pytestFilter",
+			"type": "promptString",
+			"description": "Optional pytest -k expression",
+			"default": ""
+		}
+	]
+}

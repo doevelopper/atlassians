@@ -1,1 +1,22 @@
-{}
+{
+	"recommendations": [
+		"bazelbuild.vscode-bazel",
+		"llvm-vs-code-extensions.vscode-clangd",
+		"ms-vscode.cpptools",
+		"ms-vscode.cmake-tools",
+		"ms-python.python",
+		"ms-python.vscode-pylance",
+		"ms-python.debugpy",
+		"ms-python.black-formatter",
+		"charliermarsh.ruff",
+		"ms-azuretools.vscode-docker",
+		"github.vscode-github-actions",
+		"redhat.vscode-yaml",
+		"timonwong.shellcheck",
+		"ms-vscode.makefile-tools",
+		"eamodio.gitlens"
+	],
+	"unwantedRecommendations": [
+		"ms-vscode.cpptools-themes"
+	]
+}

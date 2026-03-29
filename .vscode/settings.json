@@ -1,1 +1,127 @@
-{}
+{
+	"editor.fontFamily": "JetBrains Mono, Cascadia Code, Fira Code, monospace",
+	"editor.fontLigatures": true,
+	"editor.cursorSmoothCaretAnimation": "on",
+	"editor.smoothScrolling": true,
+	"editor.stickyScroll.enabled": true,
+	"editor.bracketPairColorization.enabled": true,
+	"editor.guides.bracketPairs": "active",
+	"editor.inlineSuggest.enabled": true,
+	"editor.rulers": [
+		100
+	],
+	"editor.codeActionsOnSave": {
+		"source.organizeImports": "explicit"
+	},
+	"workbench.tree.indent": 16,
+	"workbench.editor.labelFormat": "short",
+	"workbench.list.smoothScrolling": true,
+	"workbench.colorCustomizations": {
+		"editor.lineHighlightBackground": "#1f293722",
+		"editorCursor.foreground": "#f97316",
+		"editor.selectionBackground": "#0ea5e933",
+		"editorBracketMatch.background": "#f59e0b22",
+		"editorBracketMatch.border": "#f59e0b66"
+	},
+	"terminal.integrated.fontFamily": "JetBrains Mono, Cascadia Code, Fira Code, monospace",
+	"terminal.integrated.defaultProfile.linux": "bash",
+	"files.eol": "\n",
+	"files.trimTrailingWhitespace": true,
+	"files.insertFinalNewline": true,
+	"files.associations": {
+		"BUILD": "starlark",
+		"BUILD.bazel": "starlark",
+		"*.bzl": "starlark"
+	},
+	"search.exclude": {
+		"**/.git": true,
+		"**/.cache": true,
+		"**/.pytest_cache": true,
+		"**/.mypy_cache": true,
+		"**/bazel-*": true,
+		"**/artifacts/build": true
+	},
+	"files.watcherExclude": {
+		"**/bazel-*": true,
+		"**/artifacts/build/**": true,
+		"**/artifacts/coverage/**": true
+	},
+	"python.defaultInterpreterPath": "/usr/bin/python3",
+	"python.testing.pytestEnabled": true,
+	"python.testing.unittestEnabled": false,
+	"python.testing.pytestArgs": [
+		"src/test",
+		"src/it"
+	],
+	"python.analysis.typeCheckingMode": "basic",
+	"python.analysis.extraPaths": [
+		"${workspaceFolder}/src"
+	],
+	"[python]": {
+		"editor.defaultFormatter": "ms-python.black-formatter",
+		"editor.formatOnSave": true,
+		"editor.rulers": [
+			{
+				"column": 80,
+				"color": "#ef444466"
+			},
+			{
+				"column": 100,
+				"color": "#f59e0b66"
+			},
+			{
+				"column": 120,
+				"color": "#22c55e66"
+			}
+		]
+	},
+	"clangd.arguments": [
+		"--background-index",
+		"--clang-tidy",
+		"--completion-style=detailed",
+		"--header-insertion=never"
+	],
+	"C_Cpp.default.compilerPath": "/usr/bin/g++",
+	"C_Cpp.default.intelliSenseMode": "linux-gcc-x64",
+	"C_Cpp.default.cppStandard": "c++20",
+	"C_Cpp.default.cStandard": "c17",
+	"[cpp]": {
+		"editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
+		"editor.formatOnSave": true,
+		"editor.rulers": [
+			{
+				"column": 80,
+				"color": "#ef444466"
+			},
+			{
+				"column": 100,
+				"color": "#f59e0b66"
+			},
+			{
+				"column": 120,
+				"color": "#22c55e66"
+			}
+		]
+	},
+	"[c]": {
+		"editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
+		"editor.formatOnSave": true,
+		"editor.rulers": [
+			{
+				"column": 80,
+				"color": "#ef444466"
+			},
+			{
+				"column": 100,
+				"color": "#f59e0b66"
+			},
+			{
+				"column": 120,
+				"color": "#22c55e66"
+			}
+		]
+	},
+	"[starlark]": {
+		"editor.formatOnSave": true
+	}
+}
