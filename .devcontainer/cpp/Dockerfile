@@ -198,3 +198,25 @@ RUN --mount=type=cache,target=/cache,sharing=locked \
  wget --no-hsts -qP /usr/local/lib/python*/dist-packages/cmake/data/share/cmake-*/Modules/ https://github.com/cpm-cmake/CPM.cmake/releases/download/v${CPM_VERSION}/CPM.cmake \
  && conan profile detect \
  && echo -e "\n[conf]\ntools.cmake.cmaketoolchain:generator=Ninja" >> "$(conan profile path default)"
+
+
+RUN cd /tmp \
+    && git clone --depth=1 https://github.com/danmar/cppcheck.git \
+    && cd cppcheck \
+    && cmake -E make_directory build \
+    && cmake -E chdir build cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local \
+    && cmake --build build --target all --clean-first > /dev/null 2>&1 \
+    && cmake --build build --target install \
+    && cp --recursive --verbose cfg  /usr/local/bin || true \
+    && cd /tmp \
+    && rm -rf cppcheck
+
+RUN cd /tmp \
+    && git clone --depth=1 https://github.com/doxygen/doxygen.git  \
+    && cd doxygen \
+    && cmake -E make_directory build \
+    && cmake -E chdir build cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local  \
+    && cmake --build build --target all --clean-first > /dev/null 2>&1 \
+    && cmake --build build --target install \
+    && cd /tmp \
+    && rm -rf doxygen

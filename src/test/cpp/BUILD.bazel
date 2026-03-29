@@ -1,1 +1,213 @@
-# BUILD.bazel
+
+load(
+    "@rules_cc//cc:defs.bzl",
+    "cc_library",
+    "cc_test"
+)
+
+load(
+    "@rules_pkg//:pkg.bzl",
+    "pkg_tar",
+    "pkg_deb"
+  )
+
+licenses(["notice"])  # Apache License
+
+cc_library(
+    name = "com.github.doevelopper.atlassians.test",
+    srcs = [
+        "com/github/doevelopper/atlassians/guide/DummyTest.cpp",
+        "com/github/doevelopper/atlassians/guide/DummyTest.hpp",
+
+        # "com/github/doevelopper/atlassians/app/ApplicationTest.cpp",
+        # "com/github/doevelopper/atlassians/app/ApplicationTest.hpp",
+        # "com/github/doevelopper/atlassians/app/NoOpTest.cpp",
+        # "com/github/doevelopper/atlassians/app/NoOpTest.hpp",
+        # "com/github/doevelopper/atlassians/app/NotificationTest.cpp",
+        # "com/github/doevelopper/atlassians/app/NotificationTest.hpp",
+        # "com/github/doevelopper/atlassians/app/PluginInterfaceMock.cpp",
+        # "com/github/doevelopper/atlassians/app/PluginInterfaceMock.hpp",
+        # "com/github/doevelopper/atlassians/app/PluginInterfaceTest.cpp",
+        # "com/github/doevelopper/atlassians/app/PluginInterfaceTest.hpp",
+        # "com/github/doevelopper/atlassians/app/TimeoutGuardTest.cpp",
+        # "com/github/doevelopper/atlassians/app/TimeoutGuardTest.hpp",
+        # "com/github/doevelopper/atlassians/app/ExecutorTest.cpp",
+        # "com/github/doevelopper/atlassians/app/ExecutorTest.hpp",
+        # "com/github/doevelopper/atlassians/app/QueuedHandlerTest.cpp",
+        # "com/github/doevelopper/atlassians/app/QueuedHandlerTest.hpp",
+        # "com/github/doevelopper/atlassians/app/QueuedHandleBaseTest.cpp",
+        # "com/github/doevelopper/atlassians/app/QueuedHandleBaseTest.hpp",
+        # "com/github/doevelopper/atlassians/app/utils/AsyncRequestTest.cpp",
+        # "com/github/doevelopper/atlassians/app/utils/AsyncRequestTest.hpp",
+        # "com/github/doevelopper/atlassians/app/utils/AsyncPromiseTest.hpp",
+        # "com/github/doevelopper/atlassians/app/utils/AsyncPromiseTest.cpp",
+        # "com/github/doevelopper/atlassians/app/utils/AsyncTaskTest.hpp",
+        # "com/github/doevelopper/atlassians/app/utils/AsyncTaskTest.cpp",
+        # "com/github/doevelopper/atlassians/app/utils/ChecksumTest.cpp",
+        # "com/github/doevelopper/atlassians/app/utils/ChecksumTest.hpp",
+        # "com/github/doevelopper/atlassians/app/utils/MessageQueueTest.cpp",
+        # "com/github/doevelopper/atlassians/app/utils/MessageQueueTest.hpp",
+        # "com/github/doevelopper/atlassians/app/utils/SemaphoreTest.cpp",
+        # "com/github/doevelopper/atlassians/app/utils/SemaphoreTest.hpp",
+        # "com/github/doevelopper/atlassians/app/utils/SemaphoreLockTest.cpp",
+        # "com/github/doevelopper/atlassians/app/utils/SemaphoreLockTest.hpp",
+
+
+        "com/github/doevelopper/atlassians/extensions/ConfigurableEventListener.cpp",
+        "com/github/doevelopper/atlassians/extensions/ConfigurableEventListener.hpp",
+        "com/github/doevelopper/atlassians/extensions/CustomEnvironment.cpp",
+        "com/github/doevelopper/atlassians/extensions/CustomEnvironment.hpp",
+        "com/github/doevelopper/atlassians/extensions/GTestEventListener.cpp",
+        "com/github/doevelopper/atlassians/extensions/GTestEventListener.hpp",
+        "com/github/doevelopper/atlassians/extensions/SDLCPrinter.cpp",
+        "com/github/doevelopper/atlassians/extensions/SDLCPrinter.hpp",
+        "com/github/doevelopper/atlassians/extensions/TestDriver.cpp",
+        "com/github/doevelopper/atlassians/extensions/TestDriver.hpp",
+        "com/github/doevelopper/atlassians/extensions/UnitTestBuilder.cpp",
+        "com/github/doevelopper/atlassians/extensions/UnitTestBuilder.hpp",
+
+        # "com/github/doevelopper/atlassians/logging/LoggingServicePrivateTest.cpp",
+        # "com/github/doevelopper/atlassians/logging/LoggingServicePrivateTest.hpp",
+        # # "com/github/doevelopper/atlassians/logging/LoggingServiceTest.cpp",
+        # # "com/github/doevelopper/atlassians/logging/LoggingServiceTest.hpp",
+
+        # "com/github/doevelopper/atlassians/semver/VersionTest.cpp",
+        # "com/github/doevelopper/atlassians/semver/VersionTest.hpp",
+        # "com/github/doevelopper/atlassians/semver/TokenTest.cpp",
+        # "com/github/doevelopper/atlassians/semver/TokenTest.hpp",
+
+        # "com/github/doevelopper/atlassians/timers/TimerQueueTest.cpp",
+        # "com/github/doevelopper/atlassians/timers/TimerQueueTest.hpp",
+        # "com/github/doevelopper/atlassians/timers/TimerStateBaseTest.cpp",
+        # "com/github/doevelopper/atlassians/timers/TimerStateBaseTest.hpp",
+        # "com/github/doevelopper/atlassians/timers/TimerStateTest.cpp",
+        # "com/github/doevelopper/atlassians/timers/TimerStateTest.hpp",
+        # "com/github/doevelopper/atlassians/timers/TimerTest.cpp",
+        # "com/github/doevelopper/atlassians/timers/TimerTest.hpp",
+    ],
+
+    copts = [
+        "-D_REENTRANT",
+        # "-DGTEST_REMOVE_LEGACY_TEST_CASEAPI_=1",
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [],
+        "@bazel_tools//src/conditions:linux_x86_64": [
+              "-I/usr/local/include/",
+          ],
+        "@bazel_tools//src/conditions:darwin": [],
+    }),
+
+    includes = [
+        ".",
+    ],
+
+    linkopts = [
+
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [],
+        "@bazel_tools//src/conditions:linux_x86_64": [
+          "-pthread",
+          "-L/usr/local/lib",
+          ],
+        "@bazel_tools//src/conditions:darwin": [],
+    }),
+
+    deps = [
+        "@com.github.doevelopper.rules-sdlc//src/main/cpp:com.github.doevelopper.atlassians.main",
+        "@com_google_googletest//:gtest",
+#         # "@org_apache_apr_util//:aprutil",
+#         # "@org_apache_logging_log4cxx//:log4cxx",
+#         # "@com_github_tencent_rapidjson//:rapidjson",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:span",
+#         # "@org_apache_apr//:apr",
+    ],
+
+    visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "com.github.doevelopper.atlassians.test.bin",
+    size = "small",
+    srcs = [
+        "unitTestRunner.cpp",
+    ],
+
+    copts = [
+        "-D_REENTRANT",
+        "-DGTEST_REMOVE_LEGACY_TEST_CASEAPI_=1",
+        # "-DROOT_DIR=$(workspace)",
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [],
+        "@bazel_tools//src/conditions:linux_x86_64": [
+              "-I/usr/local/include/",
+          ],
+        "@bazel_tools//src/conditions:darwin": [],
+    }),
+    deps = [
+        "@com.github.doevelopper.rules-sdlc//src/test/cpp:com.github.doevelopper.atlassians.test",
+    ],
+
+    # env = [
+    #   "GTEST_INSTALL_FAILURE_SIGNAL_HANDLER:1",
+    #     # $(location log4cxx) ,
+    # ],
+    # env = {"ENVVAR:foo"},
+    visibility = ["//visibility:public"],
+)
+
+
+# cc_test(
+#     name = "first_fuzz_test",
+#     srcs = ["first_fuzz_test.cc"],
+#     shard_count = 50,
+#     deps = [
+#         "@com_google_fuzztest//fuzztest",
+#         "@com_google_fuzztest//fuzztest:fuzztest_gtest_main",
+#         "@com_google_googletest//:gtest"
+#     ],
+# )
+
+# Can be run with or without `--config=fuzztest`. When running without, the
+# fuzzing mode tests are skipped.
+# cc_test(
+#     name = "functional_test",
+#     timeout = "long",
+#     srcs = ["functional_test.cc"],
+#     data = [
+#         "@com_google_fuzztest//e2e_tests/testdata:fuzz_tests_for_functional_testing.stripped",
+#         "@com_google_fuzztest//e2e_tests/testdata:fuzz_tests_with_invalid_seeds.stripped",
+#     ],
+#     shard_count = 50,
+#     deps = [
+#         "@com_google_absl//absl/container:flat_hash_map",
+#         "@com_google_absl//absl/strings",
+#         "@com_google_absl//absl/strings:str_format",
+#         "@com_google_absl//absl/time",
+#         "@com_google_fuzztest//fuzztest:io",
+#         "@com_google_fuzztest//fuzztest:logging",
+#         "@com_google_fuzztest//fuzztest:serialization",
+#         "@com_google_fuzztest//fuzztest:subprocess",
+#         "@com_google_fuzztest//fuzztest:type_support",
+#         "@com_google_googletest//:gtest_main",
+#         "@com_googlesource_code_re2//:re2",
+#     ],
+# )
+
+# Must be run with `--config=fuzztest`, as it benchmarks fuzzing mode, which
+# needs coverage instrumentation.
+# cc_binary(
+#     name = "benchmark_test",
+#     testonly = 1,
+#     srcs = ["benchmark_test.cc"],
+#     data = ["@com_google_fuzztest//e2e_tests/testdata:fuzz_tests_for_microbenchmarking.stripped"],
+#     deps = [
+#         "@com_google_absl//absl/flags:flag",
+#         "@com_google_absl//absl/flags:parse",
+#         "@com_google_absl//absl/strings",
+#         "@com_google_absl//absl/strings:str_format",
+#         "@com_google_absl//absl/time",
+#         "@com_google_fuzztest//fuzztest:logging",
+#         "@com_google_fuzztest//fuzztest:subprocess",
+#     ],
+# )
