@@ -6,9 +6,6 @@ ARG BATS_CORE_VERSION=1.13.0
 ARG BATS_SUPPORT_VERSION=0.3.0
 ARG BATS_ASSERT_VERSION=2.2.4
 
-ADD --checksum=sha256:a122d4080a26c1da986bd0e7202b1630eb661a624915ef244f496fdd306e85fb \
- https://www.cisco.com/security/pki/certs/ciscoumbrellaroot.pem /cisco-umbrella-root.crt
-
 ADD --checksum=sha256:a85e12b8828271a152b338ca8109aa23493b57950987c8e6dff97ba492772ff3 \
  https://github.com/bats-core/bats-core/archive/refs/tags/v${BATS_CORE_VERSION}.tar.gz /bats-core.tar.gz
 ADD --checksum=sha256:7815237aafeb42ddcc1b8c698fc5808026d33317d8701d5ec2396e9634e2918f \
@@ -30,6 +27,7 @@ SHELL ["/bin/bash", "-Eeuo", "pipefail", "-c"]
 
 # hadolint ignore=DL3008
 RUN --mount=type=bind,source=.devcontainer/base/apt-requirements.json,target=/tmp/apt-requirements.json \
+   --mount=type=bind,source=.docker/common/ca-certificates,target=/tmp/ca \
     --mount=type=cache,target=/var/cache/apt,sharing=locked \
     --mount=type=cache,target=/var/lib/apt,sharing=locked \
     --mount=type=cache,target=/var/log,sharing=locked \
@@ -40,9 +38,8 @@ RUN --mount=type=bind,source=.devcontainer/base/apt-requirements.json,target=/tm
    jq -r 'to_entries | .[] | .key + "=" + .value' /tmp/apt-requirements.json | \
       xargs apt-get install -y --no-install-recommends
 
-   # Include the Cisco Umbrella PKI Root Certificate
-   cp /src/cisco-umbrella-root.crt /usr/local/share/ca-certificates/
-   update-ca-certificates
+   # Install optional custom CA certificates from the repository.
+   bash /tmp/ca/install-ca.sh
 
    # Install bats
    bash /src/bats-core/install.sh /usr/local

@@ -4,6 +4,33 @@ This directory contains multiple **VS Code Dev Container** configurations for
 the project.  When you open the repository in VS Code (or GitHub Codespaces),
 you will be prompted to choose which configuration to use.
 
+## Local quick start
+
+1. Ensure Docker Engine with Compose v2 is available:
+	```bash
+	docker --version
+	docker compose version
+	```
+2. In VS Code, run **Dev Containers: Reopen in Container**.
+3. Choose one of the available configurations from this folder.
+4. After attach, run:
+	```bash
+	scripts/doctor.sh
+	make ci
+	```
+
+If you prefer CLI preflight checks before opening in VS Code:
+
+```bash
+docker compose -f .devcontainer/docker-compose.yml config
+```
+
+Run the repeatable smoke check (compose config, build, and post-create sanity):
+
+```bash
+scripts/devcontainer-smoke.sh
+```
+
 ## Configurations
 
 | Folder | Name | Intended use |
@@ -71,6 +98,13 @@ docker compose -f .devcontainer/docker-compose.yml down -v
 Place `.pem` or `.crt` files in `.docker/common/ca-certificates/` and they
 will be installed into all images (devcontainer and CI) at build time via
 `.docker/common/ca-certificates/install-ca.sh`.
+
+If your Node tooling requires an extra trust bundle, set this on your host
+before opening the devcontainer:
+
+```bash
+export NODE_EXTRA_CA_CERTS=/usr/local/share/ca-certificates/<your-cert>.crt
+```
 
 ## GPG commit signing
 

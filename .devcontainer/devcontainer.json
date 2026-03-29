@@ -18,9 +18,7 @@
   "postAttachCommand": "bash /workspace/.devcontainer/scripts/post-attach.sh",
 
   "remoteEnv": {
-    "CONTAINER_FLAVOR": "cpp",
-    // Forward the NODE_EXTRA_CA_CERTS so npm/node trusts corporate CAs
-    "NODE_EXTRA_CA_CERTS": "/usr/local/share/ca-certificates/Cisco_Umbrella_Root_CA.crt"
+    "CONTAINER_FLAVOR": "cpp"
   },
 
   "features": {

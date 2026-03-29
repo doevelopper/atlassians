@@ -115,8 +115,9 @@ RUN --mount=type=bind,source=.devcontainer/cpp/apt-requirements-base.json,target
     --mount=from=extractor,target=/src <<EOF
 
     # Install the base system with all tool dependencies
-    apt-get update && apt-get install -y --no-install-recommends jq && jq -r 'to_entries | .[] | .key + "=" + .value' /tmp/apt-requirements-base.json | \
-        xargs apt-get install -y --no-install-recommends
+    apt-get update && apt-get install -y --no-install-recommends jq
+    jq -r 'if type == "array" then .[] else to_entries[] | "\(.key)=\(.value)" end' /tmp/apt-requirements-base.json | \
+        xargs -r apt-get install -y --no-install-recommends
 
     # Install some tools via pip to get more recent versions, clean up afterwards
     python3 -m pip install --break-system-packages --require-hashes --no-cache-dir --no-compile -r /tmp/requirements.txt
@@ -135,8 +136,9 @@ RUN --mount=type=bind,source=.devcontainer/cpp/apt-requirements-base.json,target
     echo "deb [signed-by=/usr/share/keyrings/llvm-snapshot-keyring.gpg] http://apt.llvm.org/${UBUNTU_CODENAME}/ llvm-toolchain-${UBUNTU_CODENAME}-${CLANG_VERSION} main" | tee /etc/apt/sources.list.d/llvm-snapshot.list > /dev/null
     echo "deb [signed-by=/usr/share/keyrings/mull-project-mull-stable-archive-keyring.gpg] https://dl.cloudsmith.io/public/mull-project/mull-stable/deb/ubuntu ${UBUNTU_CODENAME} main" | tee /etc/apt/sources.list.d/mull-project-mull-stable.list > /dev/null
     echo -e 'Package: *\nPin: origin "apt.llvm.org"\nPin-Priority: 1000' > /etc/apt/preferences
-    apt-get update && jq -r 'to_entries | .[] | .key + "=" + .value' /tmp/apt-requirements-clang.json | \
-        xargs apt-get install -y --no-install-recommends
+    apt-get update
+    jq -r 'if type == "array" then .[] else to_entries[] | "\(.key)=\(.value)" end' /tmp/apt-requirements-clang.json | \
+        xargs -r apt-get install -y --no-install-recommends
 
     # Install arm-gcc toolchain
     cp -a /src/arm-gnu-toolchain-*-arm-none-eabi /opt/gcc-arm-none-eabi
