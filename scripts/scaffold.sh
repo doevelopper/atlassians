@@ -56,12 +56,12 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-[[ -n "$PROJECT_NAME" ]] || die "--name is required."
-[[ -n "$ORG"          ]] || die "--org is required."
-[[ -n "$PACKAGE"      ]] || die "--package is required."
+[[ -n "${PROJECT_NAME}" ]] || die "--name is required."
+[[ -n "${ORG}"          ]] || die "--org is required."
+[[ -n "${PACKAGE}"      ]] || die "--package is required."
 
 # Validate: snake_case name
-[[ "$PROJECT_NAME" =~ ^[a-z][a-z0-9_]*$ ]] \
+[[ "${PROJECT_NAME}" =~ ^[a-z][a-z0-9_]*$ ]] \
     || die "--name must be lowercase snake_case (e.g. my_service)."
 
 # ── Pre-flight ────────────────────────────────────────────────────────────────
@@ -80,21 +80,21 @@ TEMPLATE_PKG_PATH="com/github/doevelopper/premisses"
 PKG_PATH="${PACKAGE//.//}"
 
 PROJECT_NAME_UPPER="${PROJECT_NAME^^}"   # SCREAMING_SNAKE for macros
-PROJECT_NAME_CAMEL="$(echo "$PROJECT_NAME" | sed -r 's/(^|_)([a-z])/\U\2/g')"
+PROJECT_NAME_CAMEL="$(echo "${PROJECT_NAME}" | sed -r 's/(^|_)([a-z])/\U\2/g')"
 
 log "Scaffolding project:"
-log "  Name        : $PROJECT_NAME  (upper: $PROJECT_NAME_UPPER, camel: $PROJECT_NAME_CAMEL)"
-log "  Organisation: $ORG"
-log "  Package     : $PACKAGE  (path: $PKG_PATH)"
-log "  Description : $DESCRIPTION"
+log "  Name        : ${PROJECT_NAME}  (upper: ${PROJECT_NAME_UPPER}, camel: ${PROJECT_NAME_CAMEL})"
+log "  Organisation: ${ORG}"
+log "  Package     : ${PACKAGE}  (path: ${PKG_PATH})"
+log "  Description : ${DESCRIPTION}"
 
 # ── File content replacement ──────────────────────────────────────────────────
 log "Replacing template tokens in tracked files…"
 
 # Collect text files tracked by git
 mapfile -t FILES < <(git ls-files | xargs grep -rlI \
-    -e "$TEMPLATE_PROJECT" \
-    -e "$TEMPLATE_ORG" \
+    -e "${TEMPLATE_PROJECT}" \
+    -e "${TEMPLATE_ORG}" \
     -e "premisses" \
     2>/dev/null || true)
 
@@ -108,7 +108,7 @@ else
             -e "s|${TEMPLATE_PROJECT^^}|${PROJECT_NAME_UPPER}|g" \
             -e "s|${TEMPLATE_PROJECT^}|${PROJECT_NAME_CAMEL}|g" \
             -e "s|${TEMPLATE_PROJECT}|${PROJECT_NAME}|g" \
-            -- "$f"
+            -- "${f}"
     done
     log "Replaced tokens in ${#FILES[@]} file(s)."
 fi
@@ -119,10 +119,10 @@ log "Renaming namespace directories…"
 # Use git mv to preserve history for known namespace paths
 rename_dir() {
     local old="$1" new="$2"
-    if [[ -d "$old" ]]; then
-        mkdir -p "$(dirname "$new")"
-        git mv "$old" "$new"
-        log "  Renamed: $old → $new"
+    if [[ -d "${old}" ]]; then
+        mkdir -p "$(dirname "${new}")"
+        git mv "${old}" "${new}"
+        log "  Renamed: ${old} -> ${new}"
     fi
 }
 

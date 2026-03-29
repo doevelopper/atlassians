@@ -43,9 +43,11 @@ cat > "${release_notes}" <<EOF
 $(ls -1 "${BUILD_DIR}" 2>/dev/null || echo "No build artifacts yet")
 EOF
 
-printf 'version=%s\n' "${version}" >> "${report_file}"
-printf 'dry_run=%s\n' "${dry_run}" >> "${report_file}"
-printf 'release_mode=%s\n' "${release_mode}" >> "${report_file}"
-printf 'release_notes=%s\n' "${release_notes}" >> "${report_file}"
+{
+	printf 'version=%s\n' "${version}"
+	printf 'dry_run=%s\n' "${dry_run}"
+	printf 'release_mode=%s\n' "${release_mode}"
+	printf 'release_notes=%s\n' "${release_notes}"
+} >> "${report_file}"
 
 log_info "Release stage completed"

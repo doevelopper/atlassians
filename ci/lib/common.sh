@@ -5,7 +5,9 @@ set -euo pipefail
 CI_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "${CI_LIB_DIR}/../.." && pwd)"
 
+# shellcheck source=ci/lib/logging.sh
 source "${CI_LIB_DIR}/logging.sh"
+# shellcheck source=ci/lib/git.sh
 source "${CI_LIB_DIR}/git.sh"
 
 ARTIFACTS_DIR="${ROOT_DIR}/artifacts"
