@@ -9,9 +9,6 @@ COMMON_DEFINES = [
     "LOG_LEVEL=1",
 ]
 
-# All header files in cpp tree
-HDRS = glob(["com/**/*.hpp"])
-
 # Platform-specific settings
 WIN32_DEFINES = ["RTX_WIN32"]
 WIN32_LINKOPTS = []
@@ -30,9 +27,79 @@ DARWIN_LINKOPTS = []
 # Main library containing core functionality
 cc_library(
     name = "com.github.doevelopper.atlassians.main",
-    hdrs = HDRS,
+    hdrs = [
+        "com/github/doevelopper/atlassians/API_Export.hpp",
+        "com/github/doevelopper/atlassians/CompilerDetection.hpp",
+        "com/github/doevelopper/atlassians/Poison.hpp",
+    ],
     srcs = [
-        "com/github/doevelopper/atlassians/atlas/Activator.cpp",
+        "com/github/doevelopper/atlassians/atlas/NoOp.hpp",
+        "com/github/doevelopper/atlassians/atlas/NoOp.cpp",
+    ],
+    defines = COMMON_DEFINES + select({
+        "@bazel_tools//src/conditions:windows": WIN32_DEFINES,
+        "@bazel_tools//src/conditions:linux_x86_64": LINUX_DEFINES,
+        "//conditions:default": [],
+    }),
+    copts = ["-DLOG_LEVEL=1"] + select({
+        "@bazel_tools//src/conditions:windows": ["/std:c++17"],
+        "//conditions:default": ["-D_REENTRANT", "-fPIC"],
+    }),
+    features = select({
+        "@bazel_tools//src/conditions:windows": ["windows_export_all_symbols"],
+        "//conditions:default": [],
+    }),
+    includes = ["."],
+    linkopts = select({
+        "@bazel_tools//src/conditions:windows": WIN32_LINKOPTS,
+        "@bazel_tools//src/conditions:linux_x86_64": LINUX_LINKOPTS,
+        "@bazel_tools//src/conditions:darwin": DARWIN_LINKOPTS,
+    }),
+    deps = [
+
+        # Link against OpenSSL SSL and Crypto libraries
+        # bazel query @openssl//...:all
+        "@openssl//:ssl",
+        "@openssl//:crypto",
+
+        # Link against Boost Asio
+        # bazel query @boost.asio//...:all
+        "@boost.asio//:boost.asio",
+        "@boost.type_traits//:boost.type_traits",
+        "@fmt//:fmt",
+    ],
+
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "com.github.doevelopper.atlassians.main.logging",
+    srcs = [
+        "com/github/doevelopper/atlassians/logging/CustomLogger.cpp",
+        "com/github/doevelopper/atlassians/logging/CustomLogger.hpp",
+        "com/github/doevelopper/atlassians/logging/CustomLoggerPrivate.cpp",
+        "com/github/doevelopper/atlassians/logging/CustomLoggerPrivate.hpp",
+        "com/github/doevelopper/atlassians/logging/DefaultInitializationStrategy.cpp",
+        "com/github/doevelopper/atlassians/logging/DefaultInitializationStrategy.hpp",
+        "com/github/doevelopper/atlassians/logging/Demangler.cpp",
+        "com/github/doevelopper/atlassians/logging/Demangler.hpp",
+        "com/github/doevelopper/atlassians/logging/EncryptedFileAppender.cpp",
+        "com/github/doevelopper/atlassians/logging/EncryptedFileAppender.hpp",
+        "com/github/doevelopper/atlassians/logging/EnvironmentBasedInitializationStrategy.cpp",
+        "com/github/doevelopper/atlassians/logging/EnvironmentBasedInitializationStrategy.hpp",
+        "com/github/doevelopper/atlassians/logging/ILoggingInitializationStrategy.cpp",
+        "com/github/doevelopper/atlassians/logging/ILoggingInitializationStrategy.hpp",
+        "com/github/doevelopper/atlassians/logging/LogMacros.hpp",
+        "com/github/doevelopper/atlassians/logging/LoggingInitializationFactory.cpp",
+        "com/github/doevelopper/atlassians/logging/LoggingInitializationFactory.hpp",
+        "com/github/doevelopper/atlassians/logging/LoggingInitializer.cpp",
+        "com/github/doevelopper/atlassians/logging/LoggingInitializer.hpp",
+        "com/github/doevelopper/atlassians/logging/ProgrammaticInitializationStrategy.cpp",
+        "com/github/doevelopper/atlassians/logging/ProgrammaticInitializationStrategy.hpp",
+        "com/github/doevelopper/atlassians/logging/PropertyFileBasedInitializationStrategy.cpp",
+        "com/github/doevelopper/atlassians/logging/PropertyFileBasedInitializationStrategy.hpp",
+        "com/github/doevelopper/atlassians/logging/XMLFileBasedInitializationStrategy.cpp",
+        "com/github/doevelopper/atlassians/logging/XMLFileBasedInitializationStrategy.hpp",
     ],
     defines = COMMON_DEFINES + select({
         "@bazel_tools//src/conditions:windows": WIN32_DEFINES,
@@ -67,18 +134,90 @@ cc_library(
 )
 
 cc_library(
-    name = "com.github.doevelopper.atlassians.main.logging",
-    visibility = ["//visibility:public"],
-)
-
-cc_library(
     name = "com.github.doevelopper.atlassians.main.launcher",
+
+    srcs = [
+        "com/github/doevelopper/atlassians/launcher/Application.cpp",
+        "com/github/doevelopper/atlassians/launcher/Application.hpp",
+        "com/github/doevelopper/atlassians/launcher/ApplicationPrivate.cpp",
+        "com/github/doevelopper/atlassians/launcher/ApplicationPrivate.hpp",
+        "com/github/doevelopper/atlassians/launcher/Package.cpp",
+        "com/github/doevelopper/atlassians/launcher/Package.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/AbstractConfiguration.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/AbstractConfiguration.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/AbstractOption.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/AbstractOption.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/BooleanOption.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/BooleanOption.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/CommandLineParser.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/CommandLineParser.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/ConfigurationFileOption.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/ConfigurationFileOption.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/DefaultConfiguration.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/DefaultConfiguration.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/EnvironmentOption.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/EnvironmentOption.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/Grouped.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/Grouped.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/HiddenOption.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/HiddenOption.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/IConfiguration.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/IConfiguration.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/IOption.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/IOption.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/ImplicitOption.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/ImplicitOption.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/MultiValueOption.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/MultiValueOption.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/NamedOption.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/NamedOption.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/Optional.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/Optional.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/PositionalOption.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/PositionalOption.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/ProgramOption.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/ProgramOption.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/Required.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/Required.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/TypedOption.hpp",
+        "com/github/doevelopper/atlassians/launcher/fsm/ApplicationFSM.cpp",
+        "com/github/doevelopper/atlassians/launcher/fsm/ApplicationFSM.hpp",
+        "com/github/doevelopper/atlassians/launcher/fsm/FSMContext.hpp",
+        "com/github/doevelopper/atlassians/launcher/fsm/FSMEvents.hpp",
+        "com/github/doevelopper/atlassians/launcher/fsm/FSMStates.hpp",
+    ],
+    defines = COMMON_DEFINES + select({
+        "@bazel_tools//src/conditions:windows": WIN32_DEFINES,
+        "@bazel_tools//src/conditions:linux_x86_64": LINUX_DEFINES,
+        "//conditions:default": [],
+    }),
+    copts = ["-DLOG_LEVEL=1"] + select({
+        "@bazel_tools//src/conditions:windows": ["/std:c++17"],
+        "//conditions:default": ["-D_REENTRANT", "-fPIC"],
+    }),
+    features = select({
+        "@bazel_tools//src/conditions:windows": ["windows_export_all_symbols"],
+        "//conditions:default": [],
+    }),
+    includes = ["."],
+    linkopts = select({
+        "@bazel_tools//src/conditions:windows": WIN32_LINKOPTS,
+        "@bazel_tools//src/conditions:linux_x86_64": LINUX_LINKOPTS,
+        "@bazel_tools//src/conditions:darwin": DARWIN_LINKOPTS,
+    }),
+    deps = [
+        "//boost:variant",
+        "//_deps/log4cxx:log4cxx",
+        # TODO: Add rapidjson and other boost libs when configured
+    ],
     visibility = ["//visibility:public"],
 )
 
 cc_binary(
     name = "com.github.doevelopper.atlassians.main.bin",
     srcs = ["main.cpp"],
-    deps = [":com.github.doevelopper.atlassians.main"],
+    deps = [
+        ":com.github.doevelopper.atlassians.main"
+    ],
     visibility = ["//visibility:public"],
 )

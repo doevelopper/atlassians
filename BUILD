@@ -23,3 +23,11 @@ gazelle(
     },
     gazelle = "@multitool//tools/gazelle",
 )
+
+
+# load(
+#     "//src/main/resources/off_the_shelf_software:soup.bzl",
+#     "soup_dependencies"
+# )
+
+# soup_dependencies()
