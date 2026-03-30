@@ -25,8 +25,11 @@ filegroup(
 CONFIGURE_OPTIONS = [
     "--with-apr=$$EXT_BUILD_DEPS/apr/bin/apr-1-config",
     "--with-expat=$$EXT_BUILD_DEPS/expat",
-    "--with-openssl=$$EXT_BUILD_DEPS/openssl",
-    "--with-crypto",
+    # OpenSSL crypto backend is disabled: libssl-dev headers are not present in
+    # the build environment and log4cxx does not require APR-util crypto.
+    # APR-util's built-in hash implementations (MD5, SHA1) are used instead.
+    "--without-openssl",
+    "--without-crypto",
     "--disable-shared",
 ]
 
@@ -73,10 +76,9 @@ configure_make(
 
     deps = [
         "@org_apache_apr//:apr",
-        # Expat from BCR (bazel_dep name = "libexpat" in MODULE.bazel)
-        "@libexpat//:expat",
-        "@openssl//:ssl",
-        "@openssl//:crypto",
+        # cmake-built expat: provides installed include/expat.h for configure_make
+        # sysroot path $$EXT_BUILD_DEPS/expat matches the cmake target name "expat"
+        "@com_github_expat//:expat",
     ],
 
     visibility = ["//visibility:public"],

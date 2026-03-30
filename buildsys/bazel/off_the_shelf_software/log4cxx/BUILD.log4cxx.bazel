@@ -37,14 +37,17 @@ cmake(
     name = "log4cxx",
     cache_entries = {
         "CMAKE_C_FLAGS": "-fPIC",
-        "CMAKE_PREFIX_PATH": "$$EXT_BUILD_DEPS$$;$$EXT_BUILD_DEPS$$/apr;$$EXT_BUILD_DEPS$$/expat/;$$EXT_BUILD_DEPS$$/apr_util;$$EXT_BUILD_DEPS$$/openssl;$$EXT_BUILD_DEPS$$/zip",
+        "CMAKE_PREFIX_PATH": "$$EXT_BUILD_DEPS$$;$$EXT_BUILD_DEPS$$/apr;$$EXT_BUILD_DEPS$$/expat/;$$EXT_BUILD_DEPS$$/apr_util",
     },
 
     generate_args = [
         # "-DAPU_STATIC=YES",
         # "-DAPR_STATIC=YES",
         "-DPREFER_BOOST=OFF",
-        "-DLOG4CXX_UNICHAR=YES",
+        # LOG4CXX_UNICHAR=YES is only valid on Apple (CFString-based UniChar).
+        # On Linux, UniChar maps to unsigned short which has no std::char_traits
+        # specialization in libc++/libstdc++ — causes build failures.
+        "-DLOG4CXX_UNICHAR=NO",
         "-DBUILD_TESTING=OFF",
         # "-DLOG4CXX=1",
         "-DCMAKE_POSITION_INDEPENDENT_CODE=ON",

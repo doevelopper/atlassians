@@ -118,7 +118,9 @@ apr_util_ext = use_extension(
     "//buildsys/bazel/off_the_shelf_software/apr_util:apr_util_extension.bzl",
     "apr_util_extension",
 )
-use_repo(apr_util_ext, "org_apache_apr_util")
+# com_github_expat is also declared so root-module build files (used as build_file
+# for @org_apache_apr_util) can resolve @com_github_expat in their deps.
+use_repo(apr_util_ext, "org_apache_apr_util", "com_github_expat")
 
 # log4cxx (Apache Logging for C++) — not in BCR, fetched via module extension
 log4cxx_ext = use_extension(

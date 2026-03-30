@@ -29,7 +29,15 @@ configure_make(
 
     env = select({
         "@platforms//os:windows": {},
-        "//conditions:default": {"CFLAGS": "-fPIC"},
+        "//conditions:default": {
+            # Use system ar/ranlib so the generated libtool script embeds a
+            # stable path rather than a sandbox-specific llvm-ar path.
+            # Without this, apr_util fails when it reuses apr's libtool because
+            # the sandbox that held llvm-ar no longer exists at build time.
+            "AR": "/usr/bin/ar",
+            "RANLIB": "/usr/bin/ranlib",
+            "CFLAGS": "-fPIC",
+        },
     }),
 
     lib_source = ":all",

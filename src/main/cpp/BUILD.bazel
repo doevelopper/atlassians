@@ -56,24 +56,6 @@ cc_library(
         "@bazel_tools//src/conditions:darwin": DARWIN_LINKOPTS,
     }),
     deps = [
-
-        # Link against APR (Apache Portable Runtime)
-        # bazel query @org_apache_apr//...:all
-        "@org_apache_apr//:apr",
-
-        # Link against APR-util
-        # bazel query @org_apache_apr_util//...:all
-        "@org_apache_apr_util//:apr_util",
-
-        # Link against log4cxx (Apache Logging for C++)
-        # bazel query @org_apache_log4cxx//...:all
-        "@org_apache_log4cxx//:log4cxx",
-
-        # Link against OpenSSL SSL and Crypto libraries
-        # bazel query @openssl//...:all
-        "@openssl//:ssl",
-        "@openssl//:crypto",
-
         # Link against Boost Asio
         # bazel query @boost.asio//...:all
         "@boost.asio//:boost.asio",
@@ -86,6 +68,11 @@ cc_library(
 
 cc_library(
     name = "com.github.doevelopper.atlassians.main.logging",
+    hdrs = [
+        "com/github/doevelopper/atlassians/API_Export.hpp",
+        "com/github/doevelopper/atlassians/CompilerDetection.hpp",
+        "com/github/doevelopper/atlassians/Poison.hpp",
+    ],
     srcs = [
         "com/github/doevelopper/atlassians/logging/CustomLogger.cpp",
         "com/github/doevelopper/atlassians/logging/CustomLogger.hpp",
@@ -133,9 +120,23 @@ cc_library(
         "@bazel_tools//src/conditions:darwin": DARWIN_LINKOPTS,
     }),
     deps = [
-        "//boost:variant",
+
+        # Link against APR (Apache Portable Runtime)
+        # bazel query @org_apache_apr//...:all
+        "@org_apache_apr//:apr",
+
+        # Link against APR-util
+        # bazel query @org_apache_apr_util//...:all
+        "@org_apache_apr_util//:apr_util",
+
+        # Link against log4cxx (Apache Logging for C++)
+        # bazel query @org_apache_log4cxx//...:all
         "@org_apache_log4cxx//:log4cxx",
-        # TODO: Add rapidjson and other boost libs when configured
+
+        # Link against OpenSSL SSL and Crypto libraries
+        # bazel query @openssl//...:all
+        "@openssl//:ssl",
+        "@openssl//:crypto",
     ],
     visibility = ["//visibility:public"],
 )

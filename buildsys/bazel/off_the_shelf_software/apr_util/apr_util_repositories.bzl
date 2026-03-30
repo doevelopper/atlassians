@@ -28,5 +28,17 @@ def apr_util_repositories():
         ],
     )
 
-    # Expat is provided by the BCR module bazel_dep(name = "libexpat") in MODULE.bazel.
-    # Use @libexpat//:expat in build files instead of this archive.
+    # com_github_expat is a rules_foreign_cc cmake-built expat.
+    # BCR @libexpat (bazel_dep) is a regular cc_library and cannot be used as a
+    # rules_foreign_cc configure_make dep — configure scripts need the installed
+    # tree (include/expat.h, lib/libexpat.a) materialized on disk.
+    maybe(
+        http_archive,
+        name = "com_github_expat",
+        build_file = Label("//buildsys/bazel/off_the_shelf_software/expat:expat.BUILD"),
+        sha256 = "6b902ab103843592be5e99504f846ec109c1abb692e85347587f237a4ffa1033",
+        strip_prefix = "expat-2.5.0",
+        urls = [
+            "https://github.com/libexpat/libexpat/releases/download/R_2_5_0/expat-2.5.0.tar.gz",
+        ],
+    )

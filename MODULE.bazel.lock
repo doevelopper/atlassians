@@ -537,7 +537,7 @@
     },
     "//buildsys/bazel/off_the_shelf_software/apr_util:apr_util_extension.bzl%apr_util_extension": {
       "general": {
-        "bzlTransitiveDigest": "crA+mMWuAgyYGM32nFYnTxRsEfLHAYcyAv2Vr90YlfI=",
+        "bzlTransitiveDigest": "UC45lAdyxAzYGSFn4C3jFlKpDmg4O0PY9QYaUJkctkU=",
         "usagesDigest": "ALHr7LWgLMY0t0fSuwae3DyYro9IeVKas9Nrr30Ygn4=",
         "recordedInputs": [
           "REPO_MAPPING:,bazel_tools bazel_tools"
@@ -554,13 +554,24 @@
                 "https://github.com/apache/apr-util/archive/refs/tags/1.6.3.tar.gz"
               ]
             }
+          },
+          "com_github_expat": {
+            "repoRuleId": "@@bazel_tools//tools/build_defs/repo:http.bzl%http_archive",
+            "attributes": {
+              "build_file": "@@//buildsys/bazel/off_the_shelf_software/expat:expat.BUILD",
+              "sha256": "6b902ab103843592be5e99504f846ec109c1abb692e85347587f237a4ffa1033",
+              "strip_prefix": "expat-2.5.0",
+              "urls": [
+                "https://github.com/libexpat/libexpat/releases/download/R_2_5_0/expat-2.5.0.tar.gz"
+              ]
+            }
           }
         }
       }
     },
     "//buildsys/bazel/off_the_shelf_software/log4cxx:log4cxx_extension.bzl%log4cxx_extension": {
       "general": {
-        "bzlTransitiveDigest": "KdU0G/j5ahgza6atC2jGNy9JVAW8VRLdLtXgtfkKZt0=",
+        "bzlTransitiveDigest": "f1qZD6wA/pApybElX2S8iPhyavrRU5koTGUeD62zpb4=",
         "usagesDigest": "JVXdHGujv4H71ZjiRRw8bG4jiVkGX/Apd5Mpv5iD/XA=",
         "recordedInputs": [
           "REPO_MAPPING:,bazel_tools bazel_tools"
@@ -570,7 +581,6 @@
             "repoRuleId": "@@bazel_tools//tools/build_defs/repo:http.bzl%http_archive",
             "attributes": {
               "build_file": "@@//buildsys/bazel/off_the_shelf_software/log4cxx:BUILD.log4cxx.bazel",
-              "sha256": "6df9f1f682650de6045309473d5b2fe1f798a03ceb36a74a5b21f5520962d32f",
               "strip_prefix": "apache-log4cxx-1.1.0",
               "urls": [
                 "https://archive.apache.org/dist/logging/log4cxx/1.1.0/apache-log4cxx-1.1.0.tar.gz",
