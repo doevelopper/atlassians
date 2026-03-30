@@ -31,7 +31,7 @@ namespace com::github::doevelopper::atlassians::logging
         {
             if (LoggingInitializer::getInstance().isInitialized())
             {
-                LOG4CXX_TRACE(log4cxx::Logger::getRootLogger(),
+                LOG4CXX_TRACE(::log4cxx::Logger::getRootLogger(),
                               ">>> Entering: " << std::string(m_funcName));
             }
         }
@@ -47,7 +47,7 @@ namespace com::github::doevelopper::atlassians::logging
         {
             if (LoggingInitializer::getInstance().isInitialized())
             {
-                LOG4CXX_TRACE(log4cxx::Logger::getRootLogger(),
+                LOG4CXX_TRACE(::log4cxx::Logger::getRootLogger(),
                               "<<< Exiting: " << std::string(m_funcName));
             }
         }
@@ -124,7 +124,7 @@ namespace com::github::doevelopper::atlassians::logging
                                          std::string(m_strategy->getStrategyName());
                 notifyCallback(true, successMsg);
 
-                LOG4CXX_INFO(log4cxx::Logger::getRootLogger(), successMsg);
+                LOG4CXX_INFO(::log4cxx::Logger::getRootLogger(), successMsg);
                 return true;
             }
 
@@ -152,7 +152,7 @@ namespace com::github::doevelopper::atlassians::logging
         try
         {
             // Log startup message
-            auto rootLogger = log4cxx::Logger::getRootLogger();
+            auto rootLogger = ::log4cxx::Logger::getRootLogger();
 
             strategy.initialize();
 
@@ -168,7 +168,7 @@ namespace com::github::doevelopper::atlassians::logging
 
             return true;
         }
-        catch (const log4cxx::helpers::Exception& ex)
+        catch (const ::log4cxx::helpers::Exception& ex)
         {
             throw LoggingInitializationException(
                 "Log4CXX error during initialization", ex);
@@ -179,7 +179,7 @@ namespace com::github::doevelopper::atlassians::logging
     {
         try
         {
-            auto repository = log4cxx::LogManager::getLoggerRepository();
+            auto repository = ::log4cxx::LogManager::getLoggerRepository();
             return repository && repository->isConfigured();
         }
         catch (...)
@@ -209,14 +209,14 @@ namespace com::github::doevelopper::atlassians::logging
 
         try
         {
-            auto rootLogger = log4cxx::Logger::getRootLogger();
-            if (rootLogger && log4cxx::LogManager::getLoggerRepository()->isConfigured())
+            auto rootLogger = ::log4cxx::Logger::getRootLogger();
+            if (rootLogger && ::log4cxx::LogManager::getLoggerRepository()->isConfigured())
             {
                 LOG4CXX_INFO(rootLogger, "---- END LOGGING -----");
             }
 
             // Shutdown Log4CXX
-            log4cxx::LogManager::shutdown();
+            ::log4cxx::LogManager::shutdown();
 
             m_strategy.reset();
             m_initialized.store(false, std::memory_order_release);
@@ -234,8 +234,8 @@ namespace com::github::doevelopper::atlassians::logging
 
         try
         {
-            log4cxx::BasicConfigurator::resetConfiguration();
-            log4cxx::LogManager::resetConfiguration();
+            ::log4cxx::BasicConfigurator::resetConfiguration();
+            ::log4cxx::LogManager::resetConfiguration();
         }
         catch (...)
         {
@@ -293,7 +293,7 @@ namespace com::github::doevelopper::atlassians::logging
             return;
         }
 
-        auto rootLogger = log4cxx::Logger::getRootLogger();
+        auto rootLogger = ::log4cxx::Logger::getRootLogger();
         if (!rootLogger)
         {
             return;
@@ -302,26 +302,26 @@ namespace com::github::doevelopper::atlassians::logging
         switch (level)
         {
             case LogLevel::OFF:
-                rootLogger->setLevel(log4cxx::Level::getOff());
+                rootLogger->setLevel(::log4cxx::Level::getOff());
                 break;
             case LogLevel::FATAL:
-                rootLogger->setLevel(log4cxx::Level::getFatal());
+                rootLogger->setLevel(::log4cxx::Level::getFatal());
                 break;
             case LogLevel::ERROR:
-                rootLogger->setLevel(log4cxx::Level::getError());
+                rootLogger->setLevel(::log4cxx::Level::getError());
                 break;
             case LogLevel::WARN:
-                rootLogger->setLevel(log4cxx::Level::getWarn());
+                rootLogger->setLevel(::log4cxx::Level::getWarn());
                 break;
             case LogLevel::INFO:
-                rootLogger->setLevel(log4cxx::Level::getInfo());
+                rootLogger->setLevel(::log4cxx::Level::getInfo());
                 break;
             case LogLevel::DEBUG:
-                rootLogger->setLevel(log4cxx::Level::getDebug());
+                rootLogger->setLevel(::log4cxx::Level::getDebug());
                 break;
             case LogLevel::TRACE:
             case LogLevel::ALL:
-                rootLogger->setLevel(log4cxx::Level::getTrace());
+                rootLogger->setLevel(::log4cxx::Level::getTrace());
                 break;
         }
     }
@@ -335,7 +335,7 @@ namespace com::github::doevelopper::atlassians::logging
 
         try
         {
-            auto rootLogger = log4cxx::Logger::getRootLogger();
+            auto rootLogger = ::log4cxx::Logger::getRootLogger();
             if (!rootLogger)
             {
                 return LogLevel::OFF;
@@ -347,21 +347,21 @@ namespace com::github::doevelopper::atlassians::logging
                 return LogLevel::INFO;  // Default
             }
 
-            if (level == log4cxx::Level::getOff())
+            if (level == ::log4cxx::Level::getOff())
                 return LogLevel::OFF;
-            if (level == log4cxx::Level::getFatal())
+            if (level == ::log4cxx::Level::getFatal())
                 return LogLevel::FATAL;
-            if (level == log4cxx::Level::getError())
+            if (level == ::log4cxx::Level::getError())
                 return LogLevel::ERROR;
-            if (level == log4cxx::Level::getWarn())
+            if (level == ::log4cxx::Level::getWarn())
                 return LogLevel::WARN;
-            if (level == log4cxx::Level::getInfo())
+            if (level == ::log4cxx::Level::getInfo())
                 return LogLevel::INFO;
-            if (level == log4cxx::Level::getDebug())
+            if (level == ::log4cxx::Level::getDebug())
                 return LogLevel::DEBUG;
-            if (level == log4cxx::Level::getTrace())
+            if (level == ::log4cxx::Level::getTrace())
                 return LogLevel::TRACE;
-            if (level == log4cxx::Level::getAll())
+            if (level == ::log4cxx::Level::getAll())
                 return LogLevel::ALL;
 
             return LogLevel::INFO;

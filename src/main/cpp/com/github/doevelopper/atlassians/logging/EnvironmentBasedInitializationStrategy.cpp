@@ -93,40 +93,40 @@ namespace com::github::doevelopper::atlassians::logging
                 if (isXmlConfig(*configPath))
                 {
 #if APR_HAS_THREADS
-                    log4cxx::xml::DOMConfigurator::configureAndWatch(
+                    ::log4cxx::xml::DOMConfigurator::configureAndWatch(
                         pathStr, static_cast<long>(watchInterval));
-                    LOG4CXX_INFO(log4cxx::Logger::getRootLogger(),
+                    LOG4CXX_INFO(::log4cxx::Logger::getRootLogger(),
                                  "Log4CXX initialized with XML config (watching): " << pathStr);
 #else
-                    log4cxx::xml::DOMConfigurator::configure(pathStr);
-                    LOG4CXX_INFO(log4cxx::Logger::getRootLogger(),
+                    ::log4cxx::xml::DOMConfigurator::configure(pathStr);
+                    LOG4CXX_INFO(::log4cxx::Logger::getRootLogger(),
                                  "Log4CXX initialized with XML config from environment: " << pathStr);
 #endif
                 }
                 else
                 {
 #if APR_HAS_THREADS
-                    log4cxx::PropertyConfigurator::configureAndWatch(
+                    ::log4cxx::PropertyConfigurator::configureAndWatch(
                         pathStr, static_cast<long>(watchInterval));
-                    LOG4CXX_INFO(log4cxx::Logger::getRootLogger(),
+                    LOG4CXX_INFO(::log4cxx::Logger::getRootLogger(),
                                  "Log4CXX initialized with properties config (watching): " << pathStr);
 #else
-                    log4cxx::PropertyConfigurator::configure(pathStr);
-                    LOG4CXX_INFO(log4cxx::Logger::getRootLogger(),
+                    ::log4cxx::PropertyConfigurator::configure(pathStr);
+                    LOG4CXX_INFO(::log4cxx::Logger::getRootLogger(),
                                  "Log4CXX initialized with properties config from environment: " << pathStr);
 #endif
                 }
 
-                log4cxx::LogManager::getLoggerRepository()->setConfigured(true);
+                ::log4cxx::LogManager::getLoggerRepository()->setConfigured(true);
             }
             else if (m_fallbackToBasic)
             {
                 // Fallback to basic configuration
-                log4cxx::BasicConfigurator::configure();
-                log4cxx::Logger::getRootLogger()->setLevel(log4cxx::Level::getInfo());
-                log4cxx::LogManager::getLoggerRepository()->setConfigured(true);
+                ::log4cxx::BasicConfigurator::configure();
+                ::log4cxx::Logger::getRootLogger()->setLevel(::log4cxx::Level::getInfo());
+                ::log4cxx::LogManager::getLoggerRepository()->setConfigured(true);
 
-                LOG4CXX_INFO(log4cxx::Logger::getRootLogger(),
+                LOG4CXX_INFO(::log4cxx::Logger::getRootLogger(),
                              "Log4CXX initialized with basic configuration (no environment variable set)");
             }
             else
@@ -135,7 +135,7 @@ namespace com::github::doevelopper::atlassians::logging
                     "No logging configuration found in environment variables and fallback disabled");
             }
         }
-        catch (const log4cxx::helpers::Exception& ex)
+        catch (const ::log4cxx::helpers::Exception& ex)
         {
             throw LoggingInitializationException(
                 "Failed to initialize Log4CXX from environment: " + std::string(ex.what()));

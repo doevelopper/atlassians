@@ -16,16 +16,16 @@
 namespace com::github::doevelopper::atlassians::logging
 {
     CustomLoggerPrivate::CustomLoggerPrivate() noexcept
-        : m_logger(log4cxx::Logger::getRootLogger())
+        : m_logger(::log4cxx::Logger::getRootLogger())
     {
     }
 
     CustomLoggerPrivate::CustomLoggerPrivate(std::string_view loggerName)
-        : m_logger(log4cxx::Logger::getLogger(std::string(loggerName)))
+        : m_logger(::log4cxx::Logger::getLogger(std::string(loggerName)))
     {
     }
 
-    CustomLoggerPrivate::CustomLoggerPrivate(const log4cxx::LoggerPtr& logger) noexcept
+    CustomLoggerPrivate::CustomLoggerPrivate(const ::log4cxx::LoggerPtr& logger) noexcept
         : m_logger(logger)
     {
     }
@@ -66,36 +66,36 @@ namespace com::github::doevelopper::atlassians::logging
 
     void CustomLoggerPrivate::trace(const std::string& message) const
     {
-        log(log4cxx::Level::getTrace(), message);
+        log(::log4cxx::Level::getTrace(), message);
     }
 
     void CustomLoggerPrivate::debug(const std::string& message) const
     {
-        log(log4cxx::Level::getDebug(), message);
+        log(::log4cxx::Level::getDebug(), message);
     }
 
     void CustomLoggerPrivate::info(const std::string& message) const
     {
-        log(log4cxx::Level::getInfo(), message);
+        log(::log4cxx::Level::getInfo(), message);
     }
 
     void CustomLoggerPrivate::warn(const std::string& message) const
     {
-        log(log4cxx::Level::getWarn(), message);
+        log(::log4cxx::Level::getWarn(), message);
     }
 
     void CustomLoggerPrivate::error(const std::string& message) const
     {
-        log(log4cxx::Level::getError(), message);
+        log(::log4cxx::Level::getError(), message);
     }
 
     void CustomLoggerPrivate::fatal(const std::string& message) const
     {
-        log(log4cxx::Level::getFatal(), message);
+        log(::log4cxx::Level::getFatal(), message);
     }
 
     void CustomLoggerPrivate::logWithLocation(
-        const log4cxx::LevelPtr& level,
+        const ::log4cxx::LevelPtr& level,
         const std::string& message,
         const char* file,
         int line,
@@ -104,13 +104,13 @@ namespace com::github::doevelopper::atlassians::logging
         if (m_logger && m_logger->isEnabledFor(level))
         {
             // LocationInfo takes: fileName, shortFileName, methodName, lineNumber
-            log4cxx::spi::LocationInfo location(file, file, func, line);
+            ::log4cxx::spi::LocationInfo location(file, file, func, line);
             m_logger->forcedLog(level, message, location);
         }
     }
 
     void CustomLoggerPrivate::log(
-        const log4cxx::LevelPtr& level,
+        const ::log4cxx::LevelPtr& level,
         const std::string& message) const
     {
         if (m_logger && m_logger->isEnabledFor(level))
@@ -125,35 +125,35 @@ namespace com::github::doevelopper::atlassians::logging
 
     bool CustomLoggerPrivate::isTraceEnabled() const noexcept
     {
-        return isEnabledFor(log4cxx::Level::getTrace());
+        return isEnabledFor(::log4cxx::Level::getTrace());
     }
 
     bool CustomLoggerPrivate::isDebugEnabled() const noexcept
     {
-        return isEnabledFor(log4cxx::Level::getDebug());
+        return isEnabledFor(::log4cxx::Level::getDebug());
     }
 
     bool CustomLoggerPrivate::isInfoEnabled() const noexcept
     {
-        return isEnabledFor(log4cxx::Level::getInfo());
+        return isEnabledFor(::log4cxx::Level::getInfo());
     }
 
     bool CustomLoggerPrivate::isWarnEnabled() const noexcept
     {
-        return isEnabledFor(log4cxx::Level::getWarn());
+        return isEnabledFor(::log4cxx::Level::getWarn());
     }
 
     bool CustomLoggerPrivate::isErrorEnabled() const noexcept
     {
-        return isEnabledFor(log4cxx::Level::getError());
+        return isEnabledFor(::log4cxx::Level::getError());
     }
 
     bool CustomLoggerPrivate::isFatalEnabled() const noexcept
     {
-        return isEnabledFor(log4cxx::Level::getFatal());
+        return isEnabledFor(::log4cxx::Level::getFatal());
     }
 
-    bool CustomLoggerPrivate::isEnabledFor(const log4cxx::LevelPtr& level) const noexcept
+    bool CustomLoggerPrivate::isEnabledFor(const ::log4cxx::LevelPtr& level) const noexcept
     {
         try
         {
@@ -178,7 +178,7 @@ namespace com::github::doevelopper::atlassians::logging
         return {};
     }
 
-    log4cxx::LevelPtr CustomLoggerPrivate::getLevel() const
+    ::log4cxx::LevelPtr CustomLoggerPrivate::getLevel() const
     {
         if (m_logger)
         {
@@ -187,16 +187,16 @@ namespace com::github::doevelopper::atlassians::logging
         return nullptr;
     }
 
-    log4cxx::LevelPtr CustomLoggerPrivate::getEffectiveLevel() const
+    ::log4cxx::LevelPtr CustomLoggerPrivate::getEffectiveLevel() const
     {
         if (m_logger)
         {
             return m_logger->getEffectiveLevel();
         }
-        return log4cxx::Level::getOff();
+        return ::log4cxx::Level::getOff();
     }
 
-    void CustomLoggerPrivate::setLevel(const log4cxx::LevelPtr& level)
+    void CustomLoggerPrivate::setLevel(const ::log4cxx::LevelPtr& level)
     {
         if (m_logger)
         {
@@ -204,7 +204,7 @@ namespace com::github::doevelopper::atlassians::logging
         }
     }
 
-    log4cxx::LoggerPtr CustomLoggerPrivate::getLogger() const noexcept
+    ::log4cxx::LoggerPtr CustomLoggerPrivate::getLogger() const noexcept
     {
         return m_logger;
     }
@@ -220,22 +220,22 @@ namespace com::github::doevelopper::atlassians::logging
 
     void CustomLoggerPrivate::putMDC(const std::string& key, const std::string& value)
     {
-        log4cxx::MDC::put(key, value);
+        ::log4cxx::MDC::put(key, value);
     }
 
     std::string CustomLoggerPrivate::getMDC(const std::string& key)
     {
-        return log4cxx::MDC::get(key);
+        return ::log4cxx::MDC::get(key);
     }
 
     void CustomLoggerPrivate::removeMDC(const std::string& key)
     {
-        log4cxx::MDC::remove(key);
+        ::log4cxx::MDC::remove(key);
     }
 
     void CustomLoggerPrivate::clearMDC()
     {
-        log4cxx::MDC::clear();
+        ::log4cxx::MDC::clear();
     }
 
     // ============================================
@@ -244,22 +244,22 @@ namespace com::github::doevelopper::atlassians::logging
 
     void CustomLoggerPrivate::pushNDC(const std::string& message)
     {
-        log4cxx::NDC::push(message);
+        ::log4cxx::NDC::push(message);
     }
 
     std::string CustomLoggerPrivate::popNDC()
     {
-        return log4cxx::NDC::pop();
+        return ::log4cxx::NDC::pop();
     }
 
     std::size_t CustomLoggerPrivate::getNDCDepth()
     {
-        return log4cxx::NDC::getDepth();
+        return ::log4cxx::NDC::getDepth();
     }
 
     void CustomLoggerPrivate::clearNDC()
     {
-        log4cxx::NDC::clear();
+        ::log4cxx::NDC::clear();
     }
 
 }  // namespace com::github::doevelopper::atlassians::logging

@@ -38,7 +38,7 @@
  */
 #define LOG4CXX_DECLARE_STATIC_LOGGER \
 private: \
-    static log4cxx::LoggerPtr logger;
+    static ::log4cxx::LoggerPtr logger;
 
 /**
  * @ingroup LoggingService
@@ -47,7 +47,7 @@ private: \
  */
 #define LOG4CXX_DECLARE_STATIC_TEST_LOGGER \
 protected: \
-    static log4cxx::LoggerPtr logger;
+    static ::log4cxx::LoggerPtr logger;
 
 /**
  * @ingroup LoggingService
@@ -56,13 +56,13 @@ protected: \
  */
 #define LOG4CXX_DECLARE_CLASS_LOGGER(name) \
 private: \
-    log4cxx::LoggerPtr name;
+    ::log4cxx::LoggerPtr name;
 
 /**
  * @brief Get the root logger
  */
 #define DEFAULT_LOGGER() \
-    log4cxx::Logger::getRootLogger()
+    ::log4cxx::Logger::getRootLogger()
 
 /**
  * @brief Fallback logging macro to console appender.
@@ -104,10 +104,10 @@ private: \
  */
 #if defined(HAS_BOOST_DEMANGLE)
     #define LOG4CXX_DEFINE_CLASS_LOGGER(name) \
-        log4cxx::Logger::getLogger(std::string(boost::core::demangle(name)));
+        ::log4cxx::Logger::getLogger(std::string(boost::core::demangle(name)));
 #else
     #define LOG4CXX_DEFINE_CLASS_LOGGER(name) \
-        log4cxx::Logger::getLogger(std::string(name));
+        ::log4cxx::Logger::getLogger(std::string(name));
 #endif
 
 /**
@@ -145,8 +145,8 @@ private: \
 #define LOG_FUNCTION_SCOPE() \
     struct LogFunctionScopeGuard_ { \
         const char* fn_; \
-        log4cxx::LoggerPtr& log_; \
-        LogFunctionScopeGuard_(const char* fn, log4cxx::LoggerPtr& log) : fn_(fn), log_(log) { \
+        ::log4cxx::LoggerPtr& log_; \
+        LogFunctionScopeGuard_(const char* fn, ::log4cxx::LoggerPtr& log) : fn_(fn), log_(log) { \
             LOG4CXX_TRACE(log_, fn_ << " ENTER"); \
         } \
         ~LogFunctionScopeGuard_() { \

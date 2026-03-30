@@ -39,38 +39,38 @@ namespace com::github::doevelopper::atlassians::logging
         try
         {
             // Create pattern layout with configured pattern
-            auto layout = std::make_shared<log4cxx::PatternLayout>(
+            auto layout = std::make_shared<::log4cxx::PatternLayout>(
                 LOG4CXX_STR(m_pattern.c_str()));
 
             // Create console appender with the layout
-            auto consoleAppender = std::make_shared<log4cxx::ConsoleAppender>(layout);
+            auto consoleAppender = std::make_shared<::log4cxx::ConsoleAppender>(layout);
 
             // Activate appender options
-            log4cxx::helpers::Pool pool;
+            ::log4cxx::helpers::Pool pool;
             consoleAppender->activateOptions(pool);
 
             // Configure with the console appender
-            log4cxx::BasicConfigurator::configure(consoleAppender);
+            ::log4cxx::BasicConfigurator::configure(consoleAppender);
 
             // Set root logger level
-            auto rootLogger = log4cxx::Logger::getRootLogger();
+            auto rootLogger = ::log4cxx::Logger::getRootLogger();
             if (m_useTraceLevel)
             {
-                rootLogger->setLevel(log4cxx::Level::getTrace());
+                rootLogger->setLevel(::log4cxx::Level::getTrace());
             }
             else
             {
-                rootLogger->setLevel(log4cxx::Level::getInfo());
+                rootLogger->setLevel(::log4cxx::Level::getInfo());
             }
 
             // Mark repository as configured
-            log4cxx::LogManager::getLoggerRepository()->setConfigured(true);
+            ::log4cxx::LogManager::getLoggerRepository()->setConfigured(true);
 
             LOG4CXX_DEBUG(rootLogger,
                           "Log4CXX initialized with default configuration (pattern: "
                           << m_pattern << ")");
         }
-        catch (const log4cxx::helpers::Exception& ex)
+        catch (const ::log4cxx::helpers::Exception& ex)
         {
             throw LoggingInitializationException(
                 "Failed to initialize Log4CXX with default configuration: " +

@@ -24,7 +24,7 @@ namespace com::github::doevelopper::atlassians::logging
         : m_key(std::move(key))
         , m_active(true)
     {
-        log4cxx::MDC::put(m_key, value);
+        ::log4cxx::MDC::put(m_key, value);
     }
 
     CustomLogger::MDCScope::~MDCScope() noexcept
@@ -33,7 +33,7 @@ namespace com::github::doevelopper::atlassians::logging
         {
             try
             {
-                log4cxx::MDC::remove(m_key);
+                ::log4cxx::MDC::remove(m_key);
             }
             catch (...)
             {
@@ -56,7 +56,7 @@ namespace com::github::doevelopper::atlassians::logging
     CustomLogger::NDCScope::NDCScope(std::string message)
         : m_active(true)
     {
-        log4cxx::NDC::push(message);
+        ::log4cxx::NDC::push(message);
     }
 
     CustomLogger::NDCScope::~NDCScope() noexcept
@@ -65,7 +65,7 @@ namespace com::github::doevelopper::atlassians::logging
         {
             try
             {
-                log4cxx::NDC::pop();
+                ::log4cxx::NDC::pop();
             }
             catch (...)
             {

@@ -173,7 +173,7 @@ namespace com::github::doevelopper::atlassians::logging
     }
 
     ProgrammaticInitializationStrategy::Builder&
-    ProgrammaticInitializationStrategy::Builder::setRootLevel(const log4cxx::LevelPtr& level)
+    ProgrammaticInitializationStrategy::Builder::setRootLevel(const ::log4cxx::LevelPtr& level)
     {
         m_rootLevel = level;
         return *this;
@@ -182,7 +182,7 @@ namespace com::github::doevelopper::atlassians::logging
     ProgrammaticInitializationStrategy::Builder&
     ProgrammaticInitializationStrategy::Builder::addLogger(
         std::string_view loggerName,
-        const log4cxx::LevelPtr& level)
+        const ::log4cxx::LevelPtr& level)
     {
         LoggerConfig config;
         config.name = loggerName;
@@ -195,7 +195,7 @@ namespace com::github::doevelopper::atlassians::logging
     ProgrammaticInitializationStrategy::Builder&
     ProgrammaticInitializationStrategy::Builder::addLogger(
         std::string_view loggerName,
-        const log4cxx::LevelPtr& level,
+        const ::log4cxx::LevelPtr& level,
         const std::vector<std::string>& appenderNames,
         bool additivity)
     {
@@ -214,7 +214,7 @@ namespace com::github::doevelopper::atlassians::logging
         // Default to INFO level if not set
         if (!m_rootLevel)
         {
-            m_rootLevel = log4cxx::Level::getInfo();
+            m_rootLevel = ::log4cxx::Level::getInfo();
         }
 
         // Add default console appender if none configured
@@ -242,7 +242,7 @@ namespace com::github::doevelopper::atlassians::logging
     ProgrammaticInitializationStrategy::ProgrammaticInitializationStrategy() noexcept
         : m_appenders()
         , m_loggers()
-        , m_rootLevel(log4cxx::Level::getInfo())
+        , m_rootLevel(::log4cxx::Level::getInfo())
     {
         // Add default console appender
         AppenderConfig config;
@@ -255,7 +255,7 @@ namespace com::github::doevelopper::atlassians::logging
     ProgrammaticInitializationStrategy::ProgrammaticInitializationStrategy(
         std::vector<AppenderConfig> appenders,
         std::vector<LoggerConfig> loggers,
-        log4cxx::LevelPtr rootLevel)
+        ::log4cxx::LevelPtr rootLevel)
         : m_appenders(std::move(appenders))
         , m_loggers(std::move(loggers))
         , m_rootLevel(std::move(rootLevel))
@@ -268,11 +268,11 @@ namespace com::github::doevelopper::atlassians::logging
     {
         try
         {
-            log4cxx::helpers::Pool pool;
-            auto rootLogger = log4cxx::Logger::getRootLogger();
+            ::log4cxx::helpers::Pool pool;
+            auto rootLogger = ::log4cxx::Logger::getRootLogger();
 
             // Store created appenders by name
-            std::map<std::string, log4cxx::AppenderPtr> appenderMap;
+            std::map<std::string, ::log4cxx::AppenderPtr> appenderMap;
 
             // Create and configure appenders
             for (const auto& config : m_appenders)
@@ -294,7 +294,7 @@ namespace com::github::doevelopper::atlassians::logging
             // Configure additional loggers
             for (const auto& loggerConfig : m_loggers)
             {
-                auto logger = log4cxx::Logger::getLogger(loggerConfig.name);
+                auto logger = ::log4cxx::Logger::getLogger(loggerConfig.name);
                 if (loggerConfig.level)
                 {
                     logger->setLevel(loggerConfig.level);
@@ -316,13 +316,13 @@ namespace com::github::doevelopper::atlassians::logging
             }
 
             // Mark as configured
-            log4cxx::LogManager::getLoggerRepository()->setConfigured(true);
+            ::log4cxx::LogManager::getLoggerRepository()->setConfigured(true);
 
             LOG4CXX_INFO(rootLogger, "Log4CXX initialized programmatically with "
                          << m_appenders.size() << " appender(s) and "
                          << m_loggers.size() << " logger(s)");
         }
-        catch (const log4cxx::helpers::Exception& ex)
+        catch (const ::log4cxx::helpers::Exception& ex)
         {
             throw LoggingInitializationException(
                 "Failed to initialize Log4CXX programmatically: " +
@@ -393,26 +393,26 @@ namespace com::github::doevelopper::atlassians::logging
         return oss.str();
     }
 
-    log4cxx::AppenderPtr
+    ::log4cxx::AppenderPtr
     ProgrammaticInitializationStrategy::createAppender(const AppenderConfig& config) const
     {
-        log4cxx::helpers::Pool pool;
+        ::log4cxx::helpers::Pool pool;
 
         // Create layout
-        auto layout = std::make_shared<log4cxx::PatternLayout>(
+        auto layout = std::make_shared<::log4cxx::PatternLayout>(
             LOG4CXX_STR(config.pattern.c_str()));
 
-        log4cxx::AppenderPtr appender;
+        ::log4cxx::AppenderPtr appender;
 
         switch (config.type)
         {
             case AppenderConfig::Type::CONSOLE:
             {
-                auto consoleAppender = std::make_shared<log4cxx::ConsoleAppender>(
+                auto consoleAppender = std::make_shared<::log4cxx::ConsoleAppender>(
                     layout,
                     config.target == "System.err"
-                        ? log4cxx::ConsoleAppender::getSystemErr()
-                        : log4cxx::ConsoleAppender::getSystemOut());
+                        ? ::log4cxx::ConsoleAppender::getSystemErr()
+                        : ::log4cxx::ConsoleAppender::getSystemOut());
                 consoleAppender->setName(LOG4CXX_STR(config.name.c_str()));
                 consoleAppender->activateOptions(pool);
                 appender = consoleAppender;
@@ -421,7 +421,7 @@ namespace com::github::doevelopper::atlassians::logging
 
             case AppenderConfig::Type::FILE:
             {
-                auto fileAppender = std::make_shared<log4cxx::FileAppender>(
+                auto fileAppender = std::make_shared<::log4cxx::FileAppender>(
                     layout,
                     LOG4CXX_STR(config.filePath.string().c_str()),
                     config.append);
@@ -433,20 +433,20 @@ namespace com::github::doevelopper::atlassians::logging
 
             case AppenderConfig::Type::ROLLING_FILE:
             {
-                auto rollingAppender = std::make_shared<log4cxx::rolling::RollingFileAppender>();
+                auto rollingAppender = std::make_shared<::log4cxx::rolling::RollingFileAppender>();
                 rollingAppender->setName(LOG4CXX_STR(config.name.c_str()));
                 rollingAppender->setLayout(layout);
                 rollingAppender->setFile(LOG4CXX_STR(config.filePath.string().c_str()));
                 rollingAppender->setAppend(config.append);
 
                 // Set up triggering policy (size-based)
-                auto triggerPolicy = std::make_shared<log4cxx::rolling::SizeBasedTriggeringPolicy>();
+                auto triggerPolicy = std::make_shared<::log4cxx::rolling::SizeBasedTriggeringPolicy>();
                 triggerPolicy->setMaxFileSize(parseFileSize(config.maxFileSize));
                 triggerPolicy->activateOptions(pool);
                 rollingAppender->setTriggeringPolicy(triggerPolicy);
 
                 // Set up rolling policy (fixed window)
-                auto rollingPolicy = std::make_shared<log4cxx::rolling::FixedWindowRollingPolicy>();
+                auto rollingPolicy = std::make_shared<::log4cxx::rolling::FixedWindowRollingPolicy>();
                 rollingPolicy->setFileNamePattern(
                     LOG4CXX_STR((config.filePath.string() + ".%i").c_str()));
                 rollingPolicy->setMinIndex(1);

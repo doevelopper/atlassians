@@ -19,7 +19,7 @@ namespace com::github::doevelopper::atlassians::logging
     {
         try
         {
-            auto repository = log4cxx::LogManager::getLoggerRepository();
+            auto repository = ::log4cxx::LogManager::getLoggerRepository();
             return repository && repository->isConfigured();
         }
         catch (...)
@@ -30,7 +30,7 @@ namespace com::github::doevelopper::atlassians::logging
 
     void ILoggingInitializationStrategy::markAsConfigured() const
     {
-        auto repository = log4cxx::LogManager::getLoggerRepository();
+        auto repository = ::log4cxx::LogManager::getLoggerRepository();
         if (repository)
         {
             repository->setConfigured(true);

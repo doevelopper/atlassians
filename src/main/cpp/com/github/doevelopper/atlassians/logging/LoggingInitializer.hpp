@@ -184,7 +184,7 @@ namespace com::github::doevelopper::atlassians::logging
 
         /**
          * @brief Check LogManager configuration status
-         * @return true if log4cxx::LogManager::getLoggerRepository()->isConfigured()
+         * @return true if ::log4cxx::LogManager::getLoggerRepository()->isConfigured()
          *
          * This is a direct check of the underlying log4cxx status.
          */

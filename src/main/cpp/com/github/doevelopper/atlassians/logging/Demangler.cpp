@@ -3,8 +3,8 @@
 
 using namespace com::github::doevelopper::atlassians::logging;
 
-log4cxx::LoggerPtr Demangler::logger =
-    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.premisses.logging.Demangler"));
+::log4cxx::LoggerPtr Demangler::logger =
+    ::log4cxx::Logger::getLogger(std::string("com.github.doevelopper.premisses.logging.Demangler"));
 
 Demangler::Demangler() noexcept
 {

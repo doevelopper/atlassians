@@ -63,24 +63,24 @@ namespace com::github::doevelopper::atlassians::logging
             if (m_watchEnabled)
             {
                 // Configure with file watching (requires APR threads)
-                log4cxx::PropertyConfigurator::configureAndWatch(
+                ::log4cxx::PropertyConfigurator::configureAndWatch(
                     pathStr,
                     static_cast<long>(m_watchInterval.count()));
             }
             else
             {
                 // Simple one-time configuration
-                log4cxx::PropertyConfigurator::configure(pathStr);
+                ::log4cxx::PropertyConfigurator::configure(pathStr);
             }
 #else
             // No thread support - always use simple configuration
-            log4cxx::PropertyConfigurator::configure(pathStr);
+            ::log4cxx::PropertyConfigurator::configure(pathStr);
 #endif
 
             // Mark as configured
-            log4cxx::LogManager::getLoggerRepository()->setConfigured(true);
+            ::log4cxx::LogManager::getLoggerRepository()->setConfigured(true);
 
-            LOG4CXX_INFO(log4cxx::Logger::getRootLogger(),
+            LOG4CXX_INFO(::log4cxx::Logger::getRootLogger(),
                          "Log4CXX initialized with properties file: " << pathStr
 #if APR_HAS_THREADS
                          << (m_watchEnabled ? " (watching enabled)" : ""));
@@ -88,7 +88,7 @@ namespace com::github::doevelopper::atlassians::logging
                          );
 #endif
         }
-        catch (const log4cxx::helpers::Exception& ex)
+        catch (const ::log4cxx::helpers::Exception& ex)
         {
             throw LoggingInitializationException(
                 "Failed to initialize Log4CXX with properties file '" +

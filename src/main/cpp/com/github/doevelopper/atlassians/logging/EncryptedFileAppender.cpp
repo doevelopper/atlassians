@@ -836,17 +836,17 @@ namespace com::github::doevelopper::atlassians::logging
     EncryptedFileAppender& EncryptedFileAppender::operator=(EncryptedFileAppender&&) noexcept = default;
     EncryptedFileAppender::~EncryptedFileAppender() = default;
 
-    void EncryptedFileAppender::setFile(const log4cxx::LogString& file)
+    void EncryptedFileAppender::setFile(const ::log4cxx::LogString& file)
     {
         std::string narrowFile;
-        log4cxx::helpers::Transcoder::encode(file, narrowFile);
+        ::log4cxx::helpers::Transcoder::encode(file, narrowFile);
         m_impl->setFilePath(narrowFile);
     }
 
-    log4cxx::LogString EncryptedFileAppender::getFile() const
+    ::log4cxx::LogString EncryptedFileAppender::getFile() const
     {
-        log4cxx::LogString result;
-        log4cxx::helpers::Transcoder::decode(m_impl->getFilePath().string(), result);
+        ::log4cxx::LogString result;
+        ::log4cxx::helpers::Transcoder::decode(m_impl->getFilePath().string(), result);
         return result;
     }
 
@@ -860,10 +860,10 @@ namespace com::github::doevelopper::atlassians::logging
         return m_impl->getAppend();
     }
 
-    void EncryptedFileAppender::setKeyEnvVar(const log4cxx::LogString& envVar)
+    void EncryptedFileAppender::setKeyEnvVar(const ::log4cxx::LogString& envVar)
     {
         std::string narrowEnvVar;
-        log4cxx::helpers::Transcoder::encode(envVar, narrowEnvVar);
+        ::log4cxx::helpers::Transcoder::encode(envVar, narrowEnvVar);
         m_impl->setKeyEnvVar(narrowEnvVar);
     }
 
@@ -883,7 +883,7 @@ namespace com::github::doevelopper::atlassians::logging
         m_impl->setKeyProvider(std::move(provider));
     }
 
-    void EncryptedFileAppender::activateOptions(log4cxx::helpers::Pool& pool)
+    void EncryptedFileAppender::activateOptions(::log4cxx::helpers::Pool& pool)
     {
         AppenderSkeleton::activateOptions(pool);
         m_impl->activateOptions();
@@ -920,16 +920,16 @@ namespace com::github::doevelopper::atlassians::logging
     }
 
     void EncryptedFileAppender::append(
-        const log4cxx::spi::LoggingEventPtr& event,
-        log4cxx::helpers::Pool& pool)
+        const ::log4cxx::spi::LoggingEventPtr& event,
+        ::log4cxx::helpers::Pool& pool)
     {
         if (layout)
         {
-            log4cxx::LogString formattedEvent;
+            ::log4cxx::LogString formattedEvent;
             layout->format(formattedEvent, event, pool);
 
             std::string narrowFormatted;
-            log4cxx::helpers::Transcoder::encode(formattedEvent, narrowFormatted);
+            ::log4cxx::helpers::Transcoder::encode(formattedEvent, narrowFormatted);
 
             m_impl->append(narrowFormatted);
         }

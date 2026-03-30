@@ -267,14 +267,14 @@ namespace com::github::doevelopper::atlassians::logging
      *     "encrypted.log",
      *     std::move(encryption)
      * );
-     * appender->setLayout(std::make_shared<log4cxx::PatternLayout>(...));
+     * appender->setLayout(std::make_shared<::log4cxx::PatternLayout>(...));
      * appender->activateOptions(pool);
      *
      * // Add to logger
      * logger->addAppender(appender);
      * @endcode
      */
-    class SDLC_API EncryptedFileAppender : public log4cxx::AppenderSkeleton
+    class SDLC_API EncryptedFileAppender : public ::log4cxx::AppenderSkeleton
     {
     public:
         DECLARE_LOG4CXX_OBJECT(EncryptedFileAppender)
@@ -324,13 +324,13 @@ namespace com::github::doevelopper::atlassians::logging
          * @brief Set the log file path
          * @param file File path
          */
-        void setFile(const log4cxx::LogString& file);
+        void setFile(const ::log4cxx::LogString& file);
 
         /**
          * @brief Get the log file path
          * @return File path
          */
-        [[nodiscard]] log4cxx::LogString getFile() const;
+        [[nodiscard]] ::log4cxx::LogString getFile() const;
 
         /**
          * @brief Set append mode
@@ -348,7 +348,7 @@ namespace com::github::doevelopper::atlassians::logging
          * @brief Set the environment variable for key
          * @param envVar Environment variable name
          */
-        void setKeyEnvVar(const log4cxx::LogString& envVar);
+        void setKeyEnvVar(const ::log4cxx::LogString& envVar);
 
         /**
          * @brief Set whether to compress before encrypting
@@ -376,7 +376,7 @@ namespace com::github::doevelopper::atlassians::logging
          * @brief Activate appender options
          * @param pool APR pool for memory allocation
          */
-        void activateOptions(log4cxx::helpers::Pool& pool) override;
+        void activateOptions(::log4cxx::helpers::Pool& pool) override;
 
         /**
          * @brief Close the appender
@@ -423,8 +423,8 @@ namespace com::github::doevelopper::atlassians::logging
          * @param pool APR pool
          */
         void append(
-            const log4cxx::spi::LoggingEventPtr& event,
-            log4cxx::helpers::Pool& pool) override;
+            const ::log4cxx::spi::LoggingEventPtr& event,
+            ::log4cxx::helpers::Pool& pool) override;
 
     private:
         class Impl;

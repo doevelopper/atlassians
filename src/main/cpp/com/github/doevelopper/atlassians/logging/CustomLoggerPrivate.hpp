@@ -56,7 +56,7 @@ namespace com::github::doevelopper::atlassians::logging
          * @brief Constructor with log4cxx LoggerPtr
          * @param logger The log4cxx logger pointer
          */
-        explicit CustomLoggerPrivate(const log4cxx::LoggerPtr& logger) noexcept;
+        explicit CustomLoggerPrivate(const ::log4cxx::LoggerPtr& logger) noexcept;
 
         /**
          * @brief Copy constructor
@@ -98,7 +98,7 @@ namespace com::github::doevelopper::atlassians::logging
          * @brief Log with specific location information
          */
         void logWithLocation(
-            const log4cxx::LevelPtr& level,
+            const ::log4cxx::LevelPtr& level,
             const std::string& message,
             const char* file,
             int line,
@@ -118,7 +118,7 @@ namespace com::github::doevelopper::atlassians::logging
         /**
          * @brief Check if a specific level is enabled
          */
-        [[nodiscard]] bool isEnabledFor(const log4cxx::LevelPtr& level) const noexcept;
+        [[nodiscard]] bool isEnabledFor(const ::log4cxx::LevelPtr& level) const noexcept;
 
         // ============================================
         // Logger Properties
@@ -132,22 +132,22 @@ namespace com::github::doevelopper::atlassians::logging
         /**
          * @brief Get the current effective level
          */
-        [[nodiscard]] log4cxx::LevelPtr getLevel() const;
+        [[nodiscard]] ::log4cxx::LevelPtr getLevel() const;
 
         /**
          * @brief Get the effective level (considering parent hierarchy)
          */
-        [[nodiscard]] log4cxx::LevelPtr getEffectiveLevel() const;
+        [[nodiscard]] ::log4cxx::LevelPtr getEffectiveLevel() const;
 
         /**
          * @brief Set the logger level
          */
-        void setLevel(const log4cxx::LevelPtr& level);
+        void setLevel(const ::log4cxx::LevelPtr& level);
 
         /**
          * @brief Get the underlying log4cxx logger
          */
-        [[nodiscard]] log4cxx::LoggerPtr getLogger() const noexcept;
+        [[nodiscard]] ::log4cxx::LoggerPtr getLogger() const noexcept;
 
         /**
          * @brief Check if logger is valid
@@ -206,9 +206,9 @@ namespace com::github::doevelopper::atlassians::logging
         /**
          * @brief Log a message at the specified level
          */
-        void log(const log4cxx::LevelPtr& level, const std::string& message) const;
+        void log(const ::log4cxx::LevelPtr& level, const std::string& message) const;
 
-        log4cxx::LoggerPtr m_logger;
+        ::log4cxx::LoggerPtr m_logger;
     };
 
 }  // namespace com::github::doevelopper::atlassians::logging

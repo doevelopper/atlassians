@@ -57,7 +57,7 @@ namespace com::github::doevelopper::atlassians::logging
     struct LoggerConfig
     {
         std::string name;                    // Logger name (empty for root)
-        log4cxx::LevelPtr level;             // Log level
+        ::log4cxx::LevelPtr level;             // Log level
         bool additivity = true;              // Whether to inherit parent appenders
         std::vector<std::string> appenders;  // Appender names to attach
     };
@@ -78,8 +78,8 @@ namespace com::github::doevelopper::atlassians::logging
      *     .withRollingFileAppender("rolling", "/var/log/app-rolling.log")
      *         .maxFileSize("10MB")
      *         .maxBackupIndex(5)
-     *     .setRootLevel(log4cxx::Level::getInfo())
-     *     .addLogger("com.mycompany", log4cxx::Level::getDebug())
+     *     .setRootLevel(::log4cxx::Level::getInfo())
+     *     .addLogger("com.mycompany", ::log4cxx::Level::getDebug())
      *     .build();
      *
      * LoggingInitializer::getInstance().initialize(std::move(strategy));
@@ -172,7 +172,7 @@ namespace com::github::doevelopper::atlassians::logging
              * @param level The log level
              * @return Reference to this builder for chaining
              */
-            Builder& setRootLevel(const log4cxx::LevelPtr& level);
+            Builder& setRootLevel(const ::log4cxx::LevelPtr& level);
 
             /**
              * @brief Add a named logger with specific level
@@ -180,7 +180,7 @@ namespace com::github::doevelopper::atlassians::logging
              * @param level Log level for this logger
              * @return Reference to this builder for chaining
              */
-            Builder& addLogger(std::string_view loggerName, const log4cxx::LevelPtr& level);
+            Builder& addLogger(std::string_view loggerName, const ::log4cxx::LevelPtr& level);
 
             /**
              * @brief Add a named logger with level and specific appenders
@@ -192,7 +192,7 @@ namespace com::github::doevelopper::atlassians::logging
              */
             Builder& addLogger(
                 std::string_view loggerName,
-                const log4cxx::LevelPtr& level,
+                const ::log4cxx::LevelPtr& level,
                 const std::vector<std::string>& appenderNames,
                 bool additivity = true);
 
@@ -205,7 +205,7 @@ namespace com::github::doevelopper::atlassians::logging
         private:
             std::vector<AppenderConfig> m_appenders;
             std::vector<LoggerConfig> m_loggers;
-            log4cxx::LevelPtr m_rootLevel;
+            ::log4cxx::LevelPtr m_rootLevel;
         };
 
         /**
@@ -228,7 +228,7 @@ namespace com::github::doevelopper::atlassians::logging
         ProgrammaticInitializationStrategy(
             std::vector<AppenderConfig> appenders,
             std::vector<LoggerConfig> loggers,
-            log4cxx::LevelPtr rootLevel);
+            ::log4cxx::LevelPtr rootLevel);
 
         /**
          * @brief Copy constructor (deleted)
@@ -289,11 +289,11 @@ namespace com::github::doevelopper::atlassians::logging
         /**
          * @brief Create an appender from configuration
          */
-        [[nodiscard]] log4cxx::AppenderPtr createAppender(const AppenderConfig& config) const;
+        [[nodiscard]] ::log4cxx::AppenderPtr createAppender(const AppenderConfig& config) const;
 
         std::vector<AppenderConfig> m_appenders;
         std::vector<LoggerConfig> m_loggers;
-        log4cxx::LevelPtr m_rootLevel;
+        ::log4cxx::LevelPtr m_rootLevel;
     };
 
 }  // namespace com::github::doevelopper::atlassians::logging

@@ -62,24 +62,24 @@ namespace com::github::doevelopper::atlassians::logging
             if (m_watchEnabled)
             {
                 // Configure with file watching (only when APR has thread support)
-                log4cxx::xml::DOMConfigurator::configureAndWatch(
+                ::log4cxx::xml::DOMConfigurator::configureAndWatch(
                     pathStr,
                     static_cast<long>(m_watchInterval.count()));
             }
             else
             {
                 // Simple one-time configuration
-                log4cxx::xml::DOMConfigurator::configure(pathStr);
+                ::log4cxx::xml::DOMConfigurator::configure(pathStr);
             }
 #else
             // APR built without thread support, cannot use configureAndWatch
-            log4cxx::xml::DOMConfigurator::configure(pathStr);
+            ::log4cxx::xml::DOMConfigurator::configure(pathStr);
 #endif
 
             // Mark as configured
-            log4cxx::LogManager::getLoggerRepository()->setConfigured(true);
+            ::log4cxx::LogManager::getLoggerRepository()->setConfigured(true);
 
-            LOG4CXX_INFO(log4cxx::Logger::getRootLogger(),
+            LOG4CXX_INFO(::log4cxx::Logger::getRootLogger(),
                          "Log4CXX initialized with XML file: " << pathStr
 #if APR_HAS_THREADS
                          << (m_watchEnabled ? " (watching enabled)" : ""));
@@ -87,7 +87,7 @@ namespace com::github::doevelopper::atlassians::logging
                          << " (watching disabled - APR without thread support)");
 #endif
         }
-        catch (const log4cxx::helpers::Exception& ex)
+        catch (const ::log4cxx::helpers::Exception& ex)
         {
             throw LoggingInitializationException(
                 "Failed to initialize Log4CXX with XML file '" +
