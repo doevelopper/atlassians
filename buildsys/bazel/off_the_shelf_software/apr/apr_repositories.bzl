@@ -8,11 +8,13 @@ def apr_repositories():
     maybe(
         http_archive,
         name = "org_apache_apr",
-        build_file = Label("@com.github.doevelopper.rules-sdlc//src/main/resources/off_the_shelf_software/apr:BUILD.apr.bazel"),
+        build_file = Label("//buildsys/bazel/off_the_shelf_software/apr:apr.BUILD"),
+        # sha256 is for the official Apache distribution tarball (includes configure script).
+        # The GitHub source archive has a different sha256 and lacks the configure script.
         sha256 = "3d8999b216f7b6235343a4e3d456ce9379aa9a380ffb308512f133f0c5eb2db9",
         strip_prefix = "apr-1.7.2",
         urls = [
-            "https://downloads.apache.org/apr/apr-1.7.2.tar.gz",
-            "https://github.com/apache/apr/archive/refs/tags/1.7.2.tar.gz",
+            # archive.apache.org permanently hosts all Apache releases.
+            "https://archive.apache.org/dist/apr/apr-1.7.2.tar.gz",
         ],
     )

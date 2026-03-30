@@ -57,6 +57,10 @@ cc_library(
     }),
     deps = [
 
+        # Link against APR (Apache Portable Runtime)
+        # bazel query @org_apache_apr//...:all
+        "@org_apache_apr//:apr",
+
         # Link against OpenSSL SSL and Crypto libraries
         # bazel query @openssl//...:all
         "@openssl//:ssl",

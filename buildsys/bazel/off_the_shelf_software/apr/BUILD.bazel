@@ -3,6 +3,7 @@ load("@bazel_skylib//rules:build_test.bzl", "build_test")
 exports_files(
     [
         "BUILD.apr.bazel",
+        "apr.BUILD",
     ],
     visibility = ["//visibility:public"],
 )

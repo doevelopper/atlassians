@@ -16,74 +16,37 @@ CONFIGURE_OPTIONS = [
     "--enable-pool-concurrency-check",
     "--enable-other-child",
     #  "--with-pic",
-]
+        "--disable-shared",
+    ]
 
 configure_make(
     name = "apr",
     configure_command = "configure",
 
-    # configure_env_vars = select({
-    #     # "@bazel_tools//platforms:osx": {"AR": ""},
-    #     "//conditions:default": {},
-    # }),
-
     configure_in_place = True,
 
-    configure_options = select({
-        "@bazel_tools//platforms:osx": [
-            "-fPIC",
-        ] + CONFIGURE_OPTIONS,
-        "@bazel_tools//platforms:linux": [
-            # "--prefix=${INSTALLDIR}",
-            "-fPIC",
-        ] + CONFIGURE_OPTIONS,
-        "//conditions:default": [
-            "-fPIC",
-            "no-shared",
-        ] + CONFIGURE_OPTIONS,
+    configure_options = CONFIGURE_OPTIONS,
+
+    env = select({
+        "@platforms//os:windows": {},
+        "//conditions:default": {"CFLAGS": "-fPIC"},
     }),
 
     lib_source = ":all",
 
     linkopts = select({
-        "@bazel_tools//platforms:osx": [
+        "@platforms//os:osx": [
             "-lpthread",
         ],
-        "@bazel_tools//platforms:linux": [
+        "@platforms//os:linux": [
             "-ldl",
         ],
-        "//conditions:default": [ ],
+        "//conditions:default": [],
     }),
-
-    # out_include_dir = "include/apr",
-    # out_lib_dir = "lib",
 
     out_static_libs = select({
-        "@bazel_tools//platforms:osx": [
-            "libapr-1.a",
-        ],
-        # considere using "@platforms//os:windows": or @bazel_tools//platforms:windows or "@bazel_tools//src/conditions:windows":
-        "@bazel_tools//platforms:windows": [
-            "libapr-1.lib",
-        ],
-        "//conditions:default": [
-            "libapr-1.a",
-        ],
-    }),
-
-    out_shared_libs = select({
-        "@bazel_tools//platforms:osx": [
-            "libapr-1.dylib",
-        ],
-        # considere using "@platforms//os:windows": or @bazel_tools//platforms:windows or "@bazel_tools//src/conditions:windows":
-        "@bazel_tools//platforms:windows": [
-            "libapr-1.lib",
-        ],
-        "//conditions:default": [
-            "libapr-1.so",
-            "libapr-1.so.0",
-            "libapr-1.so.0.7.0"
-        ],
+        "@platforms//os:windows": ["libapr-1.lib"],
+        "//conditions:default": ["libapr-1.a"],
     }),
 
     visibility = ["//visibility:public"],

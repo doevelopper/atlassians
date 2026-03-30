@@ -105,7 +105,13 @@ bazel_dep(name = "nlohmann_json", version = "3.12.0", repo_name = "json")
 bazel_dep(name = "eigen", version = "5.0.1")
 bazel_dep(name = "protobuf", version = "29.0", repo_name = "com_google_protobuf")
 bazel_dep(name = "openssl", version = "3.5.5.bcr.1")
-# bazel_dep(name = "grpc", version = "1.80.0")
+
+# APR (Apache Portable Runtime) — not in BCR, fetched via module extension
+apr_ext = use_extension(
+    "//buildsys/bazel/off_the_shelf_software/apr:apr_extension.bzl",
+    "apr_extension",
+)
+use_repo(apr_ext, "org_apache_apr")
 
 # tensorrt_ext = use_extension("//third_party/tensorrt:extensions.bzl", "tensorrt_configure")
 # use_repo(tensorrt_ext, "local_config_tensorrt")
