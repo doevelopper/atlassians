@@ -61,6 +61,14 @@ cc_library(
         # bazel query @org_apache_apr//...:all
         "@org_apache_apr//:apr",
 
+        # Link against APR-util
+        # bazel query @org_apache_apr_util//...:all
+        "@org_apache_apr_util//:apr_util",
+
+        # Link against log4cxx (Apache Logging for C++)
+        # bazel query @org_apache_log4cxx//...:all
+        "@org_apache_log4cxx//:log4cxx",
+
         # Link against OpenSSL SSL and Crypto libraries
         # bazel query @openssl//...:all
         "@openssl//:ssl",
@@ -126,7 +134,7 @@ cc_library(
     }),
     deps = [
         "//boost:variant",
-        "//_deps/log4cxx:log4cxx",
+        "@org_apache_log4cxx//:log4cxx",
         # TODO: Add rapidjson and other boost libs when configured
     ],
     visibility = ["//visibility:public"],
@@ -211,7 +219,7 @@ cc_library(
     }),
     deps = [
         "//boost:variant",
-        "//_deps/log4cxx:log4cxx",
+        "@org_apache_log4cxx//:log4cxx",
         # TODO: Add rapidjson and other boost libs when configured
     ],
     visibility = ["//visibility:public"],

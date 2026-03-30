@@ -23,14 +23,15 @@ filegroup(
 
 
 CONFIGURE_OPTIONS = [
-    "--with-apr=\"$$EXT_BUILD_DEPS$$/apr\"",
-    "--with-expat=\"$$EXT_BUILD_DEPS$$/com_github_libexpat/expat\"",
-    "--with-openssl=\"$$EXT_BUILD_DEPS$$/com_github_openssl/openssl\"",
+    "--with-apr=$$EXT_BUILD_DEPS/apr/bin/apr-1-config",
+    "--with-expat=$$EXT_BUILD_DEPS/expat",
+    "--with-openssl=$$EXT_BUILD_DEPS/openssl",
     "--with-crypto",
+    "--disable-shared",
 ]
 
 configure_make(
-    name = "aprutil",
+    name = "apr_util",
     configure_command = "configure",
 
     # configure_env_vars = select({
@@ -40,66 +41,42 @@ configure_make(
 
     configure_in_place = True,
 
-    configure_options = CONFIGURE_OPTIONS + select({
-        "@bazel_tools//platforms:osx": [
-            # "-fPIC",
-        ] ,
-        "@bazel_tools//platforms:linux": [
-            # "--prefix=${INSTALLDIR}",
-        ] ,
-        "//conditions:default": [
-            # "-fPIC",
-            # "no-shared",
-        ] ,
+    configure_options = CONFIGURE_OPTIONS,
+
+    env = select({
+        "@platforms//os:windows": {},
+        "//conditions:default": {
+            "AR": "/usr/bin/ar",
+            "CFLAGS": "-fPIC",
+        },
     }),
 
     lib_source = ":all",
 
     linkopts = select({
-        "@bazel_tools//platforms:osx": [
+        "@platforms//os:osx": [
             "-lpthread",
         ],
-        "@bazel_tools//platforms:linux": [
+        "@platforms//os:linux": [
             "-ldl",
         ],
-        "//conditions:default": [ ],
+        "//conditions:default": [],
     }),
 
     # out_include_dir = "include/apr",
     # out_lib_dir = "lib",
 
     out_static_libs = select({
-        "@bazel_tools//platforms:osx": [
-            "libaprutil-1.a",
-        ],
-        # considere using "@platforms//os:windows": or @bazel_tools//platforms:windows or "@bazel_tools//src/conditions:windows":
-        "@bazel_tools//platforms:windows": [
-            "libaprutil-1.lib",
-        ],
-        "//conditions:default": [
-            "libaprutil-1.a",
-        ],
-    }),
-
-    out_shared_libs = select({
-        "@bazel_tools//platforms:osx": [
-            "libaprutil.dylib",
-        ],
-        # considere using "@platforms//os:windows": or @bazel_tools//platforms:windows or "@bazel_tools//src/conditions:windows":
-        "@bazel_tools//platforms:windows": [
-            "libaprutil-1.lib",
-        ],
-        "//conditions:default": [
-            "libaprutil-1.so",
-            "libaprutil-1.so.0",
-            "libaprutil-1.so.0.6.1"
-        ],
+        "@platforms//os:windows": ["libaprutil-1.lib"],
+        "//conditions:default": ["libaprutil-1.a"],
     }),
 
     deps = [
         "@org_apache_apr//:apr",
-        "@com_github_libexpat//:expat",
-        "@com_github_openssl//:openssl",
+        # Expat from BCR (bazel_dep name = "libexpat" in MODULE.bazel)
+        "@libexpat//:expat",
+        "@openssl//:ssl",
+        "@openssl//:crypto",
     ],
 
     visibility = ["//visibility:public"],

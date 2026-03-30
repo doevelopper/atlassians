@@ -13,7 +13,7 @@ LIB_NAME = "expat"
 alias(
     name = "expat",
     actual = select({
-        "@org_apache_apr//:msvc_compiler": "expat_msvc",
+        "@platforms//os:windows": "expat_msvc",
         "//conditions:default": "expat_default",
     }),
     visibility = ["//visibility:public"],
@@ -29,7 +29,9 @@ cmake(
     generate_args = ["-G\"NMake Makefiles\""],
     lib_name = LIB_NAME,
     lib_source = ":all_srcs",
+    out_include_dir = "include",
     out_static_libs = ["libexpatMT.lib"],
+    visibility = ["//visibility:public"],
 )
 
 configure_make(
@@ -42,9 +44,11 @@ configure_make(
     ],
     env = select({
         "@platforms//os:macos": {"AR": ""},
-        "//conditions:default": {},
+        "//conditions:default": {"AR": "/usr/bin/ar"},
     }),
     lib_name = LIB_NAME,
     lib_source = ":all_srcs",
+    out_include_dir = "include",
     out_static_libs = ["libexpat.a"],
+    visibility = ["//visibility:public"],
 )

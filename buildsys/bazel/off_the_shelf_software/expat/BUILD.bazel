@@ -1,0 +1,11 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+cc_library(
+	name = "expat_foreign_cc",
+	hdrs = [
+		"@libexpat//:expat/lib/expat.h",
+		"@libexpat//:expat/lib/expat_external.h",
+	],
+	deps = ["@libexpat//:libexpat"],
+	visibility = ["//visibility:public"],
+)

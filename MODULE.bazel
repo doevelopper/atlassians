@@ -113,5 +113,16 @@ apr_ext = use_extension(
 )
 use_repo(apr_ext, "org_apache_apr")
 
-# tensorrt_ext = use_extension("//third_party/tensorrt:extensions.bzl", "tensorrt_configure")
-# use_repo(tensorrt_ext, "local_config_tensorrt")
+# APR-util (Apache Portable Runtime Utility) — not in BCR, fetched via module extension
+apr_util_ext = use_extension(
+    "//buildsys/bazel/off_the_shelf_software/apr_util:apr_util_extension.bzl",
+    "apr_util_extension",
+)
+use_repo(apr_util_ext, "org_apache_apr_util")
+
+# log4cxx (Apache Logging for C++) — not in BCR, fetched via module extension
+log4cxx_ext = use_extension(
+    "//buildsys/bazel/off_the_shelf_software/log4cxx:log4cxx_extension.bzl",
+    "log4cxx_extension",
+)
+use_repo(log4cxx_ext, "org_apache_log4cxx")
