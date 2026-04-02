@@ -1,6 +1,6 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@rules_gherkin//gherkin:defs.bzl", "gherkin_test")
-load("@rules_gherkin//gherkin:defs.bzl", "gherkin_library")
+load("@rules_gherkin//gherkin:defs.bzl", "gherkin_library", "gherkin_test")
+load("//buildsys/bazel/starlark/rules/cc_bdd:defs.bzl", "cc_gherkin_steps")
 
 package(
     default_visibility = ["//visibility:public"],
@@ -32,7 +32,7 @@ cc_gherkin_steps(
         "com/github/doevelopper/atlassians/atlas/features/step_definitions/atlas.hpp",
     ],
     deps = [
-        "//com.github.doevelopper.atlassians.main.atlas",
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.atlas",
         "@cucumber-cpp//:cucumber-cpp",
         "@com_google_googletest//:gtest",
     ],
@@ -41,9 +41,9 @@ cc_gherkin_steps(
 
 gherkin_test(
     name = "com.github.doevelopper.atlassians.atlas.atp",
-    steps = "//src/it::com.github.doevelopper.atlassians.atlas-steps",
+    steps = "//src/it:com.github.doevelopper.atlassians.atlas-steps",
     deps = [
-        "//:com.github.doevelopper.atlassians.main.atlas",
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.atlas",
     ],
 )
 
@@ -62,7 +62,7 @@ cc_gherkin_steps(
         "com/github/doevelopper/atlassians/demo/features/step_definitions/Calculator.hpp",
     ],
     deps = [
-        "//com.github.doevelopper.atlassians.main.demo",
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.demo",
         "@cucumber-cpp//:cucumber-cpp",
         "@com_google_googletest//:gtest",
     ],
@@ -71,9 +71,9 @@ cc_gherkin_steps(
 
 gherkin_test(
     name = "com.github.doevelopper.atlassians.demo.atp",
-    steps = "//src/it::com.github.doevelopper.atlassians.demo-steps",
+    steps = "//src/it:com.github.doevelopper.atlassians.demo-steps",
     deps = [
-        "//:com.github.doevelopper.atlassians.main.demo",
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.demo",
     ],
 )
 

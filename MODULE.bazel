@@ -96,7 +96,7 @@ bazel_dep(name = "libexpat", version = "2.7.1.bcr.1")
 BOOST_VERSION = "1.90.0"
 # bazel_dep(name = "boost", version = "1.90.0")
 # bazel_dep(name = "boost.algorithm", version = BOOST_VERSION)
-# bazel_dep(name = "boost.asio", version = BOOST_VERSION)
+bazel_dep(name = "boost.asio", version = BOOST_VERSION)
 #
 # bazel_dep(name = "boost.bind", version = BOOST_VERSION)
 #
@@ -129,7 +129,7 @@ BOOST_VERSION = "1.90.0"
 # bazel_dep(name = "boost.polygon", version = BOOST_VERSION)
 # bazel_dep(name = "boost.property_tree", version = BOOST_VERSION)
 # bazel_dep(name = "boost.process", version = BOOST_VERSION)
-# bazel_dep(name = "boost.program_options", version = BOOST_VERSION)
+bazel_dep(name = "boost.program_options", version = BOOST_VERSION)
 # bazel_dep(name = "boost.property_map", version = BOOST_VERSION)
 # bazel_dep(name = "boost.statechart", version = BOOST_VERSION)
 # bazel_dep(name = "boost.stacktrace", version = BOOST_VERSION)
@@ -137,7 +137,7 @@ BOOST_VERSION = "1.90.0"
 # bazel_dep(name = "boost.spirit", version = BOOST_VERSION)
 # bazel_dep(name = "boost.static_assert", version = BOOST_VERSION)
 # bazel_dep(name = "boost.thread", version = BOOST_VERSION)
-# bazel_dep(name = "boost.type_traits", version = BOOST_VERSION)
+bazel_dep(name = "boost.type_traits", version = BOOST_VERSION)
 #
 # bazel_dep(name = "boost.uuid", version = BOOST_VERSION)
 # bazel_dep(name = "boost.variant", version = BOOST_VERSION)

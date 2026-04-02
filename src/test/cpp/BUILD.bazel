@@ -27,8 +27,6 @@ cc_library(
         "com/github/doevelopper/atlassians/utdriver/TestEventListener.hpp",
         "com/github/doevelopper/atlassians/utdriver/TestEventListenerConfigure.cpp",
         "com/github/doevelopper/atlassians/utdriver/TestEventListenerConfigure.hpp",
-        "main.cpp",
-
     ],
 
     copts = [
@@ -245,7 +243,7 @@ cc_test(
         "@bazel_tools//src/conditions:darwin": [],
     }),
     deps = [
-        "//src/test/cpp:com.github.doevelopper.atlassians.demo",
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.demo",
         "//src/test/cpp:com.github.doevelopper.atlassians.test",
     ],
 
@@ -443,14 +441,14 @@ cc_test(
     size = "small",
     srcs = [
         "main.cpp",
-        "com/github/doevelopper/atlassians/triada/ErrorCodeTest.cppp",
-        "com/github/doevelopper/atlassians/triada/ErrorCodeTest.hppp",
-        "com/github/doevelopper/atlassians/triada/ErrorStateMachineTest.cppp",
-        "com/github/doevelopper/atlassians/triada/ErrorStateMachineTest.hppp",
-        "com/github/doevelopper/atlassians/triada/ErrorTest.cppp",
-        "com/github/doevelopper/atlassians/triada/ErrorTest.hppp",
-        "com/github/doevelopper/atlassians/triada/RecoveryStrategyTest.cppp",
-        "com/github/doevelopper/atlassians/triada/RecoveryStrategyTest.hpp   p",
+        "com/github/doevelopper/atlassians/triada/ErrorCodeTest.cpp",
+        "com/github/doevelopper/atlassians/triada/ErrorCodeTest.hpp",
+        "com/github/doevelopper/atlassians/triada/ErrorStateMachineTest.cpp",
+        "com/github/doevelopper/atlassians/triada/ErrorStateMachineTest.hpp",
+        "com/github/doevelopper/atlassians/triada/ErrorTest.cpp",
+        "com/github/doevelopper/atlassians/triada/ErrorTest.hpp",
+        "com/github/doevelopper/atlassians/triada/RecoveryStrategyTest.cpp",
+        "com/github/doevelopper/atlassians/triada/RecoveryStrategyTest.hpp",
     ],
 
     copts = [
