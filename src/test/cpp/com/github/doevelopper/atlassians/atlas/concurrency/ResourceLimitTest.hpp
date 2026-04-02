@@ -2,10 +2,10 @@
 #ifndef COM_GITHUB_DOEVELOPPER_PREMISSES_ATLAS_CONCURRENCY_RESOURCELIMITTEST_HPP
 #define COM_GITHUB_DOEVELOPPER_PREMISSES_ATLAS_CONCURRENCY_RESOURCELIMITTEST_HPP
 
-#include <com/github/doevelopper/premisses/atlas/concurrency/Fixture.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/Fixture.hpp>
 
 
-namespace com::github::doevelopper::premisses::atlas::concurrency::test
+namespace com::github::doevelopper::atlassians::atlas::concurrency::test
 {
 
     class ResourceLimitTest : public DispatcherFixture

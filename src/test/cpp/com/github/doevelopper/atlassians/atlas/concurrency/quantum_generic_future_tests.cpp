@@ -13,9 +13,9 @@
 ** See the License for the specific language governing permissions and
 ** limitations under the License.
 */
-#include <com/github/doevelopper/premisses/atlas/concurrency/Dispatcher.hpp>
-#include <com/github/doevelopper/premisses/atlas/concurrency/util/GenericFuture.hpp>
-#include <com/github/doevelopper/premisses/atlas/concurrency/quantum_fixture.h>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/Dispatcher.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/util/GenericFuture.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/quantum_fixture.h>
 #include <gtest/gtest.h>
 #include <vector>
 

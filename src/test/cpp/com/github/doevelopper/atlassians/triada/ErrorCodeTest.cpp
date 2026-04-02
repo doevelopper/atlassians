@@ -8,22 +8,22 @@
  * Copyright (C) 2024 ACME Technology Corp. All rights reserved.
  */
 
-#include <com/github/doevelopper/premisses/triada/ErrorCodeTest.hpp>
+#include <com/github/doevelopper/atlassians/triada/ErrorCodeTest.hpp>
 
 #include <unordered_set>
 #include <sstream>
 
-using namespace com::github::doevelopper::premisses::triada;
-using namespace com::github::doevelopper::premisses::triada::test;
+using namespace com::github::doevelopper::atlassians::triada;
+using namespace com::github::doevelopper::atlassians::triada::test;
 
 log4cxx::LoggerPtr ErrorCodeTest::logger =
-    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.premisses.triada.test.ErrorCodeTest"));
+    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.atlassians.triada.test.ErrorCodeTest"));
 
 log4cxx::LoggerPtr ErrorSeverityTest::logger =
-    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.premisses.triada.test.ErrorSeverityTest"));
+    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.atlassians.triada.test.ErrorSeverityTest"));
 
 log4cxx::LoggerPtr ServiceIdTest::logger =
-    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.premisses.triada.test.ServiceIdTest"));
+    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.atlassians.triada.test.ServiceIdTest"));
 
 // ============================================
 // ErrorCodeTest Implementation

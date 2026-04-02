@@ -2,10 +2,10 @@
 #ifndef COM_GITHUB_DOEVELOPPER_NIGHT_OWL_QUANTUM_SEQUENCERTESTDATA_HPP
 #define COM_GITHUB_DOEVELOPPER_NIGHT_OWL_QUANTUM_SEQUENCERTESTDATA_HPP
 
-#include <com/github/doevelopper/premisses/atlas/concurrency/Fixture.hpp>
-#include <com/github/doevelopper/premisses/atlas/concurrency/quantum.h>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/Fixture.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/quantum.h>
 
-namespace com::github::doevelopper::premisses::atlas::concurrency::test
+namespace com::github::doevelopper::atlassians::atlas::concurrency::test
 {
 
     class SequencerTestData

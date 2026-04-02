@@ -6,14 +6,14 @@
  * Copyright (C) 2024 ACME Technology Corp. All rights reserved.
  */
 
-#include <com/github/doevelopper/premisses/licensing/LicenseStorageTest.hpp>
+#include <com/github/doevelopper/atlassians/licensing/LicenseStorageTest.hpp>
 #include <fstream>
 
-using namespace com::github::doevelopper::premisses::licensing;
-using namespace com::github::doevelopper::premisses::licensing::test;
+using namespace com::github::doevelopper::atlassians::licensing;
+using namespace com::github::doevelopper::atlassians::licensing::test;
 
 log4cxx::LoggerPtr LicenseStorageTest::logger =
-    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.premisses.licensing.test.LicenseStorageTest"));
+    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.atlassians.licensing.test.LicenseStorageTest"));
 
 LicenseStorageTest::LicenseStorageTest()
     : m_testDir(std::filesystem::temp_directory_path() / "license_storage_test")

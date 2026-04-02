@@ -2,9 +2,9 @@
 #ifndef CFS_OSAL_QUANTUM_CLEANUPTEST_HPP
 #define CFS_OSAL_QUANTUM_CLEANUPTEST_HPP
 
-#include <com/github/doevelopper/premisses/atlas/concurrency/Fixture.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/Fixture.hpp>
 
-namespace com::github::doevelopper::premisses::atlas::concurrency::test
+namespace com::github::doevelopper::atlassians::atlas::concurrency::test
 {
 
     class CleanupTest : public DispatcherFixture

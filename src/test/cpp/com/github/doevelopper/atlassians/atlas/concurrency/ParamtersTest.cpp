@@ -1,7 +1,7 @@
-#include <com/github/doevelopper/premisses/atlas/concurrency/ParamtersTest.hpp>
-#include <com/github/doevelopper/premisses/atlas/concurrency/interface/ICoroContext.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/ParamtersTest.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/interface/ICoroContext.hpp>
 
-using namespace com::github::doevelopper::premisses::atlas::concurrency::test;
+using namespace com::github::doevelopper::atlassians::atlas::concurrency::test;
 
 using ms = std::chrono::milliseconds;
 using us = std::chrono::microseconds;

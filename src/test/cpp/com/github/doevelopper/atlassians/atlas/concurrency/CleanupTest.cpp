@@ -1,14 +1,14 @@
-#include <com/github/doevelopper/premisses/atlas/concurrency/CleanupTest.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/CleanupTest.hpp>
 
 
-using namespace com::github::doevelopper::premisses::atlas::concurrency;
-using namespace com::github::doevelopper::premisses::atlas::concurrency::test;
+using namespace com::github::doevelopper::atlassians::atlas::concurrency;
+using namespace com::github::doevelopper::atlassians::atlas::concurrency::test;
 
 using ms = std::chrono::milliseconds;
 using us = std::chrono::microseconds;
 
 log4cxx::LoggerPtr CleanupTest::logger = 
-    log4cxx::Logger::getLogger ( std::string ( "com.github.doevelopper.premisses.atlas.concurrency.test.CleanupTest" ) );
+    log4cxx::Logger::getLogger ( std::string ( "com.github.doevelopper.atlassians.atlas.concurrency.test.CleanupTest" ) );
 
 CleanupTest::CleanupTest ( ) noexcept
 {

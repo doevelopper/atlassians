@@ -8,16 +8,16 @@
  * Copyright (C) 2024 ACME Technology Corp. All rights reserved.
  ********************************************************************/
 
-#include <com/github/doevelopper/premisses/launcher/args/CommandLineParserTest.hpp>
+#include <com/github/doevelopper/atlassians/launcher/args/CommandLineParserTest.hpp>
 
-namespace com::github::doevelopper::premisses::launcher::args::test
+namespace com::github::doevelopper::atlassians::launcher::args::test
 {
 
-using namespace com::github::doevelopper::premisses::launcher::args;
+using namespace com::github::doevelopper::atlassians::launcher::args;
 
 log4cxx::LoggerPtr CommandLineParserTest::logger =
     log4cxx::Logger::getLogger(std::string(
-        "com.github.doevelopper.premisses.launcher.args.test.CommandLineParserTest"));
+        "com.github.doevelopper.atlassians.launcher.args.test.CommandLineParserTest"));
 
 CommandLineParserTest::CommandLineParserTest()
     : m_parser(nullptr)
@@ -444,4 +444,4 @@ TEST_F(CommandLineParserTest, OptionValueStartingWithDash_ParsesCorrectly)
     EXPECT_TRUE(result.success);
 }
 
-}  // namespace com::github::doevelopper::premisses::launcher::args::test
+}  // namespace com::github::doevelopper::atlassians::launcher::args::test

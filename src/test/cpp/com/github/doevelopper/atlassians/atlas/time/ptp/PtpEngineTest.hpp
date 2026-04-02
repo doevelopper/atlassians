@@ -5,9 +5,9 @@
 
 #include <memory>
 
-#include <com/github/doevelopper/premisses/atlas/time/ptp/PtpEngine.hpp>
+#include <com/github/doevelopper/atlassians/atlas/time/ptp/PtpEngine.hpp>
 
-namespace com::github::doevelopper::premisses::atlas::time::ptp::test
+namespace com::github::doevelopper::atlassians::atlas::time::ptp::test
 {
 class PtpEngineTest : public ::testing::Test
 {
@@ -17,6 +17,6 @@ public:
 protected:
     std::unique_ptr<PtpEngine> engine;
 };
-} // namespace com::github::doevelopper::premisses::atlas::time::ptp::test
+} // namespace com::github::doevelopper::atlassians::atlas::time::ptp::test
 
 #endif // COM_GITHUB_DOEVELOPPER_PREMISSES_ATLAS_TIME_PTP_PTPENGINETEST_HPP

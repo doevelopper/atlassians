@@ -1,11 +1,11 @@
 
-#include <com/github/doevelopper/premisses/atlas/concurrency/DispatcherSingleton.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/DispatcherSingleton.hpp>
 
-using namespace com::github::doevelopper::premisses::atlas::concurrency;
-using namespace com::github::doevelopper::premisses::atlas::concurrency::test;
+using namespace com::github::doevelopper::atlassians::atlas::concurrency;
+using namespace com::github::doevelopper::atlassians::atlas::concurrency::test;
 
 log4cxx::LoggerPtr DispatcherSingleton::logger = 
-    log4cxx::Logger::getLogger ( std::string ( "com.github.doevelopper.premisses.atlas.concurrency.test.DispatcherSingleton" ) );
+    log4cxx::Logger::getLogger ( std::string ( "com.github.doevelopper.atlassians.atlas.concurrency.test.DispatcherSingleton" ) );
 
 using ms = std::chrono::milliseconds;
 using us = std::chrono::microseconds;

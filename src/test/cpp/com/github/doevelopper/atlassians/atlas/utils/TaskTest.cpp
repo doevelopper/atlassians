@@ -1,13 +1,13 @@
 
-#include <com/github/doevelopper/premisses/atlas/utils/TaskTest.hpp>
+#include <com/github/doevelopper/atlassians/atlas/utils/TaskTest.hpp>
 
 #include <gmock/gmock.h>
 
 #include <atomic>
 #include <stdexcept>
 
-using namespace com::github::doevelopper::premisses::atlas::utils;
-using namespace com::github::doevelopper::premisses::atlas::utils::test;
+using namespace com::github::doevelopper::atlassians::atlas::utils;
+using namespace com::github::doevelopper::atlassians::atlas::utils::test;
 
 namespace
 {
@@ -26,7 +26,7 @@ public:
 } // namespace
 
 // log4cxx::LoggerPtr TaskTest::logger =
-//     log4cxx::Logger::getLogger(std::string("com.github.doevelopper.premisses.atlas.utils.test.TaskTest"));
+//     log4cxx::Logger::getLogger(std::string("com.github.doevelopper.atlassians.atlas.utils.test.TaskTest"));
 
 TaskTest::TaskTest() : testee()
 {

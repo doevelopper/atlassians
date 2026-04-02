@@ -13,10 +13,10 @@
 
 #include <gtest/gtest.h>
 
-#include <com/github/doevelopper/premisses/launcher/args/DefaultConfiguration.hpp>
-#include <com/github/doevelopper/premisses/logging/LogMacros.hpp>
+#include <com/github/doevelopper/atlassians/launcher/args/DefaultConfiguration.hpp>
+#include <com/github/doevelopper/atlassians/logging/LogMacros.hpp>
 
-namespace com::github::doevelopper::premisses::launcher::args::test
+namespace com::github::doevelopper::atlassians::launcher::args::test
 {
     /**
      * @brief Test fixture for Configuration classes
@@ -47,6 +47,6 @@ namespace com::github::doevelopper::premisses::launcher::args::test
         std::unique_ptr<DefaultConfiguration> m_config;
     };
 
-}  // namespace com::github::doevelopper::premisses::launcher::args::test
+}  // namespace com::github::doevelopper::atlassians::launcher::args::test
 
 #endif  // COM_GITHUB_DOEVELOPPER_PREMISSES_LAUNCHER_ARGS_TEST_CONFIGURATIONTEST_HPP

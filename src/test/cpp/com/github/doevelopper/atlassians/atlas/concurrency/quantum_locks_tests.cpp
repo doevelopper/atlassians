@@ -21,8 +21,8 @@
 
 #include <gtest/gtest.h>
 
-#include <com/github/doevelopper/premisses/atlas/concurrency/quantum_fixture.h>
-#include <com/github/doevelopper/premisses/atlas/concurrency/quantum.h>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/quantum_fixture.h>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/quantum.h>
 
 using namespace Bloomberg::quantum;
 using us = std::chrono::microseconds;

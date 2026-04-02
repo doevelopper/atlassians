@@ -6,13 +6,13 @@
  * Copyright (C) 2024 ACME Technology Corp. All rights reserved.
  */
 
-#include <com/github/doevelopper/premisses/licensing/LicenseManagerTest.hpp>
+#include <com/github/doevelopper/atlassians/licensing/LicenseManagerTest.hpp>
 
-using namespace com::github::doevelopper::premisses::licensing;
-using namespace com::github::doevelopper::premisses::licensing::test;
+using namespace com::github::doevelopper::atlassians::licensing;
+using namespace com::github::doevelopper::atlassians::licensing::test;
 
 log4cxx::LoggerPtr LicenseManagerTest::logger =
-    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.premisses.licensing.test.LicenseManagerTest"));
+    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.atlassians.licensing.test.LicenseManagerTest"));
 
 LicenseManagerTest::LicenseManagerTest()
     : m_testDir(std::filesystem::temp_directory_path() / "license_manager_test")

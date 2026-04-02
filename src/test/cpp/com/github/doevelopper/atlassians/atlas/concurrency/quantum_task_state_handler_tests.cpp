@@ -18,8 +18,8 @@
 #include <atomic>
 
 #include <gtest/gtest.h>
-#include <com/github/doevelopper/premisses/atlas/concurrency/quantum.h>
-#include <com/github/doevelopper/premisses/atlas/concurrency/quantum_fixture.h>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/quantum.h>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/quantum_fixture.h>
 
 
 namespace {

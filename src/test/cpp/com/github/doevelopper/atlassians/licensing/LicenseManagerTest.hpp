@@ -11,11 +11,11 @@
 
 #include <gtest/gtest.h>
 
-#include <com/github/doevelopper/premisses/licensing/FileLicenseStorage.hpp>
-#include <com/github/doevelopper/premisses/licensing/LicenseManager.hpp>
-#include <com/github/doevelopper/premisses/logging/LogMacros.hpp>
+#include <com/github/doevelopper/atlassians/licensing/FileLicenseStorage.hpp>
+#include <com/github/doevelopper/atlassians/licensing/LicenseManager.hpp>
+#include <com/github/doevelopper/atlassians/logging/LogMacros.hpp>
 
-namespace com::github::doevelopper::premisses::licensing::test
+namespace com::github::doevelopper::atlassians::licensing::test
 {
 
 /**
@@ -66,6 +66,6 @@ public:
     int validationCount{0};
 };
 
-} // namespace com::github::doevelopper::premisses::licensing::test
+} // namespace com::github::doevelopper::atlassians::licensing::test
 
 #endif // COM_GITHUB_DOEVELOPPER_PREMISSES_LICENSING_LICENSEMANAGERTEST_HPP

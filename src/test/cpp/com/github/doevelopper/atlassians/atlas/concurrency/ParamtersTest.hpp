@@ -1,10 +1,10 @@
 
 #ifndef CFS_OSAL_QUANTUM_PARAMTERSTEST_HPP
 #define CFS_OSAL_QUANTUM_PARAMTERSTEST_HPP
-#include <com/github/doevelopper/premisses/atlas/concurrency/quantum.h>
-#include <com/github/doevelopper/premisses/atlas/concurrency/Fixture.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/quantum.h>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/Fixture.hpp>
 
-namespace com::github::doevelopper::premisses::atlas::concurrency::test
+namespace com::github::doevelopper::atlassians::atlas::concurrency::test
 {
 
     class ParamtersTest : public DispatcherFixture

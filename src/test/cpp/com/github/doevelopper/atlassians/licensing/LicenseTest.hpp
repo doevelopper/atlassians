@@ -11,11 +11,11 @@
 
 #include <gtest/gtest.h>
 
-#include <com/github/doevelopper/premisses/licensing/License.hpp>
-#include <com/github/doevelopper/premisses/licensing/LicenseTypes.hpp>
-#include <com/github/doevelopper/premisses/logging/LogMacros.hpp>
+#include <com/github/doevelopper/atlassians/licensing/License.hpp>
+#include <com/github/doevelopper/atlassians/licensing/LicenseTypes.hpp>
+#include <com/github/doevelopper/atlassians/logging/LogMacros.hpp>
 
-namespace com::github::doevelopper::premisses::licensing::test
+namespace com::github::doevelopper::atlassians::licensing::test
 {
 
 /**
@@ -53,6 +53,6 @@ protected:
     [[nodiscard]] auto createLicenseWithFeatures(const std::vector<std::string>& features) const -> License;
 };
 
-} // namespace com::github::doevelopper::premisses::licensing::test
+} // namespace com::github::doevelopper::atlassians::licensing::test
 
 #endif // COM_GITHUB_DOEVELOPPER_PREMISSES_LICENSING_LICENSETEST_HPP

@@ -1,18 +1,18 @@
 
 #include <unordered_set>
-#include <com/github/doevelopper/premisses/atlas/concurrency/TaskIdTest.hpp>
-// #include <com/github/doevelopper/premisses/atlas/concurrency/Configuration.hpp>
-// #include <com/github/doevelopper/premisses/atlas/concurrency/Dispatcher.hpp>
-// #include <com/github/doevelopper/premisses/atlas/concurrency/Context.hpp>
-// #include <com/github/doevelopper/premisses/atlas/concurrency/Traits.hpp>
-// #include <com/github/doevelopper/premisses/atlas/concurrency/interface/ICoroContext.hpp>
-#include <com/github/doevelopper/premisses/atlas/concurrency/quantum.h>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/TaskIdTest.hpp>
+// #include <com/github/doevelopper/atlassians/atlas/concurrency/Configuration.hpp>
+// #include <com/github/doevelopper/atlassians/atlas/concurrency/Dispatcher.hpp>
+// #include <com/github/doevelopper/atlassians/atlas/concurrency/Context.hpp>
+// #include <com/github/doevelopper/atlassians/atlas/concurrency/Traits.hpp>
+// #include <com/github/doevelopper/atlassians/atlas/concurrency/interface/ICoroContext.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/quantum.h>
 
-using namespace com::github::doevelopper::premisses::atlas::concurrency;
-using namespace com::github::doevelopper::premisses::atlas::concurrency::test;
+using namespace com::github::doevelopper::atlassians::atlas::concurrency;
+using namespace com::github::doevelopper::atlassians::atlas::concurrency::test;
 
 log4cxx::LoggerPtr TaskIdTest::logger =
-    log4cxx::Logger::getLogger ( std::string ( "com.github.doevelopper.premisses.atlas.concurrency.test.TaskIdTest" ) );
+    log4cxx::Logger::getLogger ( std::string ( "com.github.doevelopper.atlassians.atlas.concurrency.test.TaskIdTest" ) );
 
 TaskIdTest::TaskIdTest()
     : testee ()

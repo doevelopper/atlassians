@@ -6,20 +6,20 @@
  * Copyright (C) 2024 ACME Technology Corp. All rights reserved.
  ********************************************************************/
 
-#include <com/github/doevelopper/premisses/launcher/fsm/ApplicationFSMTest.hpp>
+#include <com/github/doevelopper/atlassians/launcher/fsm/ApplicationFSMTest.hpp>
 
 #include <thread>
 #include <chrono>
 
-using namespace com::github::doevelopper::premisses::launcher::fsm;
-using namespace com::github::doevelopper::premisses::launcher::fsm::test;
+using namespace com::github::doevelopper::atlassians::launcher::fsm;
+using namespace com::github::doevelopper::atlassians::launcher::fsm::test;
 
 // ============================================
 // Test Fixture Implementation
 // ============================================
 
 log4cxx::LoggerPtr ApplicationFSMTest::logger =
-    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.premisses.launcher.fsm.test.ApplicationFSMTest"));
+    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.atlassians.launcher.fsm.test.ApplicationFSMTest"));
 
 ApplicationFSMTest::ApplicationFSMTest()
     : m_targetUnderTest(nullptr)

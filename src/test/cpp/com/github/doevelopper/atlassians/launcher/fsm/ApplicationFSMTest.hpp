@@ -12,10 +12,10 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include <com/github/doevelopper/premisses/launcher/fsm/ApplicationFSM.hpp>
-#include <com/github/doevelopper/premisses/logging/LogMacros.hpp>
+#include <com/github/doevelopper/atlassians/launcher/fsm/ApplicationFSM.hpp>
+#include <com/github/doevelopper/atlassians/logging/LogMacros.hpp>
 
-namespace com::github::doevelopper::premisses::launcher::fsm::test
+namespace com::github::doevelopper::atlassians::launcher::fsm::test
 {
     /**
      * @brief Test fixture for ApplicationFSM tests
@@ -75,6 +75,6 @@ namespace com::github::doevelopper::premisses::launcher::fsm::test
                          std::chrono::milliseconds timeout = std::chrono::milliseconds{1000}) -> bool;
     };
 
-} // namespace com::github::doevelopper::premisses::launcher::fsm::test
+} // namespace com::github::doevelopper::atlassians::launcher::fsm::test
 
 #endif // COM_GITHUB_DOEVELOPPER_PREMISSES_LAUNCHER_FSM_APPLICATIONFSMTEST_HPP

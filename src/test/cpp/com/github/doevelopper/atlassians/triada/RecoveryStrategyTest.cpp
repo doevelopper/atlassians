@@ -8,22 +8,22 @@
  * Copyright (C) 2024 ACME Technology Corp. All rights reserved.
  */
 
-#include <com/github/doevelopper/premisses/triada/RecoveryStrategyTest.hpp>
+#include <com/github/doevelopper/atlassians/triada/RecoveryStrategyTest.hpp>
 
 #include <thread>
 #include <atomic>
 
-using namespace com::github::doevelopper::premisses::triada;
-using namespace com::github::doevelopper::premisses::triada::test;
+using namespace com::github::doevelopper::atlassians::triada;
+using namespace com::github::doevelopper::atlassians::triada::test;
 
 log4cxx::LoggerPtr RetryPolicyTest::logger =
-    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.premisses.triada.test.RetryPolicyTest"));
+    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.atlassians.triada.test.RetryPolicyTest"));
 
 log4cxx::LoggerPtr CircuitBreakerTest::logger =
-    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.premisses.triada.test.CircuitBreakerTest"));
+    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.atlassians.triada.test.CircuitBreakerTest"));
 
 log4cxx::LoggerPtr FallbackChainTest::logger =
-    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.premisses.triada.test.FallbackChainTest"));
+    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.atlassians.triada.test.FallbackChainTest"));
 
 // ============================================
 // RetryPolicyTest Implementation

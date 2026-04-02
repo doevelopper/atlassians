@@ -14,7 +14,7 @@
 ** limitations under the License.
 */
 
-#include <com/github/doevelopper/premisses/atlas/concurrency/quantum_perf_utils.h>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/quantum_perf_utils.h>
 
 #ifdef __linux__
 #include <sstream>

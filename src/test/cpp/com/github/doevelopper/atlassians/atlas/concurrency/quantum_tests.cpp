@@ -14,7 +14,7 @@
 ** limitations under the License.
 */
 #include <gtest/gtest.h>
-#include <com/github/doevelopper/premisses/atlas/concurrency/quantum_fixture.h>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/quantum_fixture.h>
 #include <stdexcept>
 #include <vector>
 #include <set>

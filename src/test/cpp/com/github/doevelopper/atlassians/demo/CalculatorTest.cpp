@@ -1,12 +1,12 @@
-#include <com/github/doevelopper/premisses/demo/CalculatorTest.hpp>
+#include <com/github/doevelopper/atlassians/demo/CalculatorTest.hpp>
 
 #include <cmath>
 
-using namespace com::github::doevelopper::premisses::demo;
-using namespace com::github::doevelopper::premisses::demo::test;
+using namespace com::github::doevelopper::atlassians::demo;
+using namespace com::github::doevelopper::atlassians::demo::test;
 
 // log4cxx::LoggerPtr CalculatorTest::logger =
-//     log4cxx::Logger::getLogger(std::string("com.github.doevelopper.premisses.demo.test.CalculatorTest"));
+//     log4cxx::Logger::getLogger(std::string("com.github.doevelopper.atlassians.demo.test.CalculatorTest"));
 
 CalculatorTest::CalculatorTest()
     : m_targetUnderTest(nullptr)

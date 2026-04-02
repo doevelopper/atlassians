@@ -2,14 +2,14 @@
 #define COM_GITHUB_DOEVELOPPER_NIGHT_OWL_QUANTUM_AUXILIARYTEST_HPP
 
 #include <gtest/gtest.h>
-#include <com/github/doevelopper/premisses/atlas/concurrency/Auxiliary.hpp>
-#include <com/github/doevelopper/premisses/logging/LogMacros.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/Auxiliary.hpp>
+#include <com/github/doevelopper/atlassians/logging/LogMacros.hpp>
 
 #include <condition_variable>
 #include <functional>
 #include <mutex>
 
-namespace com::github::doevelopper::premisses::atlas::concurrency::test
+namespace com::github::doevelopper::atlassians::atlas::concurrency::test
 {
 
     class AuxiliaryTest  : public ::testing::Test

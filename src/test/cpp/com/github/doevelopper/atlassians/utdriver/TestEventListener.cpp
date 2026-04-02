@@ -8,16 +8,16 @@
  * Copyright (C) 2024 ACME Technology Corp. All rights reserved.
  ********************************************************************/
 
-#include <com/github/doevelopper/premisses/utdriver/TestEventListener.hpp>
+#include <com/github/doevelopper/atlassians/utdriver/TestEventListener.hpp>
 
 #include <iomanip>
 #include <sstream>
 
-using namespace com::github::doevelopper::premisses::utdriver;
+using namespace com::github::doevelopper::atlassians::utdriver;
 
 // Initialize static logger
 log4cxx::LoggerPtr TestEventListener::logger =
-    log4cxx::Logger::getLogger("com.github.doevelopper.premisses.utdriver.TestEventListener");
+    log4cxx::Logger::getLogger("com.github.doevelopper.atlassians.utdriver.TestEventListener");
 
 // ============================================
 // Constructors & Destructor

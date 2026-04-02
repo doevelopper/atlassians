@@ -1,10 +1,10 @@
-#include<com/github/doevelopper/premisses/atlas/concurrency/TestTaskStateHandlerPrivate.hpp>
+#include<com/github/doevelopper/atlassians/atlas/concurrency/TestTaskStateHandlerPrivate.hpp>
 #include <gmock/gmock.h>
-using namespace com::github::doevelopper::premisses::atlas::concurrency:
-using namespace com::github::doevelopper::premisses::atlas::concurrency::test;
+using namespace com::github::doevelopper::atlassians::atlas::concurrency:
+using namespace com::github::doevelopper::atlassians::atlas::concurrency::test;
 
 log4cxx::LoggerPtr TestTaskStateHandlerPrivate::logger =
-    log4cxx::Logger::getLogger ( std::string ( "com.github.doevelopper.premisses.atlas.concurrency.test.TestTaskStateHandlerPrivate" ) );
+    log4cxx::Logger::getLogger ( std::string ( "com.github.doevelopper.atlassians.atlas.concurrency.test.TestTaskStateHandlerPrivate" ) );
 
 TestTaskStateHandlerPrivate::TestTaskStateHandlerPrivate() noexcept
 {

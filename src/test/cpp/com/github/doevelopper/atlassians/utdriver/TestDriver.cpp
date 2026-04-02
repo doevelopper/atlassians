@@ -16,18 +16,18 @@
 
 #include <gmock/gmock.h>
 
-#include <com/github/doevelopper/premisses/utdriver/TestDriver.hpp>
-#include <com/github/doevelopper/premisses/utdriver/TestEventListener.hpp>
-#include <com/github/doevelopper/premisses/utdriver/TestEventListenerConfigure.hpp>
-#include <com/github/doevelopper/premisses/utdriver/CustomTestEnvironment.hpp>
-#include <com/github/doevelopper/premisses/logging/DefaultInitializationStrategy.hpp>
+#include <com/github/doevelopper/atlassians/utdriver/TestDriver.hpp>
+#include <com/github/doevelopper/atlassians/utdriver/TestEventListener.hpp>
+#include <com/github/doevelopper/atlassians/utdriver/TestEventListenerConfigure.hpp>
+#include <com/github/doevelopper/atlassians/utdriver/CustomTestEnvironment.hpp>
+#include <com/github/doevelopper/atlassians/logging/DefaultInitializationStrategy.hpp>
 
-using namespace com::github::doevelopper::premisses::utdriver;
-using namespace com::github::doevelopper::premisses::logging;
+using namespace com::github::doevelopper::atlassians::utdriver;
+using namespace com::github::doevelopper::atlassians::logging;
 
 // Initialize static logger
 log4cxx::LoggerPtr TestDriver::logger =
-    log4cxx::Logger::getLogger("com.github.doevelopper.premisses.utdriver.TestDriver");
+    log4cxx::Logger::getLogger("com.github.doevelopper.atlassians.utdriver.TestDriver");
 
 // ============================================
 // TestDriver Implementation

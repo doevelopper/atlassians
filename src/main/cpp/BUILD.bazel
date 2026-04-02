@@ -117,8 +117,8 @@ cc_library(
         "//conditions:default": [],
     }),
     copts = ["-DLOG_LEVEL=1"] + select({
-        "@bazel_tools//src/conditions:windows": ["/std:c++17"],
-        "//conditions:default": ["-D_REENTRANT", "-fPIC"],
+        "@bazel_tools//src/conditions:windows": ["/std:c++20"],
+        "//conditions:default": ["-D_REENTRANT", "-fPIC" ,"-std=c++20"],
     }),
     features = select({
         "@bazel_tools//src/conditions:windows": ["windows_export_all_symbols"],
@@ -197,8 +197,8 @@ cc_library(
         "//conditions:default": [],
     }),
     copts = ["-DLOG_LEVEL=1"] + select({
-        "@bazel_tools//src/conditions:windows": ["/std:c++17"],
-        "//conditions:default": ["-D_REENTRANT", "-fPIC"],
+        "@bazel_tools//src/conditions:windows": ["/std:c++23"],
+        "//conditions:default": ["-D_REENTRANT", "-fPIC", "-std=c++23"],
     }),
     features = select({
         "@bazel_tools//src/conditions:windows": ["windows_export_all_symbols"],
@@ -212,7 +212,9 @@ cc_library(
     }),
     deps = [
         "@boost.asio//:boost.asio",
+        "@boost.program_options//:boost.program_options",
         "//src/main/cpp:com.github.doevelopper.atlassians.main.logging",
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.semver",
         # TODO: Add rapidjson and other boost libs when configured
     ],
     visibility = ["//visibility:public"],
@@ -484,7 +486,6 @@ cc_library(
     name = "com.github.doevelopper.atlassians.main.plugin",
 
     srcs = [
-        "com/github/doevelopper/atlassians/atlas/utils/Task.cpp",
         "com/github/doevelopper/atlassians/plugin/communication/EventBus.cpp",
         "com/github/doevelopper/atlassians/plugin/communication/EventBus.hpp",
         "com/github/doevelopper/atlassians/plugin/context/PluginContext.cpp",
@@ -503,8 +504,8 @@ cc_library(
         "com/github/doevelopper/atlassians/plugin/core/PluginExport.hpp",
         "com/github/doevelopper/atlassians/plugin/core/PluginTypes.cpp",
         "com/github/doevelopper/atlassians/plugin/core/PluginTypes.hpp",
-        "com/github/doevelopper/atlassians/plugin/examples/SimpleCalculatorPlugin.cpp",
-        "com/github/doevelopper/atlassians/plugin/examples/SimpleCalculatorPlugin.hpp",
+        # "com/github/doevelopper/atlassians/plugin/examples/SimpleCalculatorPlugin.cpp",
+        # "com/github/doevelopper/atlassians/plugin/examples/SimpleCalculatorPlugin.hpp",
         "com/github/doevelopper/atlassians/plugin/loader/DynamicLibraryLoader.cpp",
         "com/github/doevelopper/atlassians/plugin/loader/DynamicLibraryLoader.hpp",
         "com/github/doevelopper/atlassians/plugin/manager/PluginManager.cpp",
@@ -522,8 +523,8 @@ cc_library(
         "//conditions:default": [],
     }),
     copts = ["-DLOG_LEVEL=1"] + select({
-        "@bazel_tools//src/conditions:windows": ["/std:c++17"],
-        "//conditions:default": ["-D_REENTRANT", "-fPIC"],
+        "@bazel_tools//src/conditions:windows": ["/std:c++23"],
+        "//conditions:default": ["-D_REENTRANT", "-fPIC", "-std=c++23"],
     }),
     features = select({
         "@bazel_tools//src/conditions:windows": ["windows_export_all_symbols"],
@@ -569,7 +570,7 @@ cc_library(
     }),
     copts = ["-DLOG_LEVEL=1"] + select({
         "@bazel_tools//src/conditions:windows": ["/std:c++17"],
-        "//conditions:default": ["-D_REENTRANT", "-fPIC"],
+        "//conditions:default": ["-D_REENTRANT", "-fPIC", "-std=c++17"],
     }),
     features = select({
         "@bazel_tools//src/conditions:windows": ["windows_export_all_symbols"],

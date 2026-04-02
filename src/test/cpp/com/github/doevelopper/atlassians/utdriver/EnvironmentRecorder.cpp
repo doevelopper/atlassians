@@ -1,11 +1,11 @@
 
-#include <com/github/doevelopper/premisses/utdriver/EnvironmentRecorder.hpp>
+#include <com/github/doevelopper/atlassians/utdriver/EnvironmentRecorder.hpp>
 
-using namespace com::github::doevelopper::premisses::utdriver;
+using namespace com::github::doevelopper::atlassians::utdriver;
 
 // Initialize static logger
 log4cxx::LoggerPtr EnvironmentRecorder::logger =
-    log4cxx::Logger::getLogger("com.github.doevelopper.premisses.utdriver.EnvironmentRecorder");
+    log4cxx::Logger::getLogger("com.github.doevelopper.atlassians.utdriver.EnvironmentRecorder");
 
 EnvironmentRecorder::EnvironmentRecorder() noexcept
 {

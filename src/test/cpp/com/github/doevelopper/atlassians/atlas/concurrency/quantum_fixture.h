@@ -18,7 +18,7 @@
 
 #include <gtest/gtest.h>
 
-#include <com/github/doevelopper/premisses/atlas/concurrency/quantum.h>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/quantum.h>
 
 #include <unordered_map>
 #include <memory>

@@ -8,7 +8,7 @@
  * Copyright (C) 2024 ACME Technology Corp. All rights reserved.
  ********************************************************************/
 
-#include <com/github/doevelopper/premisses/utdriver/CustomTestEnvironment.hpp>
+#include <com/github/doevelopper/atlassians/utdriver/CustomTestEnvironment.hpp>
 
 #include <chrono>
 #include <cstdlib>
@@ -16,11 +16,11 @@
 #include <random>
 #include <sstream>
 
-using namespace com::github::doevelopper::premisses::utdriver;
+using namespace com::github::doevelopper::atlassians::utdriver;
 
 // Initialize static logger
 log4cxx::LoggerPtr CustomTestEnvironment::logger =
-    log4cxx::Logger::getLogger("com.github.doevelopper.premisses.utdriver.CustomTestEnvironment");
+    log4cxx::Logger::getLogger("com.github.doevelopper.atlassians.utdriver.CustomTestEnvironment");
 
 // ============================================
 // Constructors & Destructor

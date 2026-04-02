@@ -2,12 +2,12 @@
 #ifndef COM_GITHUB_DOEVELOPPER_NIGHT_OWL_QUANTUM_TESTSEQUENCERPERFORMANCE_HPP
 #define COM_GITHUB_DOEVELOPPER_NIGHT_OWL_QUANTUM_TESTSEQUENCERPERFORMANCE_HPP
 
-#include <com/github/doevelopper/premisses/logging/LogMacros.hpp>
-#include <com/github/doevelopper/premisses/atlas/concurrency/Dispatcher.hpp>
+#include <com/github/doevelopper/atlassians/logging/LogMacros.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/Dispatcher.hpp>
 #include <condition_variable>
 #include <mutex>
 
-namespace com::github::doevelopper::premisses::atlas::concurrency::test
+namespace com::github::doevelopper::atlassians::atlas::concurrency::test
 {
     struct ProcStats
     {

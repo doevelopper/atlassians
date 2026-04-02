@@ -1,11 +1,11 @@
 
-#include <com/github/doevelopper/premisses/atlas/concurrency/SequencerTest.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/SequencerTest.hpp>
 
-using namespace com::github::doevelopper::premisses::atlas::concurrency;
-using namespace com::github::doevelopper::premisses::atlas::concurrency::test;
+using namespace com::github::doevelopper::atlassians::atlas::concurrency;
+using namespace com::github::doevelopper::atlassians::atlas::concurrency::test;
 
 log4cxx::LoggerPtr SequencerTest::logger =
-    log4cxx::Logger::getLogger ( std::string ( "com.github.doevelopper.premisses.atlas.concurrency.test.SequencerTest" ) );
+    log4cxx::Logger::getLogger ( std::string ( "com.github.doevelopper.atlassians.atlas.concurrency.test.SequencerTest" ) );
 
 SequencerTest::SequencerTest()
     // : testee ()

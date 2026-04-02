@@ -8,16 +8,16 @@
  * Copyright (C) 2024 ACME Technology Corp. All rights reserved.
  ********************************************************************/
 
-#include <com/github/doevelopper/premisses/utdriver/TestEventListenerConfigure.hpp>
+#include <com/github/doevelopper/atlassians/utdriver/TestEventListenerConfigure.hpp>
 
-using namespace com::github::doevelopper::premisses::utdriver;
+using namespace com::github::doevelopper::atlassians::utdriver;
 
 // Initialize static loggers
 log4cxx::LoggerPtr TestEventListenerConfigure::logger =
-    log4cxx::Logger::getLogger("com.github.doevelopper.premisses.utdriver.TestEventListenerConfigure");
+    log4cxx::Logger::getLogger("com.github.doevelopper.atlassians.utdriver.TestEventListenerConfigure");
 
 log4cxx::LoggerPtr TestEventListenerConfigure::Delegate::logger =
-    log4cxx::Logger::getLogger("com.github.doevelopper.premisses.utdriver.TestEventListenerConfigure.Delegate");
+    log4cxx::Logger::getLogger("com.github.doevelopper.atlassians.utdriver.TestEventListenerConfigure.Delegate");
 
 // ============================================
 // Delegate Builder Implementation

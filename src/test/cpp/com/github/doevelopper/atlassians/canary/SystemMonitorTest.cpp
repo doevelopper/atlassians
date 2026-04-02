@@ -1,7 +1,7 @@
 #include "SystemMonitorTest.hpp"
 
-using namespace com::github::doevelopper::premisses::canary;
-using namespace com::github::doevelopper::premisses::canary::test;
+using namespace com::github::doevelopper::atlassians::canary;
+using namespace com::github::doevelopper::atlassians::canary::test;
 using ::testing::_;
 using ::testing::AtLeast;
 

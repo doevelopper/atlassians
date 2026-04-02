@@ -32,7 +32,7 @@
 #include <gtest/gtest.h>
 #include <log4cxx/logger.h>
 
-namespace com::github::doevelopper::premisses::utdriver
+namespace com::github::doevelopper::atlassians::utdriver
 {
     /**
      * @class TestEventListenerConfigure
@@ -304,6 +304,6 @@ namespace com::github::doevelopper::premisses::utdriver
         static log4cxx::LoggerPtr logger;
     };
 
-}  // namespace com::github::doevelopper::premisses::utdriver
+}  // namespace com::github::doevelopper::atlassians::utdriver
 
 #endif  // COM_GITHUB_DOEVELOPPER_PREMISSES_UTDRIVER_TESTEVENTLISTENERCONFIGURE_HPP

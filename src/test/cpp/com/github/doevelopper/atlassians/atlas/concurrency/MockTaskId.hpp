@@ -3,10 +3,10 @@
 #define COM_GITHUB_DOEVELOPPER_NIGHT_QUANTUM_MOCKTASKID_HPP
 
 
-#include <com/github/doevelopper/premisses/logging/LogMacros.hpp>
-#include <com/github/doevelopper/premisses/atlas/concurrency/TaskId.hpp>
+#include <com/github/doevelopper/atlassians/logging/LogMacros.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/TaskId.hpp>
 
-namespace com::github::doevelopper::premisses::atlas::concurrency::test
+namespace com::github::doevelopper::atlassians::atlas::concurrency::test
 {
 
     class MockTaskId : public Bloomberg::quantum::TaskId

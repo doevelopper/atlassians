@@ -16,7 +16,7 @@
 #ifndef BLOOMBERG_QUANTUM_SEQUENCER_TEST_COMMON_H
 #define BLOOMBERG_QUANTUM_SEQUENCER_TEST_COMMON_H
 
-#include <com/github/doevelopper/premisses/atlas/concurrency/quantum_perf_utils.h>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/quantum_perf_utils.h>
 #include <chrono>
 #include <iostream>
 #include <atomic>

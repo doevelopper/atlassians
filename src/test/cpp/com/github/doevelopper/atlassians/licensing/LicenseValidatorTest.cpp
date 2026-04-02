@@ -6,13 +6,13 @@
  * Copyright (C) 2024 ACME Technology Corp. All rights reserved.
  */
 
-#include <com/github/doevelopper/premisses/licensing/LicenseValidatorTest.hpp>
+#include <com/github/doevelopper/atlassians/licensing/LicenseValidatorTest.hpp>
 
-using namespace com::github::doevelopper::premisses::licensing;
-using namespace com::github::doevelopper::premisses::licensing::test;
+using namespace com::github::doevelopper::atlassians::licensing;
+using namespace com::github::doevelopper::atlassians::licensing::test;
 
 log4cxx::LoggerPtr LicenseValidatorTest::logger =
-    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.premisses.licensing.test.LicenseValidatorTest"));
+    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.atlassians.licensing.test.LicenseValidatorTest"));
 
 LicenseValidatorTest::LicenseValidatorTest()
 {

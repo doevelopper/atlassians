@@ -2,13 +2,13 @@
 #ifndef COM_GITHUB_DOEVELOPPER_NIGHT_OWL_QUANTUM_TESTCONFIGURATION_HPP
 #define COM_GITHUB_DOEVELOPPER_NIGHT_OWL_QUANTUM_TESTCONFIGURATION_HPP
 
-#include <com/github/doevelopper/premisses/logging/LogMacros.hpp>
-#include <com/github/doevelopper/premisses/atlas/concurrency/TaskStateHandler.hpp>
-#include <com/github/doevelopper/premisses/atlas/concurrency/util/LocalVariableGuard.hpp>
+#include <com/github/doevelopper/atlassians/logging/LogMacros.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/TaskStateHandler.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/util/LocalVariableGuard.hpp>
 #include <condition_variable>
 #include <mutex>
 
-namespace com::github::doevelopper::premisses::atlas::concurrency::test
+namespace com::github::doevelopper::atlassians::atlas::concurrency::test
 {
     class TestConfiguration
     {
@@ -48,9 +48,9 @@ namespace com::github::doevelopper::premisses::atlas::concurrency::test
 namespace std 
 {
     template<> 
-    struct hash<com::github::doevelopper::premisses::atlas::concurrency::test::TestConfiguration>
+    struct hash<com::github::doevelopper::atlassians::atlas::concurrency::test::TestConfiguration>
     {
-        size_t operator()(const com::github::doevelopper::premisses::atlas::concurrency::test::TestConfiguration & x) const
+        size_t operator()(const com::github::doevelopper::atlassians::atlas::concurrency::test::TestConfiguration & x) const
         {
             return std::hash<bool>()(x.loadBalance()) +
                 std::hash<bool>()(x.coroutineSharingForAny());

@@ -3,9 +3,9 @@
 #define COM_GITHUB_DOEVELOPPER_NIGHT_OWL_TASKIDTEST_HPP
 
 #include <gmock/gmock.h>
-#include <com/github/doevelopper/premisses/atlas/concurrency/MockTaskId.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/MockTaskId.hpp>
 
-namespace com::github::doevelopper::premisses::atlas::concurrency::test
+namespace com::github::doevelopper::atlassians::atlas::concurrency::test
 {
     class TaskIdTest : public ::testing::Test
     {

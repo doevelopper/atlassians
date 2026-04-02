@@ -1,12 +1,12 @@
 
-#include <com/github/doevelopper/premisses/atlas/concurrency/AuxiliaryTest.hpp>
-#include <com/github/doevelopper/premisses/atlas/concurrency/TaskStateHandler.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/AuxiliaryTest.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/TaskStateHandler.hpp>
 
-using namespace com::github::doevelopper::premisses::atlas::concurrency;
-using namespace com::github::doevelopper::premisses::atlas::concurrency::test;
+using namespace com::github::doevelopper::atlassians::atlas::concurrency;
+using namespace com::github::doevelopper::atlassians::atlas::concurrency::test;
 
 log4cxx::LoggerPtr AuxiliaryTest::logger =
-    log4cxx::Logger::getLogger ( std::string ( "com.github.doevelopper.premisses.atlas.concurrency.test.AuxiliaryTest" ) );
+    log4cxx::Logger::getLogger ( std::string ( "com.github.doevelopper.atlassians.atlas.concurrency.test.AuxiliaryTest" ) );
 
 AuxiliaryTest::AuxiliaryTest ( ) noexcept
 

@@ -6,9 +6,9 @@
 
 #include <memory>
 
-#include <com/github/doevelopper/premisses/atlas/utils/Task.hpp>
+#include <com/github/doevelopper/atlassians/atlas/utils/Task.hpp>
 
-namespace com::github::doevelopper::premisses::atlas::utils::test
+namespace com::github::doevelopper::atlassians::atlas::utils::test
 {
 class TaskTest : public ::testing::Test
 {
@@ -26,8 +26,8 @@ public:
 
 protected:
 private:
-    std::unique_ptr<com::github::doevelopper::premisses::atlas::utils::Task> testee;
+    std::unique_ptr<com::github::doevelopper::atlassians::atlas::utils::Task> testee;
 };
-} // namespace com::github::doevelopper::premisses::atlas::utils::test
+} // namespace com::github::doevelopper::atlassians::atlas::utils::test
 
 #endif // COM_GITHUB_DOEVELOPPER_PREMISSES_ATLAS_UTILS_TASKTEST_HPP

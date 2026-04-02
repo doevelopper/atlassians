@@ -4,10 +4,10 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include <com/github/doevelopper/premisses/canary/SystemInfo.hpp>
-#include <com/github/doevelopper/premisses/canary/ISystemInfoProvider.hpp>
+#include <com/github/doevelopper/atlassians/canary/SystemInfo.hpp>
+#include <com/github/doevelopper/atlassians/canary/ISystemInfoProvider.hpp>
 
-namespace com::github::doevelopper::premisses::canary::test
+namespace com::github::doevelopper::atlassians::canary::test
 {
     /**
      * @brief Mock CPU info provider for testing
@@ -74,6 +74,6 @@ namespace com::github::doevelopper::premisses::canary::test
         std::unique_ptr<MockUptimeProvider> m_mock_uptime_provider;
     };
 
-} // namespace com::github::doevelopper::premisses::canary::test
+} // namespace com::github::doevelopper::atlassians::canary::test
 
 #endif // COM_GITHUB_DOEVELOPPER_PREMISSES_CANARY_SYSTEMINFOTEST_HPP

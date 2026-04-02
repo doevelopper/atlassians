@@ -1,12 +1,12 @@
 
-#include <com/github/doevelopper/premisses/atlas/concurrency/DispatcherCoroRangeTest.hpp>
-#include <com/github/doevelopper/premisses/atlas/concurrency/Dispatcher.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/DispatcherCoroRangeTest.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/Dispatcher.hpp>
 
-using namespace com::github::doevelopper::premisses::atlas::concurrency;
-using namespace com::github::doevelopper::premisses::atlas::concurrency::test;
+using namespace com::github::doevelopper::atlassians::atlas::concurrency;
+using namespace com::github::doevelopper::atlassians::atlas::concurrency::test;
 
 log4cxx::LoggerPtr DispatcherCoroRangeTest::logger = 
-    log4cxx::Logger::getLogger ( std::string ( "com.github.doevelopper.premisses.atlas.concurrency.test.DispatcherCoroRangeTest" ) );
+    log4cxx::Logger::getLogger ( std::string ( "com.github.doevelopper.atlassians.atlas.concurrency.test.DispatcherCoroRangeTest" ) );
 
 DispatcherCoroRangeTest::DispatcherCoroRangeTest ( ) noexcept
 {

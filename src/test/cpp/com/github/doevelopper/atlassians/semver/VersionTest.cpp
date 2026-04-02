@@ -14,14 +14,14 @@
 #include <vector>
 #include <string>
 
-using namespace com::github::doevelopper::premisses::semver;
-using namespace com::github::doevelopper::premisses::semver::test;
+using namespace com::github::doevelopper::atlassians::semver;
+using namespace com::github::doevelopper::atlassians::semver::test;
 
-namespace com::github::doevelopper::premisses::semver::test
+namespace com::github::doevelopper::atlassians::semver::test
 {
 
 log4cxx::LoggerPtr VersionTest::logger =
-    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.premisses.semver.test.VersionTest"));
+    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.atlassians.semver.test.VersionTest"));
 
 VersionTest::VersionTest()
 {
@@ -753,4 +753,4 @@ TEST_F(VersionTest, ToCoreString_ExcludesPreReleaseAndBuild)
     EXPECT_EQ(v.toCoreString(), "1.2.3");
 }
 
-}  // namespace com::github::doevelopper::premisses::semver::test
+}  // namespace com::github::doevelopper::atlassians::semver::test

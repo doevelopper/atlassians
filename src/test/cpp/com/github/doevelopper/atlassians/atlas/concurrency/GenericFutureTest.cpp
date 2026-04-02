@@ -1,9 +1,9 @@
 
-#include <com/github/doevelopper/premisses/atlas/concurrency/GenericFutureTest.hpp>
-#include <com/github/doevelopper/premisses/atlas/concurrency/Fixture.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/GenericFutureTest.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/Fixture.hpp>
 
-using namespace com::github::doevelopper::premisses::atlas::concurrency;
-using namespace com::github::doevelopper::premisses::atlas::concurrency::test;
+using namespace com::github::doevelopper::atlassians::atlas::concurrency;
+using namespace com::github::doevelopper::atlassians::atlas::concurrency::test;
 
 using ms = std::chrono::milliseconds;
 using us = std::chrono::microseconds;

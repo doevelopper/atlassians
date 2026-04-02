@@ -14,9 +14,9 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include <com/github/doevelopper/premisses/triada/ErrorStateMachine.hpp>
+#include <com/github/doevelopper/atlassians/triada/ErrorStateMachine.hpp>
 
-namespace com::github::doevelopper::premisses::triada::test
+namespace com::github::doevelopper::atlassians::triada::test
 {
     class ErrorStateMachineTest : public ::testing::Test
     {

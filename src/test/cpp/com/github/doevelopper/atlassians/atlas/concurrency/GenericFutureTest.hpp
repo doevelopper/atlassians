@@ -4,13 +4,13 @@
 
 #include <gtest/gtest.h>
 
-#include <com/github/doevelopper/premisses/atlas/concurrency/Dispatcher.hpp>
-#include <com/github/doevelopper/premisses/atlas/concurrency/util/GenericFuture.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/Dispatcher.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/util/GenericFuture.hpp>
 
 #include <condition_variable>
 #include <mutex>
 
-namespace com::github::doevelopper::premisses::atlas::concurrency::test
+namespace com::github::doevelopper::atlassians::atlas::concurrency::test
 {
     class GenericFutureTest : public ::testing::Test
     {

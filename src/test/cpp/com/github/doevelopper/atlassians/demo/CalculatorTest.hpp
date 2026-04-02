@@ -3,9 +3,9 @@
 
 #include <gtest/gtest.h>
 
-#include <com/github/doevelopper/premisses/demo/Calculator.hpp>
+#include <com/github/doevelopper/atlassians/demo/Calculator.hpp>
 
-namespace com::github::doevelopper::premisses::demo::test
+namespace com::github::doevelopper::atlassians::demo::test
 {
     class CalculatorTest : public ::testing::Test
     {
@@ -31,7 +31,7 @@ namespace com::github::doevelopper::premisses::demo::test
         // Helper function to check if result is error
         auto isErrorResult(const Calculator::ResultType &result) -> bool;
 
-        com::github::doevelopper::premisses::demo::Calculator *m_targetUnderTest;
+        com::github::doevelopper::atlassians::demo::Calculator *m_targetUnderTest;
 
     private:
     };

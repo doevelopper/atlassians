@@ -4,10 +4,10 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include <com/github/doevelopper/premisses/canary/SystemMonitor.hpp>
-#include <com/github/doevelopper/premisses/canary/ISystemObserver.hpp>
+#include <com/github/doevelopper/atlassians/canary/SystemMonitor.hpp>
+#include <com/github/doevelopper/atlassians/canary/ISystemObserver.hpp>
 
-namespace com::github::doevelopper::premisses::canary::test
+namespace com::github::doevelopper::atlassians::canary::test
 {
     /**
      * @brief Mock observer for testing
@@ -37,6 +37,6 @@ namespace com::github::doevelopper::premisses::canary::test
         std::shared_ptr<MockSystemObserver> m_mock_observer;
     };
 
-} // namespace com::github::doevelopper::premisses::canary::test
+} // namespace com::github::doevelopper::atlassians::canary::test
 
 #endif // COM_GITHUB_DOEVELOPPER_PREMISSES_CANARY_SYSTEMMONITORTEST_HPP

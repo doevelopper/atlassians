@@ -14,9 +14,9 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include <com/github/doevelopper/premisses/triada/RecoveryStrategy.hpp>
+#include <com/github/doevelopper/atlassians/triada/RecoveryStrategy.hpp>
 
-namespace com::github::doevelopper::premisses::triada::test
+namespace com::github::doevelopper::atlassians::triada::test
 {
     class RetryPolicyTest : public ::testing::Test
     {

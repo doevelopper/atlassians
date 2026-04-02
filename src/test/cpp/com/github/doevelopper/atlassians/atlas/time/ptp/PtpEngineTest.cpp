@@ -1,7 +1,7 @@
-#include <com/github/doevelopper/premisses/atlas/time/ptp/PtpEngineTest.hpp>
+#include <com/github/doevelopper/atlassians/atlas/time/ptp/PtpEngineTest.hpp>
 
-using namespace com::github::doevelopper::premisses::atlas::time::ptp;
-using namespace com::github::doevelopper::premisses::atlas::time::ptp::test;
+using namespace com::github::doevelopper::atlassians::atlas::time::ptp;
+using namespace com::github::doevelopper::atlassians::atlas::time::ptp::test;
 
 void PtpEngineTest::SetUp()
 {

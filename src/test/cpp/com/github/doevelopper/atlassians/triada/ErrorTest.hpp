@@ -14,9 +14,9 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include <com/github/doevelopper/premisses/triada/Error.hpp>
+#include <com/github/doevelopper/atlassians/triada/Error.hpp>
 
-namespace com::github::doevelopper::premisses::triada::test
+namespace com::github::doevelopper::atlassians::triada::test
 {
     class ErrorTest : public ::testing::Test
     {

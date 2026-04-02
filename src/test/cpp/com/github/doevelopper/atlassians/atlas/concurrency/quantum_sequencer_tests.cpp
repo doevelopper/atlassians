@@ -13,8 +13,8 @@
 ** See the License for the specific language governing permissions and
 ** limitations under the License.
 */
-#include <com/github/doevelopper/premisses/atlas/concurrency/quantum_fixture.h>
-#include <com/github/doevelopper/premisses/atlas/concurrency/quantum_sequencer_test_common.h>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/quantum_fixture.h>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/quantum_sequencer_test_common.h>
 #include <gtest/gtest.h>
 
 using namespace quantum;

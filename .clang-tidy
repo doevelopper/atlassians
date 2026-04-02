@@ -1,7 +1,9 @@
 ---
 FormatStyle: "file"
+# Treat all warnings as errors (optional, good for strict CI/CD)
 WarningsAsErrors: "*"
 HeaderFilterRegex: ".*"
+ExcludeHeaderFilterRegex: ".*\\.pb\\.h|.*\\.grpc\\.pb\\.h"
 Checks: "google-build-explicit-make-pair,
          google-build-namespaces,
          google-build-using-namespace,

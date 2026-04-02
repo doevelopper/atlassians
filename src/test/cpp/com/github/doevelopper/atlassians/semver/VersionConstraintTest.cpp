@@ -13,14 +13,14 @@
 #include <vector>
 #include <string>
 
-using namespace com::github::doevelopper::premisses::semver;
-using namespace com::github::doevelopper::premisses::semver::test;
+using namespace com::github::doevelopper::atlassians::semver;
+using namespace com::github::doevelopper::atlassians::semver::test;
 
-namespace com::github::doevelopper::premisses::semver::test
+namespace com::github::doevelopper::atlassians::semver::test
 {
 
 log4cxx::LoggerPtr VersionConstraintTest::logger =
-    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.premisses.semver.test.VersionConstraintTest"));
+    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.atlassians.semver.test.VersionConstraintTest"));
 
 VersionConstraintTest::VersionConstraintTest()
 {
@@ -623,4 +623,4 @@ TEST_F(VersionConstraintTest, MoveAssignment)
     assertDoesNotSatisfy(c2, "2.0.0");
 }
 
-}  // namespace com::github::doevelopper::premisses::semver::test
+}  // namespace com::github::doevelopper::atlassians::semver::test

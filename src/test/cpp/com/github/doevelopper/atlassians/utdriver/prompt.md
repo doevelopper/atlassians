@@ -5,7 +5,7 @@ I'm developing a multi-module C++ application with a custom unit test infrastruc
 
 ### File Structure
 ```
-src/test/cpp/com/github/doevelopper/premisses/utdriver/
+src/test/cpp/com/github/doevelopper/atlassians/utdriver/
 ├── CustomTestEnvironment.cpp/.hpp
 ├── TestDriver.cpp/.hpp
 ├── TestEventListener.cpp/.hpp
@@ -104,8 +104,8 @@ Please provide:
 2. **Code Refactoring Suggestions**: Specific changes to improve code quality
 3. **Modern C++ Enhancements**: Concrete examples of modern C++ features to adopt
 4. **Google Test Best Practices**: Specific Google Test patterns and features to leverage
-5. **Example Code**: `com/github/doevelopper/premisses/demo/CalculatorTest.{h,c}pp` `src/test/cpp/main.cpp` to use as example
-6. **Logging frqmework**: Leverage logging API to log the flow. Logging framework is defined in `com/github/doevelopper/premisses/logging` folder
+5. **Example Code**: `com/github/doevelopper/atlassians/demo/CalculatorTest.{h,c}pp` `src/test/cpp/main.cpp` to use as example
+6. **Logging frqmework**: Leverage logging API to log the flow. Logging framework is defined in `com/github/doevelopper/atlassians/logging` folder
 7. **Priority Ranking**: Which improvements would have the most impact?
 8. **Migration Path**: If significant changes are needed, suggest an incremental approach
 

@@ -6,9 +6,9 @@
 
 #include <memory>
 
-#include <com/github/doevelopper/premisses/atlas/NoOp.hpp>
+#include <com/github/doevelopper/atlassians/atlas/NoOp.hpp>
 
-namespace com::github::doevelopper::premisses::atlas::utils::test {
+namespace com::github::doevelopper::atlassians::atlas::utils::test {
 class NoOpTest : public ::testing::Test {
   //   LOG4CXX_DECLARE_STATIC_TEST_LOGGER
  public:
@@ -24,7 +24,7 @@ class NoOpTest : public ::testing::Test {
 
  protected:
  private:
-  std::unique_ptr<com::github::doevelopper::premisses::atlas::utils::NoOp> testee;
+  std::unique_ptr<com::github::doevelopper::atlassians::atlas::utils::NoOp> testee;
 };
-}  // namespace com::github::doevelopper::premisses::atlas::utils::test
+}  // namespace com::github::doevelopper::atlassians::atlas::utils::test
 #endif

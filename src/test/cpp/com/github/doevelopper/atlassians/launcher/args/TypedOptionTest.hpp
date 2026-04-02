@@ -13,16 +13,16 @@
 
 #include <gtest/gtest.h>
 
-#include <com/github/doevelopper/premisses/launcher/args/TypedOption.hpp>
-#include <com/github/doevelopper/premisses/launcher/args/BooleanOption.hpp>
-#include <com/github/doevelopper/premisses/launcher/args/MultiValueOption.hpp>
-#include <com/github/doevelopper/premisses/launcher/args/ImplicitOption.hpp>
-#include <com/github/doevelopper/premisses/launcher/args/HiddenOption.hpp>
-#include <com/github/doevelopper/premisses/launcher/args/Required.hpp>
-#include <com/github/doevelopper/premisses/launcher/args/Optional.hpp>
-#include <com/github/doevelopper/premisses/logging/LogMacros.hpp>
+#include <com/github/doevelopper/atlassians/launcher/args/TypedOption.hpp>
+#include <com/github/doevelopper/atlassians/launcher/args/BooleanOption.hpp>
+#include <com/github/doevelopper/atlassians/launcher/args/MultiValueOption.hpp>
+#include <com/github/doevelopper/atlassians/launcher/args/ImplicitOption.hpp>
+#include <com/github/doevelopper/atlassians/launcher/args/HiddenOption.hpp>
+#include <com/github/doevelopper/atlassians/launcher/args/Required.hpp>
+#include <com/github/doevelopper/atlassians/launcher/args/Optional.hpp>
+#include <com/github/doevelopper/atlassians/logging/LogMacros.hpp>
 
-namespace com::github::doevelopper::premisses::launcher::args::test
+namespace com::github::doevelopper::atlassians::launcher::args::test
 {
     /**
      * @brief Test fixture for option type tests
@@ -48,6 +48,6 @@ namespace com::github::doevelopper::premisses::launcher::args::test
         boost::program_options::variables_map m_vm;
     };
 
-}  // namespace com::github::doevelopper::premisses::launcher::args::test
+}  // namespace com::github::doevelopper::atlassians::launcher::args::test
 
 #endif  // COM_GITHUB_DOEVELOPPER_PREMISSES_LAUNCHER_ARGS_TEST_TYPEDOPTIONTEST_HPP

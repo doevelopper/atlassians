@@ -8,18 +8,18 @@
  * Copyright (C) 2024 ACME Technology Corp. All rights reserved.
  */
 
-#include <com/github/doevelopper/premisses/triada/ErrorTest.hpp>
+#include <com/github/doevelopper/atlassians/triada/ErrorTest.hpp>
 
 #include <sstream>
 
-using namespace com::github::doevelopper::premisses::triada;
-using namespace com::github::doevelopper::premisses::triada::test;
+using namespace com::github::doevelopper::atlassians::triada;
+using namespace com::github::doevelopper::atlassians::triada::test;
 
 log4cxx::LoggerPtr ErrorTest::logger =
-    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.premisses.triada.test.ErrorTest"));
+    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.atlassians.triada.test.ErrorTest"));
 
 log4cxx::LoggerPtr ResultTest::logger =
-    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.premisses.triada.test.ResultTest"));
+    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.atlassians.triada.test.ResultTest"));
 
 // ============================================
 // ErrorTest Implementation

@@ -11,14 +11,14 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include <com/github/doevelopper/premisses/plugin/communication/EventBus.hpp>
-#include <com/github/doevelopper/premisses/plugin/core/PluginExceptions.hpp>
+#include <com/github/doevelopper/atlassians/plugin/communication/EventBus.hpp>
+#include <com/github/doevelopper/atlassians/plugin/core/PluginExceptions.hpp>
 
 #include <atomic>
 #include <chrono>
 #include <thread>
 
-namespace com::github::doevelopper::premisses::plugin::test
+namespace com::github::doevelopper::atlassians::plugin::test
 {
     using namespace testing;
     using namespace communication;
@@ -444,4 +444,4 @@ namespace com::github::doevelopper::premisses::plugin::test
         EXPECT_GT(config.maxQueueSize, 0);
     }
 
-} // namespace com::github::doevelopper::premisses::plugin::test
+} // namespace com::github::doevelopper::atlassians::plugin::test

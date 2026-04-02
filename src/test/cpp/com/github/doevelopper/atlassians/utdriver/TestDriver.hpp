@@ -31,8 +31,8 @@
 
 #include <gtest/gtest.h>
 #include <log4cxx/logger.h>
-#include <com/github/doevelopper/premisses/logging/LoggingInitializer.hpp>
-#include <com/github/doevelopper/premisses/logging/CustomLogger.hpp>
+#include <com/github/doevelopper/atlassians/logging/LoggingInitializer.hpp>
+#include <com/github/doevelopper/atlassians/logging/CustomLogger.hpp>
 
 // ============================================
 // Custom Test Macros for Enhanced Functionality
@@ -108,7 +108,7 @@
         }                                                                      \
     } while (false)
 
-namespace com::github::doevelopper::premisses::utdriver
+namespace com::github::doevelopper::atlassians::utdriver
 {
     /**
      * @class TestDriverConfig
@@ -411,6 +411,6 @@ namespace com::github::doevelopper::premisses::utdriver
         static log4cxx::LoggerPtr logger;
     };
 
-}  // namespace com::github::doevelopper::premisses::utdriver
+}  // namespace com::github::doevelopper::atlassians::utdriver
 
 #endif  // COM_GITHUB_DOEVELOPPER_PREMISSES_UTDRIVER_TESTDRIVER_HPP

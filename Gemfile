@@ -11,12 +11,18 @@ source "https://rubygems.org"
 # * to your cucumber.yml, Rakefile, or command line call          *
 # *****************************************************************
 
+# group :test do
+#   # cucumber 9.x is the last version with stable cucumber-wire support
+#   gem 'cucumber', '~> 9.2'
+#   gem 'cucumber-wire', '~> 7.0'
+#   gem 'cucumber_statistics', "=3.0.0"
+#   gem 'slowhandcuke', '~> 0.0.3'
+#   # Use version 20.x for compatibility with cucumber 9.x message protocol
+#   gem 'cucumber-html-formatter', '~> 20.0'
+# end
+
+# against https://github.com/open-feature/cpp-sdk/blob/main/Gemfile
 group :test do
-  # cucumber 9.x is the last version with stable cucumber-wire support
-  gem 'cucumber', '~> 9.2'
-  gem 'cucumber-wire', '~> 7.0'
-  gem 'cucumber_statistics', "=3.0.0"
-  gem 'slowhandcuke', '~> 0.0.3'
-  # Use version 20.x for compatibility with cucumber 9.x message protocol
-  gem 'cucumber-html-formatter', '~> 20.0'
+  gem 'cucumber', '~> 10.2.0'
+  gem 'cucumber-wire', '~> 8.0.0'
 end

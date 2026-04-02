@@ -8,18 +8,18 @@
  * Copyright (C) 2024 ACME Technology Corp. All rights reserved.
  */
 
-#include <com/github/doevelopper/premisses/triada/ErrorStateMachineTest.hpp>
+#include <com/github/doevelopper/atlassians/triada/ErrorStateMachineTest.hpp>
 
 #include <thread>
 
-using namespace com::github::doevelopper::premisses::triada;
-using namespace com::github::doevelopper::premisses::triada::test;
+using namespace com::github::doevelopper::atlassians::triada;
+using namespace com::github::doevelopper::atlassians::triada::test;
 
 log4cxx::LoggerPtr ErrorStateMachineTest::logger =
-    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.premisses.triada.test.ErrorStateMachineTest"));
+    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.atlassians.triada.test.ErrorStateMachineTest"));
 
 log4cxx::LoggerPtr ErrorStateManagerTest::logger =
-    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.premisses.triada.test.ErrorStateManagerTest"));
+    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.atlassians.triada.test.ErrorStateManagerTest"));
 
 // ============================================
 // ErrorStateMachineTest Implementation

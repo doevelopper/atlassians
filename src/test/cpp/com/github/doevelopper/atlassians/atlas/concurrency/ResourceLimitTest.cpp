@@ -1,10 +1,10 @@
 
-#include <com/github/doevelopper/premisses/atlas/concurrency/ResourceLimitTest.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/ResourceLimitTest.hpp>
 
-using namespace com::github::doevelopper::premisses::atlas::concurrency::test;
+using namespace com::github::doevelopper::atlassians::atlas::concurrency::test;
 
 log4cxx::LoggerPtr ResourceLimitTest::logger = 
-    log4cxx::Logger::getLogger ( std::string ( "com.github.doevelopper.premisses.atlas.concurrency.test.ResourceLimitTest" ) );
+    log4cxx::Logger::getLogger ( std::string ( "com.github.doevelopper.atlassians.atlas.concurrency.test.ResourceLimitTest" ) );
 
 ResourceLimitTest::ResourceLimitTest ( ) noexcept
 {

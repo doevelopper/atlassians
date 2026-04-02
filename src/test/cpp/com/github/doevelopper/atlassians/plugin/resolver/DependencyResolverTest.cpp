@@ -11,10 +11,10 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include <com/github/doevelopper/premisses/plugin/resolver/DependencyResolver.hpp>
-#include <com/github/doevelopper/premisses/plugin/metadata/PluginMetadata.hpp>
+#include <com/github/doevelopper/atlassians/plugin/resolver/DependencyResolver.hpp>
+#include <com/github/doevelopper/atlassians/plugin/metadata/PluginMetadata.hpp>
 
-namespace com::github::doevelopper::premisses::plugin::test
+namespace com::github::doevelopper::atlassians::plugin::test
 {
     using namespace testing;
     using namespace resolver;
@@ -461,4 +461,4 @@ namespace com::github::doevelopper::premisses::plugin::test
         EXPECT_FALSE(config.enableCaching);
     }
 
-} // namespace com::github::doevelopper::premisses::plugin::test
+} // namespace com::github::doevelopper::atlassians::plugin::test

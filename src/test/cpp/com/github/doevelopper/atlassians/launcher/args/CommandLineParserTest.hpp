@@ -13,14 +13,14 @@
 
 #include <gtest/gtest.h>
 
-#include <com/github/doevelopper/premisses/launcher/args/CommandLineParser.hpp>
-#include <com/github/doevelopper/premisses/launcher/args/TypedOption.hpp>
-#include <com/github/doevelopper/premisses/launcher/args/BooleanOption.hpp>
-#include <com/github/doevelopper/premisses/launcher/args/MultiValueOption.hpp>
-#include <com/github/doevelopper/premisses/launcher/args/PositionalOption.hpp>
-#include <com/github/doevelopper/premisses/logging/LogMacros.hpp>
+#include <com/github/doevelopper/atlassians/launcher/args/CommandLineParser.hpp>
+#include <com/github/doevelopper/atlassians/launcher/args/TypedOption.hpp>
+#include <com/github/doevelopper/atlassians/launcher/args/BooleanOption.hpp>
+#include <com/github/doevelopper/atlassians/launcher/args/MultiValueOption.hpp>
+#include <com/github/doevelopper/atlassians/launcher/args/PositionalOption.hpp>
+#include <com/github/doevelopper/atlassians/logging/LogMacros.hpp>
 
-namespace com::github::doevelopper::premisses::launcher::args::test
+namespace com::github::doevelopper::atlassians::launcher::args::test
 {
     /**
      * @brief Test fixture for CommandLineParser tests
@@ -56,6 +56,6 @@ namespace com::github::doevelopper::premisses::launcher::args::test
         std::unique_ptr<CommandLineParser> m_parser;
     };
 
-}  // namespace com::github::doevelopper::premisses::launcher::args::test
+}  // namespace com::github::doevelopper::atlassians::launcher::args::test
 
 #endif  // COM_GITHUB_DOEVELOPPER_PREMISSES_LAUNCHER_ARGS_TEST_COMMANDLINEPARSERTEST_HPP

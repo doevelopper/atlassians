@@ -2,9 +2,9 @@
 #ifndef COM_GITHUB_DOEVELOPPER_NIGHT_OWL_QUANTUM_SEQUENCERTEST_HPP
 #define COM_GITHUB_DOEVELOPPER_NIGHT_OWL_QUANTUM_SEQUENCERTEST_HPP
 
-#include <com/github/doevelopper/premisses/atlas/concurrency/SequencerTestData.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/SequencerTestData.hpp>
 
-namespace com::github::doevelopper::premisses::atlas::concurrency::test
+namespace com::github::doevelopper::atlassians::atlas::concurrency::test
 {
     class SequencerTest : public DispatcherFixture
     {

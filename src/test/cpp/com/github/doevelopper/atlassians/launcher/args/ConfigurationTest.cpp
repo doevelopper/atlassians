@@ -14,18 +14,18 @@
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/value_semantic.hpp>
 
-#include <com/github/doevelopper/premisses/launcher/args/ConfigurationTest.hpp>
+#include <com/github/doevelopper/atlassians/launcher/args/ConfigurationTest.hpp>
 
 namespace po = boost::program_options;
 
-namespace com::github::doevelopper::premisses::launcher::args::test
+namespace com::github::doevelopper::atlassians::launcher::args::test
 {
 
-using namespace com::github::doevelopper::premisses::launcher::args;
+using namespace com::github::doevelopper::atlassians::launcher::args;
 
 log4cxx::LoggerPtr ConfigurationTest::logger =
     log4cxx::Logger::getLogger(std::string(
-        "com.github.doevelopper.premisses.launcher.args.test.ConfigurationTest"));
+        "com.github.doevelopper.atlassians.launcher.args.test.ConfigurationTest"));
 
 ConfigurationTest::ConfigurationTest()
     : m_config(nullptr)
@@ -376,4 +376,4 @@ TEST_F(ConfigurationTest, Get_WrongType_ReturnsDefault)
     EXPECT_EQ(m_config->get<std::string>("port", "default"), "default");
 }
 
-}  // namespace com::github::doevelopper::premisses::launcher::args::test
+}  // namespace com::github::doevelopper::atlassians::launcher::args::test

@@ -14,7 +14,7 @@
 ** limitations under the License.
 */
 
-#include <com/github/doevelopper/premisses/atlas/concurrency/quantum_fixture.h>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/quantum_fixture.h>
 #include <sstream>
 
 using namespace Bloomberg;

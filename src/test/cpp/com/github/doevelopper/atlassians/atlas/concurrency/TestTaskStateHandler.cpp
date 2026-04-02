@@ -1,12 +1,12 @@
 
-#include<com/github/doevelopper/premisses/atlas/concurrency/TestTaskStateHandler.hpp>
-#include<com/github/doevelopper/premisses/atlas/concurrency/TestTaskStateHandlerPrivate.hpp>
+#include<com/github/doevelopper/atlassians/atlas/concurrency/TestTaskStateHandler.hpp>
+#include<com/github/doevelopper/atlassians/atlas/concurrency/TestTaskStateHandlerPrivate.hpp>
 
-using namespace com::github::doevelopper::premisses::atlas::concurrency;
-using namespace com::github::doevelopper::premisses::atlas::concurrency::test;
+using namespace com::github::doevelopper::atlassians::atlas::concurrency;
+using namespace com::github::doevelopper::atlassians::atlas::concurrency::test;
 
 log4cxx::LoggerPtr TestTaskStateHandler::logger =
-    log4cxx::Logger::getLogger ( std::string ( "com.github.doevelopper.premisses.atlas.concurrency.test.TestTaskStateHandler" ) );
+    log4cxx::Logger::getLogger ( std::string ( "com.github.doevelopper.atlassians.atlas.concurrency.test.TestTaskStateHandler" ) );
 
 TestTaskStateHandler::TestTaskStateHandler() noexcept
     // : d_ptr ( new TestTaskStateHandlerPrivate () )

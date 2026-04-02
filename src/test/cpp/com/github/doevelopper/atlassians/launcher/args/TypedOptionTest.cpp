@@ -8,16 +8,16 @@
  * Copyright (C) 2024 ACME Technology Corp. All rights reserved.
  ********************************************************************/
 
-#include <com/github/doevelopper/premisses/launcher/args/TypedOptionTest.hpp>
+#include <com/github/doevelopper/atlassians/launcher/args/TypedOptionTest.hpp>
 
-namespace com::github::doevelopper::premisses::launcher::args::test
+namespace com::github::doevelopper::atlassians::launcher::args::test
 {
 
-using namespace com::github::doevelopper::premisses::launcher::args;
+using namespace com::github::doevelopper::atlassians::launcher::args;
 
 log4cxx::LoggerPtr TypedOptionTest::logger =
     log4cxx::Logger::getLogger(std::string(
-        "com.github.doevelopper.premisses.launcher.args.test.TypedOptionTest"));
+        "com.github.doevelopper.atlassians.launcher.args.test.TypedOptionTest"));
 
 TypedOptionTest::TypedOptionTest()
 {
@@ -386,4 +386,4 @@ TEST_F(TypedOptionTest, SharedPtr_OptionsCanBeShared)
     EXPECT_EQ(copy->getLongName(), "shared");
 }
 
-}  // namespace com::github::doevelopper::premisses::launcher::args::test
+}  // namespace com::github::doevelopper::atlassians::launcher::args::test

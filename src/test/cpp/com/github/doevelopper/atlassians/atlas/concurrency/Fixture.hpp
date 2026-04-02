@@ -2,9 +2,9 @@
 #define COM_GITHUB_DOEVELOPPER_NIGHT_OWL_QUANTUM_FIXTURE_HPP
 
 #include <gtest/gtest.h>
-#include <com/github/doevelopper/premisses/atlas/concurrency/TestConfiguration.hpp>
-// #include <com/github/doevelopper/premisses/atlas/concurrency/DispatcherSingleton.hpp>
-#include <com/github/doevelopper/premisses/atlas/concurrency/Dispatcher.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/TestConfiguration.hpp>
+// #include <com/github/doevelopper/atlassians/atlas/concurrency/DispatcherSingleton.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/Dispatcher.hpp>
 
 #include <functional>
 #include <list>
@@ -14,7 +14,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace com::github::doevelopper::premisses::atlas::concurrency::test
+namespace com::github::doevelopper::atlassians::atlas::concurrency::test
 {
     class DispatcherFixture : public ::testing::TestWithParam<TestConfiguration>
     {

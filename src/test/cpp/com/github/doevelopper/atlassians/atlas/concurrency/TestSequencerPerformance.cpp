@@ -1,16 +1,16 @@
 
-#include<com/github/doevelopper/premisses/atlas/concurrency/TestSequencerPerformance.hpp>
+#include<com/github/doevelopper/atlassians/atlas/concurrency/TestSequencerPerformance.hpp>
 #include <com/github/doevelopper/night/owl/time/TimeFixture.hpp>
 
 #include <fstream>
 #include <iostream>
 
-using namespace com::github::doevelopper::premisses::atlas::concurrency;
-using namespace com::github::doevelopper::premisses::atlas::concurrency::test;
+using namespace com::github::doevelopper::atlassians::atlas::concurrency;
+using namespace com::github::doevelopper::atlassians::atlas::concurrency::test;
 
 template <typename Sequencer>
 log4cxx::LoggerPtr TestSequencerPerformance<Sequencer>::logger =
-    log4cxx::Logger::getLogger ( std::string ( "com.github.doevelopper.premisses.atlas.concurrency.test.TestSequencerPerformance" ) );
+    log4cxx::Logger::getLogger ( std::string ( "com.github.doevelopper.atlassians.atlas.concurrency.test.TestSequencerPerformance" ) );
 
 ProcStats ProcStats::operator-(const ProcStats & s1)
 {

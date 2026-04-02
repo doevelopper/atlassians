@@ -1,10 +1,10 @@
-#include <com/github/doevelopper/premisses/atlas/concurrency/Fixture.hpp>
-#include <com/github/doevelopper/premisses/atlas/concurrency/DispatcherSingleton.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/Fixture.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/DispatcherSingleton.hpp>
 
-using namespace com::github::doevelopper::premisses::atlas::concurrency::test;
+using namespace com::github::doevelopper::atlassians::atlas::concurrency::test;
 
 log4cxx::LoggerPtr DispatcherFixture::logger = 
-    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.premisses.atlas.concurrency.test.DispatcherFixture"));
+    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.atlassians.atlas.concurrency.test.DispatcherFixture"));
 
 DispatcherFixture::DispatcherFixture() noexcept
     : m_dispatcher()

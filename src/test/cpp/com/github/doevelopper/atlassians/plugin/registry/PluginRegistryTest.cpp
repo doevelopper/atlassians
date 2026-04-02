@@ -11,14 +11,14 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
-#include <com/github/doevelopper/premisses/plugin/registry/PluginRegistry.hpp>
-#include <com/github/doevelopper/premisses/plugin/metadata/PluginMetadata.hpp>
-#include <com/github/doevelopper/premisses/plugin/core/PluginExceptions.hpp>
+#include <com/github/doevelopper/atlassians/plugin/registry/PluginRegistry.hpp>
+#include <com/github/doevelopper/atlassians/plugin/metadata/PluginMetadata.hpp>
+#include <com/github/doevelopper/atlassians/plugin/core/PluginExceptions.hpp>
 
 #include <thread>
 #include <vector>
 
-namespace com::github::doevelopper::premisses::plugin::test
+namespace com::github::doevelopper::atlassians::plugin::test
 {
     using namespace testing;
     using namespace registry;
@@ -423,4 +423,4 @@ namespace com::github::doevelopper::premisses::plugin::test
         EXPECT_EQ(registry_->getMetadata("NonExistent"), nullptr);
     }
 
-} // namespace com::github::doevelopper::premisses::plugin::test
+} // namespace com::github::doevelopper::atlassians::plugin::test

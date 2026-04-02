@@ -1,8 +1,8 @@
 
-#include <com/github/doevelopper/premisses/atlas/NoOpTest.hpp>
+#include <com/github/doevelopper/atlassians/atlas/NoOpTest.hpp>
 
-using namespace com::github::doevelopper::premisses::atlas::utils;
-using namespace com::github::doevelopper::premisses::atlas::utils::test;
+using namespace com::github::doevelopper::atlassians::atlas::utils;
+using namespace com::github::doevelopper::atlassians::atlas::utils::test;
 
 // log4cxx::LoggerPtr EventSystemTest::logger =
 //     log4cxx::Logger::getLogger(std::string("cfs.edar.test.EventSystemTest"));

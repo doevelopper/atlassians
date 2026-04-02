@@ -1,1 +1,88 @@
-# BUILD.bazel
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_gherkin//gherkin:defs.bzl", "gherkin_test")
+load("@rules_gherkin//gherkin:defs.bzl", "gherkin_library")
+
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+
+cc_library(
+    name = "com.github.doevelopper.atlassians.bdddriver",
+    srcs = [
+        "com/github/doevelopper/atlassians/bdddriver/BddDriver.cpp",
+        "com/github/doevelopper/atlassians/bdddriver/BddEnvironment.cpp",
+        "com/github/doevelopper/atlassians/bdddriver/BddStaticInit.cpp",
+    ],
+    hdrs = [
+        "com/github/doevelopper/atlassians/bdddriver/BddDriver.hpp",
+        "com/github/doevelopper/atlassians/bdddriver/BddEnvironment.hpp",
+    ],
+    include_prefix = "test/e2e",
+    deps = [
+        "@cucumber-cpp//:cucumber-cpp",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_gherkin_steps(
+    name = "com.github.doevelopper.atlassians.atlas-steps",
+    srcs = [
+        "com/github/doevelopper/atlassians/atlas/features/step_definitions/atlas.cpp",
+        "com/github/doevelopper/atlassians/atlas/features/step_definitions/atlas.hpp",
+    ],
+    deps = [
+        "//com.github.doevelopper.atlassians.main.atlas",
+        "@cucumber-cpp//:cucumber-cpp",
+        "@com_google_googletest//:gtest",
+    ],
+    visibility = ["//test/e2e:__subpackages__"],
+)
+
+gherkin_test(
+    name = "com.github.doevelopper.atlassians.atlas.atp",
+    steps = "//src/it::com.github.doevelopper.atlassians.atlas-steps",
+    deps = [
+        "//:com.github.doevelopper.atlassians.main.atlas",
+    ],
+)
+
+gherkin_library(
+    name = "com.github.doevelopper.atlassians.atlas.feature",
+
+    srcs = [
+        "com/github/doevelopper/atlassians/atlas/features/atlas.feature",
+    ],
+)
+
+cc_gherkin_steps(
+    name = "com.github.doevelopper.atlassians.demo-steps",
+    srcs = [
+        "com/github/doevelopper/atlassians/demo/features/step_definitions/Calculator.cpp",
+        "com/github/doevelopper/atlassians/demo/features/step_definitions/Calculator.hpp",
+    ],
+    deps = [
+        "//com.github.doevelopper.atlassians.main.demo",
+        "@cucumber-cpp//:cucumber-cpp",
+        "@com_google_googletest//:gtest",
+    ],
+    visibility = ["//test/e2e:__subpackages__"],
+)
+
+gherkin_test(
+    name = "com.github.doevelopper.atlassians.demo.atp",
+    steps = "//src/it::com.github.doevelopper.atlassians.demo-steps",
+    deps = [
+        "//:com.github.doevelopper.atlassians.main.demo",
+    ],
+)
+
+gherkin_library(
+    name = "com.github.doevelopper.atlassians.demo.feature",
+
+    srcs = [
+        "com/github/doevelopper/atlassians/demo/features/calculator.feature",
+    ],
+)
+
+

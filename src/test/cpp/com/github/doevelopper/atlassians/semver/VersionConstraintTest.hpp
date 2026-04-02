@@ -13,10 +13,10 @@
 
 #include <gtest/gtest.h>
 
-#include <com/github/doevelopper/premisses/semver/VersionConstraint.hpp>
-#include <com/github/doevelopper/premisses/logging/LogMacros.hpp>
+#include <com/github/doevelopper/atlassians/semver/VersionConstraint.hpp>
+#include <com/github/doevelopper/atlassians/logging/LogMacros.hpp>
 
-namespace com::github::doevelopper::premisses::semver::test
+namespace com::github::doevelopper::atlassians::semver::test
 {
 
 /**
@@ -57,6 +57,6 @@ protected:
                                         std::string_view versionString);
 };
 
-}  // namespace com::github::doevelopper::premisses::semver::test
+}  // namespace com::github::doevelopper::atlassians::semver::test
 
 #endif  // COM_GITHUB_DOEVELOPPER_PREMISSES_SEMVER_VERSIONCONSTRAINTTEST_HPP

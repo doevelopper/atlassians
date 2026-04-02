@@ -6,13 +6,13 @@
  * Copyright (C) 2024 ACME Technology Corp. All rights reserved.
  */
 
-#include <com/github/doevelopper/premisses/licensing/LicenseTest.hpp>
+#include <com/github/doevelopper/atlassians/licensing/LicenseTest.hpp>
 
-using namespace com::github::doevelopper::premisses::licensing;
-using namespace com::github::doevelopper::premisses::licensing::test;
+using namespace com::github::doevelopper::atlassians::licensing;
+using namespace com::github::doevelopper::atlassians::licensing::test;
 
 log4cxx::LoggerPtr LicenseTest::logger =
-    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.premisses.licensing.test.LicenseTest"));
+    log4cxx::Logger::getLogger(std::string("com.github.doevelopper.atlassians.licensing.test.LicenseTest"));
 
 LicenseTest::LicenseTest()
 {

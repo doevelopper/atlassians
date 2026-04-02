@@ -2,10 +2,10 @@
 #ifndef COM_GITHUB_DOEVELOPPER_NIGHT_OWL_QUANTUM_DISPATCHERSINGLETON_HPP
 #define COM_GITHUB_DOEVELOPPER_NIGHT_OWL_QUANTUM_DISPATCHERSINGLETON_HPP
 
-#include <com/github/doevelopper/premisses/atlas/concurrency/TestConfiguration.hpp>
-#include <com/github/doevelopper/premisses/atlas/concurrency/quantum.h>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/TestConfiguration.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/quantum.h>
 
-namespace com::github::doevelopper::premisses::atlas::concurrency::test
+namespace com::github::doevelopper::atlassians::atlas::concurrency::test
 {
 
     class DispatcherSingleton
