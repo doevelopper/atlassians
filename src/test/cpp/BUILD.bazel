@@ -563,3 +563,22 @@ cc_test(
 #         "@com_google_fuzztest//fuzztest:subprocess",
 #     ],
 # )
+
+pkg_tar(
+    name = "com.github.doevelopper.atlassians.test.package",
+    srcs = [
+        ":com.github.doevelopper.atlassians.test.atlas.bin",
+        ":com.github.doevelopper.atlassians.test.canary.bin",
+        ":com.github.doevelopper.atlassians.test.demo.bin",
+        ":com.github.doevelopper.atlassians.test.launcher.bin",
+        ":com.github.doevelopper.atlassians.test.licensing.bin",
+        ":com.github.doevelopper.atlassians.test.plugin.bin",
+        ":com.github.doevelopper.atlassians.test.bin",
+        ":com.github.doevelopper.atlassians.test.quota.bin",
+        ":com.github.doevelopper.atlassians.test.triada.bin",
+        ":com.github.doevelopper.atlassians.test.semver.bin",
+    ],
+    extension = "tar.gz",
+    package_dir = "/opt/atlassians/test",
+    visibility = ["//visibility:public"],
+)

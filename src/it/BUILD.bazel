@@ -1,6 +1,7 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_gherkin//gherkin:defs.bzl", "gherkin_library", "gherkin_test")
 load("//buildsys/bazel/starlark/rules/cc_bdd:defs.bzl", "cc_gherkin_steps")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 package(
     default_visibility = ["//visibility:public"],
@@ -85,4 +86,13 @@ gherkin_library(
     ],
 )
 
-
+pkg_tar(
+    name = "com.github.doevelopper.atlassians.it.package",
+    srcs = [
+        ":com.github.doevelopper.atlassians.atlas-steps",
+        ":com.github.doevelopper.atlassians.demo-steps",
+    ],
+    extension = "tar.gz",
+    package_dir = "/opt/atlassians/it",
+    visibility = ["//visibility:public"],
+)

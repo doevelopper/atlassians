@@ -3,6 +3,7 @@ load(
     "cc_binary",
     "cc_library"
 )
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 # Common build settings
 COMMON_DEFINES = [
@@ -677,5 +678,15 @@ cc_binary(
     deps = [
         ":com.github.doevelopper.atlassians.main"
     ],
+    visibility = ["//visibility:public"],
+)
+
+pkg_tar(
+    name = "com.github.doevelopper.atlassians.main.package",
+    srcs = [
+        ":com.github.doevelopper.atlassians.main.bin",
+    ],
+    extension = "tar.gz",
+    package_dir = "/opt/atlassians/bin",
     visibility = ["//visibility:public"],
 )
