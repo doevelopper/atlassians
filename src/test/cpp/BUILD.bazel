@@ -1,0 +1,584 @@
+
+load(
+    "@rules_cc//cc:defs.bzl",
+    "cc_library",
+    "cc_test"
+)
+
+load(
+    "@rules_pkg//:pkg.bzl",
+    "pkg_tar",
+    "pkg_deb"
+  )
+
+licenses(["notice"])  # Apache License
+
+
+cc_library(
+    name = "com.github.doevelopper.atlassians.test",
+    srcs = [
+        "com/github/doevelopper/atlassians/utdriver/CustomTestEnvironment.cpp",
+        "com/github/doevelopper/atlassians/utdriver/CustomTestEnvironment.hpp",
+        "com/github/doevelopper/atlassians/utdriver/EnvironmentRecorder.cpp",
+        "com/github/doevelopper/atlassians/utdriver/EnvironmentRecorder.hpp",
+        "com/github/doevelopper/atlassians/utdriver/TestDriver.cpp",
+        "com/github/doevelopper/atlassians/utdriver/TestDriver.hpp",
+        "com/github/doevelopper/atlassians/utdriver/TestEventListener.cpp",
+        "com/github/doevelopper/atlassians/utdriver/TestEventListener.hpp",
+        "com/github/doevelopper/atlassians/utdriver/TestEventListenerConfigure.cpp",
+        "com/github/doevelopper/atlassians/utdriver/TestEventListenerConfigure.hpp",
+    ],
+
+    copts = [
+        "-D_REENTRANT",
+        # "-DGTEST_REMOVE_LEGACY_TEST_CASEAPI_=1",
+        "-std=c++23",
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [],
+        "@bazel_tools//src/conditions:linux_x86_64": [
+              "-I/usr/local/include/",
+              "-std=c++23",
+          ],
+        "@bazel_tools//src/conditions:darwin": [],
+    }),
+
+    includes = [
+        ".",
+    ],
+
+    linkopts = [
+
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [],
+        "@bazel_tools//src/conditions:linux_x86_64": [
+          "-pthread",
+          "-L/usr/local/lib",
+          ],
+        "@bazel_tools//src/conditions:darwin": [],
+    }),
+
+    deps = [
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.logging",
+        "@com_google_googletest//:gtest",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:span",
+#         # "@org_apache_apr//:apr",
+    ],
+
+    visibility = ["//visibility:public"],
+)
+
+
+cc_test(
+    name = "com.github.doevelopper.atlassians.test.atlas.bin",
+    size = "small",
+    srcs = [
+        "main.cpp",
+        "com/github/doevelopper/atlassians/atlas/barriers/SpinLockTest.cpp",
+        "com/github/doevelopper/atlassians/atlas/barriers/SpinLockTest.hpp",
+        "com/github/doevelopper/atlassians/atlas/barriers/SpinMutexTest.cpp",
+        "com/github/doevelopper/atlassians/atlas/barriers/SpinMutexTest.hpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/AuxiliaryTest.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/AuxiliaryTest.hpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/CleanupTest.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/CleanupTest.hpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/CoreTest.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/CoreTest.hpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/CoroLocalStorageTest.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/CoroLocalStorageTest.hpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/DispatcherCoroRangeTest.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/DispatcherCoroRangeTest.hpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/DispatcherSingleton.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/DispatcherSingleton.hpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/ExecutionTest.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/ExecutionTest.hpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/Fixture.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/Fixture.hpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/ForEachTest.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/ForEachTest.hpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/FutureJoinerTest.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/FutureJoinerTest.hpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/GenericFutureTest.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/GenericFutureTest.hpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/LocksTest.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/LocksTest.hpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/MapReduceTest.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/MapReduceTest.hpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/MockTaskId.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/MockTaskId.hpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/MutexTest.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/MutexTest.hpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/ParamtersTest.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/ParamtersTest.hpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/PromiseTest.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/PromiseTest.hpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/quantum_fixture.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/quantum_fixture.h",
+        "com/github/doevelopper/atlassians/atlas/concurrency/quantum_generic_future_tests.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/quantum_locks_tests.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/quantum_perf_utils.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/quantum_perf_utils.h",
+        "com/github/doevelopper/atlassians/atlas/concurrency/quantum_sequencer_experimental_tests.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/quantum_sequencer_test_common.h",
+        "com/github/doevelopper/atlassians/atlas/concurrency/quantum_sequencer_tests.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/quantum_task_state_handler_tests.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/quantum_tests.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/ResourceLimitTest.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/ResourceLimitTest.hpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/SequencerTest.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/SequencerTestData.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/SequencerTestData.hpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/SequencerTest.hpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/SharedQueueTest.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/SharedQueueTest.hpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/StressTestBalanced.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/StressTestBalanced.hpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/StressTest.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/StressTest.hpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/TaskIdTest.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/TaskIdTest.hpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/TestConfiguration.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/TestConfiguration.hpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/TestSequencerPerformance.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/TestSequencerPerformance.hpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/TestTaskStateHandler.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/TestTaskStateHandler.hpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/TestTaskStateHandlerPrivate.cpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/TestTaskStateHandlerPrivate.hpp",
+        "com/github/doevelopper/atlassians/atlas/io/ReaderMock.cpp",
+        "com/github/doevelopper/atlassians/atlas/io/ReaderMock.hpp",
+        "com/github/doevelopper/atlassians/atlas/io/SerializableMock.cpp",
+        "com/github/doevelopper/atlassians/atlas/io/SerializableMock.hpp",
+        "com/github/doevelopper/atlassians/atlas/io/WriterMock.cpp",
+        "com/github/doevelopper/atlassians/atlas/io/WriterMock.hpp",
+        "com/github/doevelopper/atlassians/atlas/NoOpTest.cpp",
+        "com/github/doevelopper/atlassians/atlas/NoOpTest.hpp",
+        "com/github/doevelopper/atlassians/atlas/time/FakeClockTest.cpp",
+        "com/github/doevelopper/atlassians/atlas/time/FakeClockTest.hpp",
+        "com/github/doevelopper/atlassians/atlas/time/ptp/PtpEngineTest.cpp",
+        "com/github/doevelopper/atlassians/atlas/time/ptp/PtpEngineTest.hpp",
+        "com/github/doevelopper/atlassians/atlas/time/TimeFixtureTest.cpp",
+        "com/github/doevelopper/atlassians/atlas/time/TimeFixtureTest.hpp",
+        "com/github/doevelopper/atlassians/atlas/utils/TaskTest.cpp",
+        "com/github/doevelopper/atlassians/atlas/utils/TaskTest.hpp",
+    ],
+
+    copts = [
+        "-D_REENTRANT",
+        "-DGTEST_REMOVE_LEGACY_TEST_CASEAPI_=1",
+        # "-DROOT_DIR=$(workspace)",
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [],
+        "@bazel_tools//src/conditions:linux_x86_64": [
+            "-I/usr/local/include/",
+        ],
+        "@bazel_tools//src/conditions:darwin": [],
+    }),
+    deps = [
+        "//src/test/cpp:com.github.doevelopper.atlassians.test",
+    ],
+
+    # env = [
+    #   "GTEST_INSTALL_FAILURE_SIGNAL_HANDLER:1",
+    #     # $(location log4cxx) ,
+    # ],
+    # env = {"ENVVAR:foo"},
+    visibility = ["//visibility:public"],
+)
+
+
+cc_test(
+    name = "com.github.doevelopper.atlassians.test.canary.bin",
+    size = "small",
+    srcs = [
+        "main.cpp",
+        "com/github/doevelopper/atlassians/canary/SystemInfoTest.cpp",
+        "com/github/doevelopper/atlassians/canary/SystemInfoTest.hpp",
+        "com/github/doevelopper/atlassians/canary/SystemMonitorTest.cpp",
+        "com/github/doevelopper/atlassians/canary/SystemMonitorTest.hpp",
+    ],
+
+    copts = [
+        "-D_REENTRANT",
+        "-DGTEST_REMOVE_LEGACY_TEST_CASEAPI_=1",
+        # "-DROOT_DIR=$(workspace)",
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [],
+        "@bazel_tools//src/conditions:linux_x86_64": [
+            "-I/usr/local/include/",
+        ],
+        "@bazel_tools//src/conditions:darwin": [],
+    }),
+    deps = [
+        "//src/test/cpp:com.github.doevelopper.atlassians.test",
+    ],
+
+    # env = [
+    #   "GTEST_INSTALL_FAILURE_SIGNAL_HANDLER:1",
+    #     # $(location log4cxx) ,
+    # ],
+    # env = {"ENVVAR:foo"},
+    visibility = ["//visibility:public"],
+)
+
+
+cc_test(
+    name = "com.github.doevelopper.atlassians.test.demo.bin",
+    size = "small",
+    srcs = [
+        # "main.cpp",
+        "com/github/doevelopper/atlassians/demo/CalculatorTest.cpp",
+        "com/github/doevelopper/atlassians/demo/CalculatorTest.hpp",
+    ],
+
+    copts = [
+        "-D_REENTRANT",
+        "-DGTEST_REMOVE_LEGACY_TEST_CASEAPI_=1",
+        # "-DROOT_DIR=$(workspace)",
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [],
+        "@bazel_tools//src/conditions:linux_x86_64": [
+            "-I/usr/local/include/",
+        ],
+        "@bazel_tools//src/conditions:darwin": [],
+    }),
+    deps = [
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.demo",
+        "//src/test/cpp:com.github.doevelopper.atlassians.test",
+    ],
+
+    # env = [
+    #   "GTEST_INSTALL_FAILURE_SIGNAL_HANDLER:1",
+    #     # $(location log4cxx) ,
+    # ],
+    # env = {"ENVVAR:foo"},
+    visibility = ["//visibility:public"],
+)
+
+
+cc_test(
+    name = "com.github.doevelopper.atlassians.test.launcher.bin",
+    size = "small",
+    srcs = [
+        "main.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/CommandLineParserTest.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/CommandLineParserTest.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/ConfigurationTest.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/ConfigurationTest.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/TypedOptionTest.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/TypedOptionTest.hpp",
+        "com/github/doevelopper/atlassians/launcher/fsm/ApplicationFSMTest.cpp",
+        "com/github/doevelopper/atlassians/launcher/fsm/ApplicationFSMTest.hpp",
+    ],
+
+    copts = [
+        "-D_REENTRANT",
+        "-DGTEST_REMOVE_LEGACY_TEST_CASEAPI_=1",
+        # "-DROOT_DIR=$(workspace)",
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [],
+        "@bazel_tools//src/conditions:linux_x86_64": [
+            "-I/usr/local/include/",
+        ],
+        "@bazel_tools//src/conditions:darwin": [],
+    }),
+    deps = [
+        "//src/test/cpp:com.github.doevelopper.atlassians.test",
+    ],
+
+    # env = [
+    #   "GTEST_INSTALL_FAILURE_SIGNAL_HANDLER:1",
+    #     # $(location log4cxx) ,
+    # ],
+    # env = {"ENVVAR:foo"},
+    visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "com.github.doevelopper.atlassians.test.licensing.bin",
+    size = "small",
+    srcs = [
+        "main.cpp",
+        "com/github/doevelopper/atlassians/licensing/LicenseManagerTest.cpp",
+        "com/github/doevelopper/atlassians/licensing/LicenseManagerTest.hpp",
+        "com/github/doevelopper/atlassians/licensing/LicenseStorageTest.cpp",
+        "com/github/doevelopper/atlassians/licensing/LicenseStorageTest.hpp",
+        "com/github/doevelopper/atlassians/licensing/LicenseTest.cpp",
+        "com/github/doevelopper/atlassians/licensing/LicenseTest.hpp",
+        "com/github/doevelopper/atlassians/licensing/LicenseValidatorTest.cpp",
+        "com/github/doevelopper/atlassians/licensing/LicenseValidatorTest.hpp",
+    ],
+
+    copts = [
+        "-D_REENTRANT",
+        "-DGTEST_REMOVE_LEGACY_TEST_CASEAPI_=1",
+        # "-DROOT_DIR=$(workspace)",
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [],
+        "@bazel_tools//src/conditions:linux_x86_64": [
+            "-I/usr/local/include/",
+        ],
+        "@bazel_tools//src/conditions:darwin": [],
+    }),
+    deps = [
+        "//src/test/cpp:com.github.doevelopper.atlassians.test",
+    ],
+
+    # env = [
+    #   "GTEST_INSTALL_FAILURE_SIGNAL_HANDLER:1",
+    #     # $(location log4cxx) ,
+    # ],
+    # env = {"ENVVAR:foo"},
+    visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "com.github.doevelopper.atlassians.test.plugin.bin",
+    size = "small",
+    srcs = [
+        "main.cpp",
+        "com/github/doevelopper/atlassians/plugin/communication/EventBusTest.cpp",
+        "com/github/doevelopper/atlassians/plugin/registry/PluginRegistryTest.cpp",
+        "com/github/doevelopper/atlassians/plugin/resolver/DependencyResolverTest.cpp",
+    ],
+
+    copts = [
+        "-D_REENTRANT",
+        "-DGTEST_REMOVE_LEGACY_TEST_CASEAPI_=1",
+        # "-DROOT_DIR=$(workspace)",
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [],
+        "@bazel_tools//src/conditions:linux_x86_64": [
+            "-I/usr/local/include/",
+        ],
+        "@bazel_tools//src/conditions:darwin": [],
+    }),
+    deps = [
+        "//src/test/cpp:com.github.doevelopper.atlassians.test",
+    ],
+
+    # env = [
+    #   "GTEST_INSTALL_FAILURE_SIGNAL_HANDLER:1",
+    #     # $(location log4cxx) ,
+    # ],
+    # env = {"ENVVAR:foo"},
+    visibility = ["//visibility:public"],
+)
+
+
+cc_test(
+    name = "com.github.doevelopper.atlassians.test.bin",
+    size = "small",
+    srcs = [
+        "main.cpp",
+        "com/github/doevelopper/atlassians/quota/BoundedAllocatorTest.cpp",
+        "com/github/doevelopper/atlassians/quota/BoundedAllocatorTest.hpp",
+        "com/github/doevelopper/atlassians/quota/DeferredReclamationAllocatorTest.cpp",
+        "com/github/doevelopper/atlassians/quota/DeferredReclamationAllocatorTest.hpp",
+        "com/github/doevelopper/atlassians/quota/OutOfMemoryAllocatorTest.cpp",
+        "com/github/doevelopper/atlassians/quota/OutOfMemoryAllocatorTest.hpp",
+    ],
+
+    copts = [
+        "-D_REENTRANT",
+        "-DGTEST_REMOVE_LEGACY_TEST_CASEAPI_=1",
+        # "-DROOT_DIR=$(workspace)",
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [],
+        "@bazel_tools//src/conditions:linux_x86_64": [
+            "-I/usr/local/include/",
+        ],
+        "@bazel_tools//src/conditions:darwin": [],
+    }),
+    deps = [
+        "//src/test/cpp:com.github.doevelopper.atlassians.test",
+    ],
+
+    # env = [
+    #   "GTEST_INSTALL_FAILURE_SIGNAL_HANDLER:1",
+    #     # $(location log4cxx) ,
+    # ],
+    # env = {"ENVVAR:foo"},
+    visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "com.github.doevelopper.atlassians.test.quota.bin",
+    size = "small",
+    srcs = [
+        "main.cpp",
+        "com/github/doevelopper/atlassians/quota/security/Crc32CTest.cpp",
+        "com/github/doevelopper/atlassians/quota/security/Crc32CTest.hpp",
+        "com/github/doevelopper/atlassians/quota/security/SslCryptoTest.cpp",
+        "com/github/doevelopper/atlassians/quota/security/SslCryptoTest.hpp",
+    ],
+
+    copts = [
+        "-D_REENTRANT",
+        "-DGTEST_REMOVE_LEGACY_TEST_CASEAPI_=1",
+        # "-DROOT_DIR=$(workspace)",
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [],
+        "@bazel_tools//src/conditions:linux_x86_64": [
+            "-I/usr/local/include/",
+        ],
+        "@bazel_tools//src/conditions:darwin": [],
+    }),
+    deps = [
+        "//src/test/cpp:com.github.doevelopper.atlassians.test",
+    ],
+
+    # env = [
+    #   "GTEST_INSTALL_FAILURE_SIGNAL_HANDLER:1",
+    #     # $(location log4cxx) ,
+    # ],
+    # env = {"ENVVAR:foo"},
+    visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "com.github.doevelopper.atlassians.test.triada.bin",
+    size = "small",
+    srcs = [
+        "main.cpp",
+        "com/github/doevelopper/atlassians/triada/ErrorCodeTest.cpp",
+        "com/github/doevelopper/atlassians/triada/ErrorCodeTest.hpp",
+        "com/github/doevelopper/atlassians/triada/ErrorStateMachineTest.cpp",
+        "com/github/doevelopper/atlassians/triada/ErrorStateMachineTest.hpp",
+        "com/github/doevelopper/atlassians/triada/ErrorTest.cpp",
+        "com/github/doevelopper/atlassians/triada/ErrorTest.hpp",
+        "com/github/doevelopper/atlassians/triada/RecoveryStrategyTest.cpp",
+        "com/github/doevelopper/atlassians/triada/RecoveryStrategyTest.hpp",
+    ],
+
+    copts = [
+        "-D_REENTRANT",
+        "-DGTEST_REMOVE_LEGACY_TEST_CASEAPI_=1",
+        # "-DROOT_DIR=$(workspace)",
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [],
+        "@bazel_tools//src/conditions:linux_x86_64": [
+            "-I/usr/local/include/",
+        ],
+        "@bazel_tools//src/conditions:darwin": [],
+    }),
+    deps = [
+        "//src/test/cpp:com.github.doevelopper.atlassians.test",
+    ],
+
+    # env = [
+    #   "GTEST_INSTALL_FAILURE_SIGNAL_HANDLER:1",
+    #     # $(location log4cxx) ,
+    # ],
+    # env = {"ENVVAR:foo"},
+    visibility = ["//visibility:public"],
+)
+
+cc_test(
+    name = "com.github.doevelopper.atlassians.test.semver.bin",
+    size = "small",
+    srcs = [
+        "main.cpp",
+        "com/github/doevelopper/atlassians/semver/VersionConstraintTest.cpp",
+        "com/github/doevelopper/atlassians/semver/VersionConstraintTest.hpp",
+        "com/github/doevelopper/atlassians/semver/VersionTest.cpp",
+        "com/github/doevelopper/atlassians/semver/VersionTest.hpp",
+    ],
+
+    copts = [
+        "-D_REENTRANT",
+        "-DGTEST_REMOVE_LEGACY_TEST_CASEAPI_=1",
+        # "-DROOT_DIR=$(workspace)",
+    ] + select({
+        "@bazel_tools//src/conditions:windows": [],
+        "@bazel_tools//src/conditions:linux_x86_64": [
+            "-I/usr/local/include/",
+        ],
+        "@bazel_tools//src/conditions:darwin": [],
+    }),
+    deps = [
+        "//src/test/cpp:com.github.doevelopper.atlassians.test",
+    ],
+
+    # env = [
+    #   "GTEST_INSTALL_FAILURE_SIGNAL_HANDLER:1",
+    #     # $(location log4cxx) ,
+    # ],
+    # env = {"ENVVAR:foo"},
+    visibility = ["//visibility:public"],
+)
+
+
+# cc_test(
+#     name = "first_fuzz_test",
+#     srcs = ["first_fuzz_test.cc"],
+#     shard_count = 50,
+#     deps = [
+#         "@com_google_fuzztest//fuzztest",
+#         "@com_google_fuzztest//fuzztest:fuzztest_gtest_main",
+#         "@com_google_googletest//:gtest"
+#     ],
+# )
+
+# Can be run with or without `--config=fuzztest`. When running without, the
+# fuzzing mode tests are skipped.
+# cc_test(
+#     name = "functional_test",
+#     timeout = "long",
+#     srcs = ["functional_test.cc"],
+#     data = [
+#         "@com_google_fuzztest//e2e_tests/testdata:fuzz_tests_for_functional_testing.stripped",
+#         "@com_google_fuzztest//e2e_tests/testdata:fuzz_tests_with_invalid_seeds.stripped",
+#     ],
+#     shard_count = 50,
+#     deps = [
+#         "@com_google_absl//absl/container:flat_hash_map",
+#         "@com_google_absl//absl/strings",
+#         "@com_google_absl//absl/strings:str_format",
+#         "@com_google_absl//absl/time",
+#         "@com_google_fuzztest//fuzztest:io",
+#         "@com_google_fuzztest//fuzztest:logging",
+#         "@com_google_fuzztest//fuzztest:serialization",
+#         "@com_google_fuzztest//fuzztest:subprocess",
+#         "@com_google_fuzztest//fuzztest:type_support",
+#         "@com_google_googletest//:gtest_main",
+#         "@com_googlesource_code_re2//:re2",
+#     ],
+# )
+
+# Must be run with `--config=fuzztest`, as it benchmarks fuzzing mode, which
+# needs coverage instrumentation.
+# cc_binary(
+#     name = "benchmark_test",
+#     testonly = 1,
+#     srcs = ["benchmark_test.cc"],
+#     data = ["@com_google_fuzztest//e2e_tests/testdata:fuzz_tests_for_microbenchmarking.stripped"],
+#     deps = [
+#         "@com_google_absl//absl/flags:flag",
+#         "@com_google_absl//absl/flags:parse",
+#         "@com_google_absl//absl/strings",
+#         "@com_google_absl//absl/strings:str_format",
+#         "@com_google_absl//absl/time",
+#         "@com_google_fuzztest//fuzztest:logging",
+#         "@com_google_fuzztest//fuzztest:subprocess",
+#     ],
+# )
+
+pkg_tar(
+    name = "com.github.doevelopper.atlassians.test.package",
+    srcs = [
+        ":com.github.doevelopper.atlassians.test.atlas.bin",
+        ":com.github.doevelopper.atlassians.test.canary.bin",
+        ":com.github.doevelopper.atlassians.test.demo.bin",
+        ":com.github.doevelopper.atlassians.test.launcher.bin",
+        ":com.github.doevelopper.atlassians.test.licensing.bin",
+        ":com.github.doevelopper.atlassians.test.plugin.bin",
+        ":com.github.doevelopper.atlassians.test.bin",
+        ":com.github.doevelopper.atlassians.test.quota.bin",
+        ":com.github.doevelopper.atlassians.test.triada.bin",
+        ":com.github.doevelopper.atlassians.test.semver.bin",
+    ],
+    extension = "tar.gz",
+    package_dir = "/opt/atlassians/test",
+    visibility = ["//visibility:public"],
+)

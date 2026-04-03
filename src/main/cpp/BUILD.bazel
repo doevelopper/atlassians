@@ -1,0 +1,692 @@
+load(
+    "@rules_cc//cc:defs.bzl",
+    "cc_binary",
+    "cc_library"
+)
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+
+# Common build settings
+COMMON_DEFINES = [
+    "LOG_LEVEL=1",
+]
+
+# Platform-specific settings
+WIN32_DEFINES = ["RTX_WIN32"]
+WIN32_LINKOPTS = []
+
+LINUX_DEFINES = ["RT_LINUX"]
+LINUX_LINKOPTS = [
+    "-L/usr/local/lib",
+    "-lpthread",
+    "-lrt",
+    "-luuid",
+]
+
+DARWIN_DEFINES = []
+DARWIN_LINKOPTS = []
+
+cc_library(
+    name = "com.github.doevelopper.atlassians.main.logging",
+    hdrs = [
+        "com/github/doevelopper/atlassians/API_Export.hpp",
+        "com/github/doevelopper/atlassians/CompilerDetection.hpp",
+        "com/github/doevelopper/atlassians/Poison.hpp",
+    ],
+    srcs = [
+        "com/github/doevelopper/atlassians/logging/CustomLogger.cpp",
+        "com/github/doevelopper/atlassians/logging/CustomLogger.hpp",
+        "com/github/doevelopper/atlassians/logging/CustomLoggerPrivate.cpp",
+        "com/github/doevelopper/atlassians/logging/CustomLoggerPrivate.hpp",
+        "com/github/doevelopper/atlassians/logging/DefaultInitializationStrategy.cpp",
+        "com/github/doevelopper/atlassians/logging/DefaultInitializationStrategy.hpp",
+        "com/github/doevelopper/atlassians/logging/Demangler.cpp",
+        "com/github/doevelopper/atlassians/logging/Demangler.hpp",
+        #"com/github/doevelopper/atlassians/logging/EncryptedFileAppender.cpp",
+        #"com/github/doevelopper/atlassians/logging/EncryptedFileAppender.hpp",
+        "com/github/doevelopper/atlassians/logging/EnvironmentBasedInitializationStrategy.cpp",
+        "com/github/doevelopper/atlassians/logging/EnvironmentBasedInitializationStrategy.hpp",
+        "com/github/doevelopper/atlassians/logging/ILoggingInitializationStrategy.cpp",
+        "com/github/doevelopper/atlassians/logging/ILoggingInitializationStrategy.hpp",
+        "com/github/doevelopper/atlassians/logging/LogMacros.hpp",
+        "com/github/doevelopper/atlassians/logging/LoggingInitializationFactory.cpp",
+        "com/github/doevelopper/atlassians/logging/LoggingInitializationFactory.hpp",
+        "com/github/doevelopper/atlassians/logging/LoggingInitializer.cpp",
+        "com/github/doevelopper/atlassians/logging/LoggingInitializer.hpp",
+        "com/github/doevelopper/atlassians/logging/ProgrammaticInitializationStrategy.cpp",
+        "com/github/doevelopper/atlassians/logging/ProgrammaticInitializationStrategy.hpp",
+        "com/github/doevelopper/atlassians/logging/PropertyFileBasedInitializationStrategy.cpp",
+        "com/github/doevelopper/atlassians/logging/PropertyFileBasedInitializationStrategy.hpp",
+        "com/github/doevelopper/atlassians/logging/XMLFileBasedInitializationStrategy.cpp",
+        "com/github/doevelopper/atlassians/logging/XMLFileBasedInitializationStrategy.hpp",
+    ],
+    defines = COMMON_DEFINES + select({
+        "@bazel_tools//src/conditions:windows": WIN32_DEFINES,
+        "@bazel_tools//src/conditions:linux_x86_64": LINUX_DEFINES,
+        "//conditions:default": [],
+    }),
+    copts = ["-DLOG_LEVEL=1"] + select({
+        "@bazel_tools//src/conditions:windows": ["/std:c++17"],
+        "//conditions:default": ["-D_REENTRANT", "-fPIC"],
+    }),
+    features = select({
+        "@bazel_tools//src/conditions:windows": ["windows_export_all_symbols"],
+        "//conditions:default": [],
+    }),
+    includes = ["."],
+    linkopts = select({
+        "@bazel_tools//src/conditions:windows": WIN32_LINKOPTS,
+        "@bazel_tools//src/conditions:linux_x86_64": LINUX_LINKOPTS,
+        "@bazel_tools//src/conditions:darwin": DARWIN_LINKOPTS,
+    }),
+    deps = [
+
+        # Link against APR (Apache Portable Runtime)
+        # bazel query @org_apache_apr//...:all
+        "@org_apache_apr//:apr",
+
+        # Link against APR-util
+        # bazel query @org_apache_apr_util//...:all
+        "@org_apache_apr_util//:apr_util",
+
+        # Link against log4cxx (Apache Logging for C++)
+        # bazel query @org_apache_log4cxx//...:all
+        "@org_apache_log4cxx//:log4cxx",
+
+        # Link against OpenSSL SSL and Crypto libraries
+        # bazel query @openssl//...:all
+        "@openssl//:ssl",
+        "@openssl//:crypto",
+        "@fmt//:fmt",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "com.github.doevelopper.atlassians.main.semver",
+    hdrs = [
+        "com/github/doevelopper/atlassians/semver/GitRevision.hpp",
+    ],
+    srcs = [
+        "com/github/doevelopper/atlassians/semver/Version.cpp",
+        "com/github/doevelopper/atlassians/semver/Version.hpp",
+        "com/github/doevelopper/atlassians/semver/VersionConstraint.cpp",
+        "com/github/doevelopper/atlassians/semver/VersionConstraint.hpp",
+    ],
+    defines = COMMON_DEFINES + select({
+        "@bazel_tools//src/conditions:windows": WIN32_DEFINES,
+        "@bazel_tools//src/conditions:linux_x86_64": LINUX_DEFINES,
+        "//conditions:default": [],
+    }),
+    copts = ["-DLOG_LEVEL=1"] + select({
+        "@bazel_tools//src/conditions:windows": ["/std:c++20"],
+        "//conditions:default": ["-D_REENTRANT", "-fPIC" ,"-std=c++20"],
+    }),
+    features = select({
+        "@bazel_tools//src/conditions:windows": ["windows_export_all_symbols"],
+        "//conditions:default": [],
+    }),
+    includes = ["."],
+    linkopts = select({
+        "@bazel_tools//src/conditions:windows": WIN32_LINKOPTS,
+        "@bazel_tools//src/conditions:linux_x86_64": LINUX_LINKOPTS,
+        "@bazel_tools//src/conditions:darwin": DARWIN_LINKOPTS,
+    }),
+    deps = [
+
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.logging",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+
+cc_library(
+    name = "com.github.doevelopper.atlassians.main.launcher",
+
+    srcs = [
+        "com/github/doevelopper/atlassians/launcher/Application.cpp",
+        "com/github/doevelopper/atlassians/launcher/Application.hpp",
+        "com/github/doevelopper/atlassians/launcher/ApplicationPrivate.cpp",
+        "com/github/doevelopper/atlassians/launcher/ApplicationPrivate.hpp",
+        "com/github/doevelopper/atlassians/launcher/Package.cpp",
+        "com/github/doevelopper/atlassians/launcher/Package.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/AbstractConfiguration.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/AbstractConfiguration.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/AbstractOption.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/AbstractOption.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/BooleanOption.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/BooleanOption.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/CommandLineParser.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/CommandLineParser.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/ConfigurationFileOption.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/ConfigurationFileOption.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/DefaultConfiguration.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/DefaultConfiguration.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/EnvironmentOption.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/EnvironmentOption.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/Grouped.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/Grouped.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/HiddenOption.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/HiddenOption.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/IConfiguration.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/IConfiguration.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/IOption.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/IOption.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/ImplicitOption.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/ImplicitOption.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/MultiValueOption.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/MultiValueOption.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/NamedOption.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/NamedOption.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/Optional.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/Optional.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/PositionalOption.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/PositionalOption.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/ProgramOption.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/ProgramOption.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/Required.cpp",
+        "com/github/doevelopper/atlassians/launcher/args/Required.hpp",
+        "com/github/doevelopper/atlassians/launcher/args/TypedOption.hpp",
+        "com/github/doevelopper/atlassians/launcher/fsm/ApplicationFSM.cpp",
+        "com/github/doevelopper/atlassians/launcher/fsm/ApplicationFSM.hpp",
+        "com/github/doevelopper/atlassians/launcher/fsm/FSMContext.hpp",
+        "com/github/doevelopper/atlassians/launcher/fsm/FSMEvents.hpp",
+        "com/github/doevelopper/atlassians/launcher/fsm/FSMStates.hpp",
+    ],
+    defines = COMMON_DEFINES + select({
+        "@bazel_tools//src/conditions:windows": WIN32_DEFINES,
+        "@bazel_tools//src/conditions:linux_x86_64": LINUX_DEFINES,
+        "//conditions:default": [],
+    }),
+    copts = ["-DLOG_LEVEL=1"] + select({
+        "@bazel_tools//src/conditions:windows": ["/std:c++23"],
+        "//conditions:default": ["-D_REENTRANT", "-fPIC", "-std=c++23"],
+    }),
+    features = select({
+        "@bazel_tools//src/conditions:windows": ["windows_export_all_symbols"],
+        "//conditions:default": [],
+    }),
+    includes = ["."],
+    linkopts = select({
+        "@bazel_tools//src/conditions:windows": WIN32_LINKOPTS,
+        "@bazel_tools//src/conditions:linux_x86_64": LINUX_LINKOPTS,
+        "@bazel_tools//src/conditions:darwin": DARWIN_LINKOPTS,
+    }),
+    deps = [
+        "@boost.asio//:boost.asio",
+        "@boost.program_options//:boost.program_options",
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.logging",
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.semver",
+        # TODO: Add rapidjson and other boost libs when configured
+    ],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "com.github.doevelopper.atlassians.main.atlas",
+
+    srcs = [
+        "com/github/doevelopper/atlassians/atlas/Activator.cpp",
+        "com/github/doevelopper/atlassians/atlas/Activator.hpp",
+        "com/github/doevelopper/atlassians/atlas/NoOp.cpp",
+        "com/github/doevelopper/atlassians/atlas/NoOp.hpp",
+        "com/github/doevelopper/atlassians/atlas/Notification.cpp",
+        "com/github/doevelopper/atlassians/atlas/Notification.hpp",
+        "com/github/doevelopper/atlassians/atlas/barriers/RecursiveReadLock.cpp",
+        "com/github/doevelopper/atlassians/atlas/barriers/RecursiveReadLock.hpp",
+        "com/github/doevelopper/atlassians/atlas/barriers/RecursiveReadWriteMutex.cpp",
+        "com/github/doevelopper/atlassians/atlas/barriers/RecursiveReadWriteMutex.hpp",
+        "com/github/doevelopper/atlassians/atlas/barriers/RecursiveWriteLock.cpp",
+        "com/github/doevelopper/atlassians/atlas/barriers/RecursiveWriteLock.hpp",
+        "com/github/doevelopper/atlassians/atlas/barriers/SpinGuard.cpp",
+        "com/github/doevelopper/atlassians/atlas/barriers/SpinGuard.hpp",
+        "com/github/doevelopper/atlassians/atlas/barriers/SpinLock.cpp",
+        "com/github/doevelopper/atlassians/atlas/barriers/SpinLock.hpp",
+        "com/github/doevelopper/atlassians/atlas/barriers/SpinMutex.cpp",
+        "com/github/doevelopper/atlassians/atlas/barriers/SpinMutex.hpp",
+        "com/github/doevelopper/atlassians/atlas/barriers/Synchronised.cpp",
+        "com/github/doevelopper/atlassians/atlas/barriers/Synchronised.hpp",
+        "com/github/doevelopper/atlassians/atlas/details/AnyNull.hpp",
+        "com/github/doevelopper/atlassians/atlas/details/CallableType.cpp",
+        "com/github/doevelopper/atlassians/atlas/details/CallableType.hpp",
+        "com/github/doevelopper/atlassians/atlas/details/Either.hpp",
+        "com/github/doevelopper/atlassians/atlas/io/AbstractSerializable.cpp",
+        "com/github/doevelopper/atlassians/atlas/io/AbstractSerializable.hpp",
+        "com/github/doevelopper/atlassians/atlas/io/Reader.cpp",
+        "com/github/doevelopper/atlassians/atlas/io/Reader.hpp",
+        "com/github/doevelopper/atlassians/atlas/io/Writer.cpp",
+        "com/github/doevelopper/atlassians/atlas/io/Writer.hpp",
+        "com/github/doevelopper/atlassians/atlas/quota/BoundedAllocator.cpp",
+        "com/github/doevelopper/atlassians/atlas/quota/BoundedAllocator.hpp",
+        "com/github/doevelopper/atlassians/atlas/quota/DeferredReclamationAllocator.cpp",
+        "com/github/doevelopper/atlassians/atlas/quota/DeferredReclamationAllocator.hpp",
+        "com/github/doevelopper/atlassians/atlas/quota/NullAllocator.cpp",
+        "com/github/doevelopper/atlassians/atlas/quota/NullAllocator.hpp",
+        "com/github/doevelopper/atlassians/atlas/quota/OnDestruction.cpp",
+        "com/github/doevelopper/atlassians/atlas/quota/OnDestruction.hpp",
+        "com/github/doevelopper/atlassians/atlas/quota/OutOfMemoryAllocator.cpp",
+        "com/github/doevelopper/atlassians/atlas/quota/OutOfMemoryAllocator.hpp",
+        "com/github/doevelopper/atlassians/atlas/security/Crc32C.cpp",
+        "com/github/doevelopper/atlassians/atlas/security/Crc32C.hpp",
+        "com/github/doevelopper/atlassians/atlas/security/SslCrypto.cpp",
+        "com/github/doevelopper/atlassians/atlas/security/SslCrypto.hpp",
+        "com/github/doevelopper/atlassians/atlas/time/AdelsonVelskyLandis.hpp",
+        "com/github/doevelopper/atlassians/atlas/time/AdelsonVelskyLandisNode.cpp",
+        "com/github/doevelopper/atlassians/atlas/time/AdelsonVelskyLandisNode.hpp",
+        "com/github/doevelopper/atlassians/atlas/time/AdelsonVelskyLandisTree.cpp",
+        "com/github/doevelopper/atlassians/atlas/time/AdelsonVelskyLandisTree.hpp",
+        "com/github/doevelopper/atlassians/atlas/time/Alarm.cpp",
+        "com/github/doevelopper/atlassians/atlas/time/Alarm.hpp",
+        "com/github/doevelopper/atlassians/atlas/time/AlarmFactory.cpp",
+        "com/github/doevelopper/atlassians/atlas/time/AlarmFactory.hpp",
+        "com/github/doevelopper/atlassians/atlas/time/NaturallyAligned.cpp",
+        "com/github/doevelopper/atlassians/atlas/time/NaturallyAligned.hpp",
+        "com/github/doevelopper/atlassians/atlas/time/PosixTimestamp.cpp",
+        "com/github/doevelopper/atlassians/atlas/time/PosixTimestamp.hpp",
+        "com/github/doevelopper/atlassians/atlas/time/TimeFixture.cpp",
+        "com/github/doevelopper/atlassians/atlas/time/TimeFixture.hpp",
+        "com/github/doevelopper/atlassians/atlas/time/TimeSlicingEvent.cpp",
+        "com/github/doevelopper/atlassians/atlas/time/TimeSlicingEvent.hpp",
+        "com/github/doevelopper/atlassians/atlas/time/TimeoutGuard.cpp",
+        "com/github/doevelopper/atlassians/atlas/time/TimeoutGuard.hpp",
+        "com/github/doevelopper/atlassians/atlas/time/Timer.cpp",
+        "com/github/doevelopper/atlassians/atlas/time/Timer.hpp",
+        "com/github/doevelopper/atlassians/atlas/time/Timeslicing.cpp",
+        "com/github/doevelopper/atlassians/atlas/time/Timeslicing.hpp",
+        "com/github/doevelopper/atlassians/atlas/time/WaitNotifier.cpp",
+        "com/github/doevelopper/atlassians/atlas/time/WaitNotifier.hpp",
+        "com/github/doevelopper/atlassians/atlas/time/ptp/Bmca.cpp",
+        "com/github/doevelopper/atlassians/atlas/time/ptp/Bmca.hpp",
+        "com/github/doevelopper/atlassians/atlas/time/ptp/INetworkAdapter.cpp",
+        "com/github/doevelopper/atlassians/atlas/time/ptp/INetworkAdapter.hpp",
+        "com/github/doevelopper/atlassians/atlas/time/ptp/IPtpClock.cpp",
+        "com/github/doevelopper/atlassians/atlas/time/ptp/IPtpClock.hpp",
+        "com/github/doevelopper/atlassians/atlas/time/ptp/PtpEngine.cpp",
+        "com/github/doevelopper/atlassians/atlas/time/ptp/PtpEngine.hpp",
+        "com/github/doevelopper/atlassians/atlas/time/ptp/PtpMessage.cpp",
+        "com/github/doevelopper/atlassians/atlas/time/ptp/PtpMessage.hpp",
+        "com/github/doevelopper/atlassians/atlas/time/ptp/PtpStateMachine.cpp",
+        "com/github/doevelopper/atlassians/atlas/time/ptp/PtpStateMachine.hpp",
+        "com/github/doevelopper/atlassians/atlas/time/ptp/PtpTimestamp.cpp",
+        "com/github/doevelopper/atlassians/atlas/time/ptp/PtpTimestamp.hpp",
+        "com/github/doevelopper/atlassians/atlas/time/ptp/PtpTypes.hpp",
+        "com/github/doevelopper/atlassians/atlas/utils/SignalHandler.cpp",
+        "com/github/doevelopper/atlassians/atlas/utils/SignalHandler.hpp",
+        "com/github/doevelopper/atlassians/atlas/utils/Singleton.hpp",
+        "com/github/doevelopper/atlassians/atlas/utils/Task.cpp",
+        "com/github/doevelopper/atlassians/atlas/utils/Task.hpp",
+    ],
+    defines = COMMON_DEFINES + select({
+        "@bazel_tools//src/conditions:windows": WIN32_DEFINES,
+        "@bazel_tools//src/conditions:linux_x86_64": LINUX_DEFINES,
+        "//conditions:default": [],
+    }),
+    copts = ["-DLOG_LEVEL=1"] + select({
+        "@bazel_tools//src/conditions:windows": ["/std:c++17"],
+        "//conditions:default": ["-D_REENTRANT", "-fPIC"],
+    }),
+    features = select({
+        "@bazel_tools//src/conditions:windows": ["windows_export_all_symbols"],
+        "//conditions:default": [],
+    }),
+    includes = ["."],
+    linkopts = select({
+        "@bazel_tools//src/conditions:windows": WIN32_LINKOPTS,
+        "@bazel_tools//src/conditions:linux_x86_64": LINUX_LINKOPTS,
+        "@bazel_tools//src/conditions:darwin": DARWIN_LINKOPTS,
+    }),
+    deps = [
+        "@boost.asio//:boost.asio",
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.logging",
+        # TODO: Add rapidjson and other boost libs when configured
+    ],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "com.github.doevelopper.atlassians.main.canary",
+
+    srcs = [
+        "com/github/doevelopper/atlassians/canary/ISystemInfoProvider.hpp",
+        "com/github/doevelopper/atlassians/canary/ISystemObserver.hpp",
+        "com/github/doevelopper/atlassians/canary/ProcCpuInfoProvider.cpp",
+        "com/github/doevelopper/atlassians/canary/ProcCpuInfoProvider.hpp",
+        "com/github/doevelopper/atlassians/canary/ProcLoadAvgProvider.cpp",
+        "com/github/doevelopper/atlassians/canary/ProcLoadAvgProvider.hpp",
+        "com/github/doevelopper/atlassians/canary/ProcMemInfoProvider.cpp",
+        "com/github/doevelopper/atlassians/canary/ProcMemInfoProvider.hpp",
+        "com/github/doevelopper/atlassians/canary/ProcUptimeProvider.cpp",
+        "com/github/doevelopper/atlassians/canary/ProcUptimeProvider.hpp",
+        "com/github/doevelopper/atlassians/canary/SystemInfo.cpp",
+        "com/github/doevelopper/atlassians/canary/SystemInfo.hpp",
+        "com/github/doevelopper/atlassians/canary/SystemMetrics.hpp",
+        "com/github/doevelopper/atlassians/canary/SystemMonitor.cpp",
+        "com/github/doevelopper/atlassians/canary/SystemMonitor.hpp",
+    ],
+    defines = COMMON_DEFINES + select({
+        "@bazel_tools//src/conditions:windows": WIN32_DEFINES,
+        "@bazel_tools//src/conditions:linux_x86_64": LINUX_DEFINES,
+        "//conditions:default": [],
+    }),
+    copts = ["-DLOG_LEVEL=1"] + select({
+        "@bazel_tools//src/conditions:windows": ["/std:c++17"],
+        "//conditions:default": ["-D_REENTRANT", "-fPIC"],
+    }),
+    features = select({
+        "@bazel_tools//src/conditions:windows": ["windows_export_all_symbols"],
+        "//conditions:default": [],
+    }),
+    includes = ["."],
+    linkopts = select({
+        "@bazel_tools//src/conditions:windows": WIN32_LINKOPTS,
+        "@bazel_tools//src/conditions:linux_x86_64": LINUX_LINKOPTS,
+        "@bazel_tools//src/conditions:darwin": DARWIN_LINKOPTS,
+    }),
+    deps = [
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.logging",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "com.github.doevelopper.atlassians.main.events",
+
+    srcs = [
+        "com/github/doevelopper/atlassians/events/pub/IBroker.cpp",
+        "com/github/doevelopper/atlassians/events/pub/IBroker.hpp",
+        "com/github/doevelopper/atlassians/events/pub/IPublisher.hpp",
+        "com/github/doevelopper/atlassians/events/pub/ISubscriber.hpp",
+        "com/github/doevelopper/atlassians/events/pub/PubSub.cpp",
+        "com/github/doevelopper/atlassians/events/pub/PubSub.hpp",
+        "com/github/doevelopper/atlassians/events/pub/Publisher.cpp",
+        "com/github/doevelopper/atlassians/events/pub/Publisher.hpp",
+        "com/github/doevelopper/atlassians/events/pub/Subscriber.cpp",
+        "com/github/doevelopper/atlassians/events/pub/Subscriber.hpp",
+    ],
+    defines = COMMON_DEFINES + select({
+        "@bazel_tools//src/conditions:windows": WIN32_DEFINES,
+        "@bazel_tools//src/conditions:linux_x86_64": LINUX_DEFINES,
+        "//conditions:default": [],
+    }),
+    copts = ["-DLOG_LEVEL=1"] + select({
+        "@bazel_tools//src/conditions:windows": ["/std:c++17"],
+        "//conditions:default": ["-D_REENTRANT", "-fPIC"],
+    }),
+    features = select({
+        "@bazel_tools//src/conditions:windows": ["windows_export_all_symbols"],
+        "//conditions:default": [],
+    }),
+    includes = ["."],
+    linkopts = select({
+        "@bazel_tools//src/conditions:windows": WIN32_LINKOPTS,
+        "@bazel_tools//src/conditions:linux_x86_64": LINUX_LINKOPTS,
+        "@bazel_tools//src/conditions:darwin": DARWIN_LINKOPTS,
+    }),
+    deps = [
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.logging",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "com.github.doevelopper.atlassians.main.licensing",
+
+    srcs = [
+    "com/github/doevelopper/atlassians/licensing/BaseLicenseStorage.cpp",
+    "com/github/doevelopper/atlassians/licensing/BaseLicenseStorage.hpp",
+    "com/github/doevelopper/atlassians/licensing/BaseLicenseValidator.cpp",
+    "com/github/doevelopper/atlassians/licensing/BaseLicenseValidator.hpp",
+    "com/github/doevelopper/atlassians/licensing/ExpirationValidator.cpp",
+    "com/github/doevelopper/atlassians/licensing/ExpirationValidator.hpp",
+    "com/github/doevelopper/atlassians/licensing/FeatureValidator.cpp",
+    "com/github/doevelopper/atlassians/licensing/FeatureValidator.hpp",
+    "com/github/doevelopper/atlassians/licensing/FileLicenseStorage.cpp",
+    "com/github/doevelopper/atlassians/licensing/FileLicenseStorage.hpp",
+    "com/github/doevelopper/atlassians/licensing/HardwareIdValidator.cpp",
+    "com/github/doevelopper/atlassians/licensing/HardwareIdValidator.hpp",
+    "com/github/doevelopper/atlassians/licensing/ILicenseGenerator.hpp",
+    "com/github/doevelopper/atlassians/licensing/ILicenseObserver.hpp",
+    "com/github/doevelopper/atlassians/licensing/ILicensePolicy.hpp",
+    "com/github/doevelopper/atlassians/licensing/ILicenseStorage.hpp",
+    "com/github/doevelopper/atlassians/licensing/ILicenseValidator.hpp",
+    "com/github/doevelopper/atlassians/licensing/ILicenseVerifier.hpp",
+    "com/github/doevelopper/atlassians/licensing/License.cpp",
+    "com/github/doevelopper/atlassians/licensing/License.hpp",
+    "com/github/doevelopper/atlassians/licensing/LicenseManager.cpp",
+    "com/github/doevelopper/atlassians/licensing/LicenseManager.hpp",
+    "com/github/doevelopper/atlassians/licensing/LicenseTypes.hpp",
+    "com/github/doevelopper/atlassians/licensing/ValidationChain.cpp",
+    "com/github/doevelopper/atlassians/licensing/ValidationChain.hpp",
+    ],
+    defines = COMMON_DEFINES + select({
+        "@bazel_tools//src/conditions:windows": WIN32_DEFINES,
+        "@bazel_tools//src/conditions:linux_x86_64": LINUX_DEFINES,
+        "//conditions:default": [],
+    }),
+    copts = ["-DLOG_LEVEL=1"] + select({
+        "@bazel_tools//src/conditions:windows": ["/std:c++17"],
+        "//conditions:default": ["-D_REENTRANT", "-fPIC"],
+    }),
+    features = select({
+        "@bazel_tools//src/conditions:windows": ["windows_export_all_symbols"],
+        "//conditions:default": [],
+    }),
+    includes = ["."],
+    linkopts = select({
+        "@bazel_tools//src/conditions:windows": WIN32_LINKOPTS,
+        "@bazel_tools//src/conditions:linux_x86_64": LINUX_LINKOPTS,
+        "@bazel_tools//src/conditions:darwin": DARWIN_LINKOPTS,
+    }),
+    deps = [
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.logging",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+
+cc_library(
+    name = "com.github.doevelopper.atlassians.main.plugin",
+
+    srcs = [
+        "com/github/doevelopper/atlassians/plugin/communication/EventBus.cpp",
+        "com/github/doevelopper/atlassians/plugin/communication/EventBus.hpp",
+        "com/github/doevelopper/atlassians/plugin/context/PluginContext.cpp",
+        "com/github/doevelopper/atlassians/plugin/context/PluginContext.hpp",
+        "com/github/doevelopper/atlassians/plugin/core/BasePlugin.cpp",
+        "com/github/doevelopper/atlassians/plugin/core/BasePlugin.hpp",
+        "com/github/doevelopper/atlassians/plugin/core/IPlugin.hpp",
+        "com/github/doevelopper/atlassians/plugin/core/IPluginCommunicator.hpp",
+        "com/github/doevelopper/atlassians/plugin/core/IPluginContext.hpp",
+        "com/github/doevelopper/atlassians/plugin/core/IPluginDependencyResolver.hpp",
+        "com/github/doevelopper/atlassians/plugin/core/IPluginLoader.hpp",
+        "com/github/doevelopper/atlassians/plugin/core/IPluginMetadata.hpp",
+        "com/github/doevelopper/atlassians/plugin/core/IPluginRegistry.hpp",
+        "com/github/doevelopper/atlassians/plugin/core/IPluginValidator.hpp",
+        "com/github/doevelopper/atlassians/plugin/core/PluginExceptions.hpp",
+        "com/github/doevelopper/atlassians/plugin/core/PluginExport.hpp",
+        "com/github/doevelopper/atlassians/plugin/core/PluginTypes.cpp",
+        "com/github/doevelopper/atlassians/plugin/core/PluginTypes.hpp",
+        # "com/github/doevelopper/atlassians/plugin/examples/SimpleCalculatorPlugin.cpp",
+        # "com/github/doevelopper/atlassians/plugin/examples/SimpleCalculatorPlugin.hpp",
+        "com/github/doevelopper/atlassians/plugin/loader/DynamicLibraryLoader.cpp",
+        "com/github/doevelopper/atlassians/plugin/loader/DynamicLibraryLoader.hpp",
+        "com/github/doevelopper/atlassians/plugin/manager/PluginManager.cpp",
+        "com/github/doevelopper/atlassians/plugin/manager/PluginManager.hpp",
+        "com/github/doevelopper/atlassians/plugin/metadata/PluginMetadata.cpp",
+        "com/github/doevelopper/atlassians/plugin/metadata/PluginMetadata.hpp",
+        "com/github/doevelopper/atlassians/plugin/registry/PluginRegistry.cpp",
+        "com/github/doevelopper/atlassians/plugin/registry/PluginRegistry.hpp",
+        "com/github/doevelopper/atlassians/plugin/resolver/DependencyResolver.cpp",
+        "com/github/doevelopper/atlassians/plugin/resolver/DependencyResolver.hpp",
+    ],
+    defines = COMMON_DEFINES + select({
+        "@bazel_tools//src/conditions:windows": WIN32_DEFINES,
+        "@bazel_tools//src/conditions:linux_x86_64": LINUX_DEFINES,
+        "//conditions:default": [],
+    }),
+    copts = ["-DLOG_LEVEL=1"] + select({
+        "@bazel_tools//src/conditions:windows": ["/std:c++23"],
+        "//conditions:default": ["-D_REENTRANT", "-fPIC", "-std=c++23"],
+    }),
+    features = select({
+        "@bazel_tools//src/conditions:windows": ["windows_export_all_symbols"],
+        "//conditions:default": [],
+    }),
+    includes = ["."],
+    linkopts = select({
+        "@bazel_tools//src/conditions:windows": WIN32_LINKOPTS,
+        "@bazel_tools//src/conditions:linux_x86_64": LINUX_LINKOPTS,
+        "@bazel_tools//src/conditions:darwin": DARWIN_LINKOPTS,
+    }),
+    deps = [
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.logging",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+
+cc_library(
+    name = "com.github.doevelopper.atlassians.main.triada",
+
+    srcs = [
+        "com/github/doevelopper/atlassians/triada/Error.cpp",
+        "com/github/doevelopper/atlassians/triada/Error.hpp",
+        "com/github/doevelopper/atlassians/triada/ErrorCategory.cpp",
+        "com/github/doevelopper/atlassians/triada/ErrorCategory.hpp",
+        "com/github/doevelopper/atlassians/triada/ErrorCode.cpp",
+        "com/github/doevelopper/atlassians/triada/ErrorCode.hpp",
+        "com/github/doevelopper/atlassians/triada/ErrorContext.cpp",
+        "com/github/doevelopper/atlassians/triada/ErrorContext.hpp",
+        "com/github/doevelopper/atlassians/triada/ErrorReporting.cpp",
+        "com/github/doevelopper/atlassians/triada/ErrorReporting.hpp",
+        "com/github/doevelopper/atlassians/triada/ErrorStateMachine.cpp",
+        "com/github/doevelopper/atlassians/triada/ErrorStateMachine.hpp",
+        "com/github/doevelopper/atlassians/triada/Exceptions.hpp",
+        "com/github/doevelopper/atlassians/triada/RecoveryStrategy.cpp",
+        "com/github/doevelopper/atlassians/triada/RecoveryStrategy.hpp",
+    ],
+    defines = COMMON_DEFINES + select({
+        "@bazel_tools//src/conditions:windows": WIN32_DEFINES,
+        "@bazel_tools//src/conditions:linux_x86_64": LINUX_DEFINES,
+        "//conditions:default": [],
+    }),
+    copts = ["-DLOG_LEVEL=1"] + select({
+        "@bazel_tools//src/conditions:windows": ["/std:c++17"],
+        "//conditions:default": ["-D_REENTRANT", "-fPIC", "-std=c++17"],
+    }),
+    features = select({
+        "@bazel_tools//src/conditions:windows": ["windows_export_all_symbols"],
+        "//conditions:default": [],
+    }),
+    includes = ["."],
+    linkopts = select({
+        "@bazel_tools//src/conditions:windows": WIN32_LINKOPTS,
+        "@bazel_tools//src/conditions:linux_x86_64": LINUX_LINKOPTS,
+        "@bazel_tools//src/conditions:darwin": DARWIN_LINKOPTS,
+    }),
+    deps = [
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.logging",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+# Main library containing core functionality
+cc_library(
+    name = "com.github.doevelopper.atlassians.main",
+    hdrs = [
+        "com/github/doevelopper/atlassians/API_Export.hpp",
+        "com/github/doevelopper/atlassians/CompilerDetection.hpp",
+        "com/github/doevelopper/atlassians/Poison.hpp",
+    ],
+    srcs = [
+        "com/github/doevelopper/atlassians/atlas/NoOp.hpp",
+        "com/github/doevelopper/atlassians/atlas/NoOp.cpp",
+    ],
+    defines = COMMON_DEFINES + select({
+        "@bazel_tools//src/conditions:windows": WIN32_DEFINES,
+        "@bazel_tools//src/conditions:linux_x86_64": LINUX_DEFINES,
+        "//conditions:default": [],
+    }),
+    copts = ["-DLOG_LEVEL=1"] + select({
+        "@bazel_tools//src/conditions:windows": ["/std:c++17"],
+        "//conditions:default": ["-D_REENTRANT", "-fPIC"],
+    }),
+    features = select({
+        "@bazel_tools//src/conditions:windows": ["windows_export_all_symbols"],
+        "//conditions:default": [],
+    }),
+    includes = ["."],
+    linkopts = select({
+        "@bazel_tools//src/conditions:windows": WIN32_LINKOPTS,
+        "@bazel_tools//src/conditions:linux_x86_64": LINUX_LINKOPTS,
+        "@bazel_tools//src/conditions:darwin": DARWIN_LINKOPTS,
+    }),
+    deps = [
+        # Link against Boost Asio
+        # bazel query @boost.asio//...:all
+        "@boost.asio//:boost.asio",
+        "@boost.type_traits//:boost.type_traits",
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.logging",
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.launcher",
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.atlas",
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.canary",
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.events",
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.licensing",
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.plugin",
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.triada",
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.semver",
+        "@fmt//:fmt",
+    ],
+
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "com.github.doevelopper.atlassians.main.demo",
+
+    srcs = [
+        "com/github/doevelopper/atlassians/demo/Calculator.cpp",
+        "com/github/doevelopper/atlassians/demo/Calculator.hpp",
+    ],
+    defines = COMMON_DEFINES + select({
+        "@bazel_tools//src/conditions:windows": WIN32_DEFINES,
+        "@bazel_tools//src/conditions:linux_x86_64": LINUX_DEFINES,
+        "//conditions:default": [],
+    }),
+    copts = ["-DLOG_LEVEL=1"] + select({
+        "@bazel_tools//src/conditions:windows": ["/std:c++17"],
+        "//conditions:default": ["-D_REENTRANT", "-fPIC"],
+    }),
+    features = select({
+        "@bazel_tools//src/conditions:windows": ["windows_export_all_symbols"],
+        "//conditions:default": [],
+    }),
+    includes = ["."],
+    linkopts = select({
+        "@bazel_tools//src/conditions:windows": WIN32_LINKOPTS,
+        "@bazel_tools//src/conditions:linux_x86_64": LINUX_LINKOPTS,
+        "@bazel_tools//src/conditions:darwin": DARWIN_LINKOPTS,
+    }),
+    deps = [
+        "//src/main/cpp:com.github.doevelopper.atlassians.main",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+cc_binary(
+    name = "com.github.doevelopper.atlassians.main.bin",
+    srcs = ["main.cpp"],
+    deps = [
+        ":com.github.doevelopper.atlassians.main"
+    ],
+    visibility = ["//visibility:public"],
+)
+
+pkg_tar(
+    name = "com.github.doevelopper.atlassians.main.package",
+    srcs = [
+        ":com.github.doevelopper.atlassians.main.bin",
+    ],
+    extension = "tar.gz",
+    package_dir = "/opt/atlassians/bin",
+    visibility = ["//visibility:public"],
+)
