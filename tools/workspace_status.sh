@@ -16,3 +16,5 @@ cat <<EOF
 STABLE_GIT_COMMIT ${git_commit}
 STABLE_MONOREPO_VERSION ${auto_version}
 EOF
+
+echo "STABLE_GIT_COMMIT $(git rev-parse HEAD)"

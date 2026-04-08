@@ -111,9 +111,9 @@ llvm = use_extension("@toolchains_llvm//toolchain/extensions:llvm.bzl", "llvm")
 llvm.toolchain(
     # NB: llvm doesn't release for all platforms on every patch release
     llvm_versions = {
-        "": "22.1.2",
-        "darwin-aarch64": "22.1.2",
-        "darwin-x86_64": "22.1.2",
+        "": "21.1.0",
+        "darwin-aarch64": "21.1.0",
+        "darwin-x86_64": "21.1.0",
     },
 )
 use_repo(llvm, "llvm_toolchain", "llvm_toolchain_llvm")
@@ -172,11 +172,13 @@ use_repo(ruby, "ruby", "ruby_toolchains")
 register_toolchains("@ruby_toolchains//:all")
 
 ruby.bundle_fetch(
-    name = "bundle",
+    # name = "bundle",
+    name = "cucumber",
     gemfile = "//:Gemfile",
     gemfile_lock = "//:Gemfile.lock",
 )
-use_repo(ruby, "bundle")
+# use_repo(ruby, "bundle")
+use_repo(ruby, "cucumber")
 
 #########################
 # Java and other JVM languages
@@ -295,7 +297,7 @@ bazel_dep(name = "boost.type_traits", version = BOOST_VERSION)
 
 bazel_dep(name = "gflags", version = "2.2.2")
 bazel_dep(name = "glog", version = "0.7.1")
-
+bazel_dep(name = "libuuid", version = "2.41.2")
 bazel_dep(name = "google_benchmark", version = "1.9.4", repo_name = "com_github_google_benchmark")
 bazel_dep(name = "googletest", version = "1.17.0.bcr.2")
 bazel_dep(name = "nlohmann_json", version = "3.12.0.bcr.1")

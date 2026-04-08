@@ -1,6 +1,6 @@
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_gherkin//gherkin:defs.bzl", "gherkin_library", "cc_gherkin_steps", "gherkin_test")
-#load("//buildsys/bazel/starlark/rules/cc_bdd:defs.bzl", "cc_gherkin_steps")
+#load("//tools/starlark/rules/cc_bdd:defs.bzl", "cc_gherkin_steps")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 package(

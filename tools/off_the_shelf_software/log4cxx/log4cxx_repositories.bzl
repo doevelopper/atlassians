@@ -7,7 +7,7 @@ def log4cxx_repositories():
     maybe(
         http_archive,
         name = "org_apache_log4cxx",
-        build_file = Label("//buildsys/bazel/off_the_shelf_software/log4cxx:BUILD.log4cxx.bazel"),
+        build_file = Label("//tools/off_the_shelf_software/log4cxx:BUILD.log4cxx.bazel"),
         #sha256 = "eb425ce35a391cf0927356bebb7da53f96c8a7aaf634aaf740e011203c732bb",
         strip_prefix = "apache-log4cxx-1.1.0",
         urls = [

@@ -21,6 +21,28 @@
     We use the same flags as absl, plus turn some warnings into errors.
 """
 
+load("@bazel_skylib//lib:selects.bzl", "selects")
+load("@rules_cc//cc:cc_binary.bzl", "cc_binary")
+load("@rules_cc//cc:cc_library.bzl", "cc_library")
+load("@rules_cc//cc:cc_test.bzl", "cc_test")
+
+package(
+    default_visibility = ["//visibility:public"],
+    licenses = ["notice"],
+)
+
+PLATFORM_CPU_X86 = ("@platforms//cpu:x86_32", "@platforms//cpu:x86_64")
+
+PLATFORM_CPU_ARM = ("@platforms//cpu:arm", "@platforms//cpu:armv7")
+
+PLATFORM_CPU_ARM64 = "@platforms//cpu:arm64"
+
+PLATFORM_CPU_MIPS = "@platforms//cpu:mips64"
+
+PLATFORM_CPU_PPC = "@platforms//cpu:ppc"
+
+PLATFORM_CPU_RISCV = ("@platforms//cpu:riscv32", "@platforms//cpu:riscv64")
+
 WERROR = [
     "-Werror=return-type",
     "-Werror=switch",

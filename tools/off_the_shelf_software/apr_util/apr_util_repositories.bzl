@@ -19,7 +19,7 @@ def apr_util_repositories():
     maybe(
         http_archive,
         name = "org_apache_apr_util",
-        build_file = Label("//buildsys/bazel/off_the_shelf_software/apr_util:apr-utils.BUILD"),
+        build_file = Label("//tools/off_the_shelf_software/apr_util:apr-utils.BUILD"),
         sha256 = "2b74d8932703826862ca305b094eef2983c27b39d5c9414442e9976a9acf1983",
         strip_prefix = "apr-util-1.6.3",
         urls = [
@@ -35,7 +35,7 @@ def apr_util_repositories():
     maybe(
         http_archive,
         name = "com_github_expat",
-        build_file = Label("//buildsys/bazel/off_the_shelf_software/expat:expat.BUILD"),
+        build_file = Label("//tools/off_the_shelf_software/expat:expat.BUILD"),
         sha256 = "6b902ab103843592be5e99504f846ec109c1abb692e85347587f237a4ffa1033",
         strip_prefix = "expat-2.5.0",
         urls = [

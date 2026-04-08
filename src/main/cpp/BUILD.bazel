@@ -19,7 +19,7 @@ LINUX_LINKOPTS = [
     "-L/usr/local/lib",
     "-lpthread",
     "-lrt",
-    "-luuid",
+#    "-luuid",
 ]
 
 DARWIN_DEFINES = []
@@ -97,6 +97,7 @@ cc_library(
         "@openssl//:ssl",
         "@openssl//:crypto",
         "@fmt//:fmt",
+        #"@libuuid//:uuid",
     ],
     visibility = ["//visibility:public"],
 )
@@ -395,8 +396,8 @@ cc_library(
         "com/github/doevelopper/atlassians/events/pub/IBroker.hpp",
         "com/github/doevelopper/atlassians/events/pub/IPublisher.hpp",
         "com/github/doevelopper/atlassians/events/pub/ISubscriber.hpp",
-        "com/github/doevelopper/atlassians/events/pub/PubSub.cpp",
-        "com/github/doevelopper/atlassians/events/pub/PubSub.hpp",
+#        "com/github/doevelopper/atlassians/events/pub/PubSub.cpp",
+#        "com/github/doevelopper/atlassians/events/pub/PubSub.hpp",
         "com/github/doevelopper/atlassians/events/pub/Publisher.cpp",
         "com/github/doevelopper/atlassians/events/pub/Publisher.hpp",
         "com/github/doevelopper/atlassians/events/pub/Subscriber.cpp",

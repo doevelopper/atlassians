@@ -8,7 +8,7 @@ def apr_repositories():
     maybe(
         http_archive,
         name = "org_apache_apr",
-        build_file = Label("//buildsys/bazel/off_the_shelf_software/apr:apr.BUILD"),
+        build_file = Label("//tools/off_the_shelf_software/apr:apr.BUILD"),
         # sha256 is for the official Apache distribution tarball (includes configure script).
         # The GitHub source archive has a different sha256 and lacks the configure script.
         sha256 = "3d8999b216f7b6235343a4e3d456ce9379aa9a380ffb308512f133f0c5eb2db9",
