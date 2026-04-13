@@ -1,0 +1,5 @@
+exports_files([
+	"src/build_asio.cpp",
+	"src/build_asio_ssl.cpp",
+	"src/build_beast.cpp",
+])

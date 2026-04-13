@@ -101,13 +101,13 @@ auto ProgramOption::parseEnvironment(const std::string& prefix) -> bool
 
             // Convert: OPTION_NAME -> option-name
             std::transform(optionName.begin(), optionName.end(), optionName.begin(),
-                [](unsigned char c)
+                [](char c) -> char
                 {
                     if (c == '_')
                     {
-                        return static_cast<unsigned char>('-');
+                        return '-';
                     }
-                    return static_cast<unsigned char>(std::tolower(c, std::locale::classic()));
+                    return static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
                 });
 
             return optionName;

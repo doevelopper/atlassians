@@ -144,10 +144,10 @@ auto AbstractConfiguration::parseEnvironment() -> bool
             std::string optionName = envName.substr(m_envPrefix.length());
 
             std::transform(optionName.begin(), optionName.end(), optionName.begin(),
-                [](unsigned char c) -> unsigned char
+                [](char c) -> char
                 {
                     if (c == '_') return '-';
-                    return std::tolower(c, std::locale::classic());
+                    return static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
                 });
 
             return optionName;

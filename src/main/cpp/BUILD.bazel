@@ -213,8 +213,16 @@ cc_library(
         "@bazel_tools//src/conditions:darwin": DARWIN_LINKOPTS,
     }),
     deps = [
-        "@boost.asio//:boost.asio",
-        "@boost.program_options//:boost.program_options",
+        #  bazel query @boost.program_options//...:all
+        # "@boost.asio//:boost.asio",
+        # "@boost.program_options//:boost.program_options",
+        # bazel query @boost//...:all
+        "@boost//:algorithm",
+        "@boost//:asio",
+        "@boost//:filesystem",
+        "@boost//:program_options",
+        "@boost//:msm",
+        "@boost//:statechart",
         "//src/main/cpp:com.github.doevelopper.atlassians.main.logging",
         "//src/main/cpp:com.github.doevelopper.atlassians.main.semver",
         # TODO: Add rapidjson and other boost libs when configured
@@ -323,7 +331,7 @@ cc_library(
     }),
     copts = ["-DLOG_LEVEL=1"] + select({
         "@bazel_tools//src/conditions:windows": ["/std:c++17"],
-        "//conditions:default": ["-D_REENTRANT", "-fPIC"],
+        "//conditions:default": ["-D_REENTRANT", "-fPIC", "-std=c++23"],
     }),
     features = select({
         "@bazel_tools//src/conditions:windows": ["windows_export_all_symbols"],
@@ -370,7 +378,7 @@ cc_library(
     }),
     copts = ["-DLOG_LEVEL=1"] + select({
         "@bazel_tools//src/conditions:windows": ["/std:c++17"],
-        "//conditions:default": ["-D_REENTRANT", "-fPIC"],
+        "//conditions:default": ["-D_REENTRANT", "-fPIC", "-std=c++23"],
     }),
     features = select({
         "@bazel_tools//src/conditions:windows": ["windows_export_all_symbols"],
@@ -410,7 +418,7 @@ cc_library(
     }),
     copts = ["-DLOG_LEVEL=1"] + select({
         "@bazel_tools//src/conditions:windows": ["/std:c++17"],
-        "//conditions:default": ["-D_REENTRANT", "-fPIC"],
+        "//conditions:default": ["-D_REENTRANT", "-fPIC", "-std=c++23"],
     }),
     features = select({
         "@bazel_tools//src/conditions:windows": ["windows_export_all_symbols"],
@@ -572,7 +580,7 @@ cc_library(
     }),
     copts = ["-DLOG_LEVEL=1"] + select({
         "@bazel_tools//src/conditions:windows": ["/std:c++17"],
-        "//conditions:default": ["-D_REENTRANT", "-fPIC", "-std=c++17"],
+        "//conditions:default": ["-D_REENTRANT", "-fPIC", "-std=c++23"],
     }),
     features = select({
         "@bazel_tools//src/conditions:windows": ["windows_export_all_symbols"],
@@ -585,6 +593,11 @@ cc_library(
         "@bazel_tools//src/conditions:darwin": DARWIN_LINKOPTS,
     }),
     deps = [
+        # bazel query @boost//...:all
+        "@boost//:statechart",
+        "@boost//:signals2",
+        "@boost//:variant2",
+        "@boost//:conversion",
         "//src/main/cpp:com.github.doevelopper.atlassians.main.logging",
     ],
     visibility = ["//visibility:public"],
@@ -609,7 +622,7 @@ cc_library(
     }),
     copts = ["-DLOG_LEVEL=1"] + select({
         "@bazel_tools//src/conditions:windows": ["/std:c++17"],
-        "//conditions:default": ["-D_REENTRANT", "-fPIC"],
+        "//conditions:default": ["-D_REENTRANT", "-fPIC", "-std=c++23"],
     }),
     features = select({
         "@bazel_tools//src/conditions:windows": ["windows_export_all_symbols"],
@@ -623,9 +636,9 @@ cc_library(
     }),
     deps = [
         # Link against Boost Asio
-        # bazel query @boost.asio//...:all
-        "@boost.asio//:boost.asio",
-        "@boost.type_traits//:boost.type_traits",
+        # # bazel query @boost.asio//...:all
+        # "@boost.asio//:boost.asio",
+        # "@boost.type_traits//:boost.type_traits",
         "//src/main/cpp:com.github.doevelopper.atlassians.main.logging",
         "//src/main/cpp:com.github.doevelopper.atlassians.main.launcher",
         "//src/main/cpp:com.github.doevelopper.atlassians.main.atlas",
