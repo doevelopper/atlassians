@@ -4,7 +4,7 @@
 
 #include <gtest/gtest.h>
 
-#include <com/github/doevelopper/night/owl/barriers/SpinLock.hpp>
+#include <com/github/doevelopper/atlassians/atlas/barriers/SpinLock.hpp>
 
 namespace  com::github::doevelopper::night::owl::barriers::test
 {

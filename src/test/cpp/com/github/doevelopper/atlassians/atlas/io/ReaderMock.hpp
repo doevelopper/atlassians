@@ -1,7 +1,7 @@
 #ifndef COM_GITHUB_DOEVELOPPER_NIGHT_OWL_IO_READERMOCK_HPP
 #define COM_GITHUB_DOEVELOPPER_NIGHT_OWL_IO_READERMOCK_HPP
 
-#include <com/github/doevelopper/night/owl/io/Reader.hpp>
+#include <com/github/doevelopper/atlassians/atlas/io/Reader.hpp>
 
 namespace com::github::doevelopper::night::owl::io::test
 {

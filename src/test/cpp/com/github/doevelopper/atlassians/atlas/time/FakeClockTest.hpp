@@ -4,7 +4,7 @@
 
 #include <gtest/gtest.h>
 
-#include <com/github/doevelopper/night/owl/extentions/FakeClock.hpp>
+#include <com/github/doevelopper/atlassians/atlas/time/FakeClock.hpp>
 
 namespace  com::github::doevelopper::night::owl::time::test
 {

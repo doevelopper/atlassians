@@ -1,4 +1,4 @@
-#include <cfs/osal/quantum/MutexTest.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/MutexTest.hpp>
 
 using namespace cfs::osal::quantum::test;
 

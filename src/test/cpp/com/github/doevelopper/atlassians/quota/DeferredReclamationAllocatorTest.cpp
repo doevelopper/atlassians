@@ -3,10 +3,10 @@
 #include <cstddef>
 #include <memory>
 
-#include <com/github/doevelopper/night/owl/quota/OnDestruction.hpp>
-#include <com/github/doevelopper/night/owl/quota/DeferredReclamationAllocatorTest.hpp>
+#include <com/github/doevelopper/atlassians/atlas/quota/OnDestruction.hpp>
+#include <com/github/doevelopper/atlassians/quota/DeferredReclamationAllocatorTest.hpp>
 
-using namespace  com::github::doevelopper::night::owl::quota;
+using namespace  com::github::doevelopper::atlassians::atlas::quota;
 using namespace  com::github::doevelopper::night::owl::quota::test;
 
 template <typename T>
@@ -55,12 +55,12 @@ TYPED_TEST_P(DeferredReclamationAllocatorTest, test_making_a_copy_of_an_allocato
     // LOG4CXX_TRACE(logger, __LOG4CXX_FUNC__ );
 }
 
-REGISTER_TYPED_TEST_CASE_P(DeferredReclamationAllocatorTest,
+REGISTER_TYPED_TEST_SUITE_P(DeferredReclamationAllocatorTest,
         test_an_allocator_should_be_equal_to_itself,
         test_making_a_copy_of_an_allocator_should_yield_an_allocator_that_compares_equal
 );
 
-INSTANTIATE_TYPED_TEST_CASE_P(DifferentAllocatorTypes, DeferredReclamationAllocatorTest, ContainerTypes);
+INSTANTIATE_TYPED_TEST_SUITE_P(DifferentAllocatorTypes, DeferredReclamationAllocatorTest, ContainerTypes);
 
 /*
 

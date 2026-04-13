@@ -1,4 +1,4 @@
-#include <cfs/osal/quantum/CoreTest.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/CoreTest.hpp>
 
 using namespace cfs::osal::quantum::test;
 

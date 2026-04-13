@@ -25,8 +25,9 @@ public:
     void TearDown() override;
 
 protected:
-private:
     std::unique_ptr<com::github::doevelopper::atlassians::atlas::utils::Task> testee;
+
+private:
 };
 } // namespace com::github::doevelopper::atlassians::atlas::utils::test
 

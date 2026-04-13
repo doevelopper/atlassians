@@ -75,7 +75,7 @@ namespace Bloomberg::quantum
                 return result;
             });
 #else
-            return dispatcher.template postAsyncIo2([container {std::move(futures)}]() -> std::vector<T> {
+            return dispatcher.postAsyncIo2([container {std::move(futures)}]() -> std::vector<T> {
                 std::vector<T> result;
                 result.reserve(container.size());
                 for (auto && f : container)
@@ -106,7 +106,7 @@ namespace Bloomberg::quantum
                 return result;
             });
 #else
-            return dispatcher.template post2([container {std::move(futures)}](VoidContextPtr ctx) -> std::vector<T> {
+            return dispatcher.post2([container {std::move(futures)}](VoidContextPtr ctx) -> std::vector<T> {
                 std::vector<T> result;
                 result.reserve(container.size());
                 for (auto && f : container)

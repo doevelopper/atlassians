@@ -4,7 +4,7 @@
 
 #include <gtest/gtest.h>
 
-#include <com/github/doevelopper/night/owl/observer/Value.hpp>
+#include <com/github/doevelopper/atlassians/events/observer/Value.hpp>
 
 namespace  com::github::doevelopper::night::owl::time::test
 {

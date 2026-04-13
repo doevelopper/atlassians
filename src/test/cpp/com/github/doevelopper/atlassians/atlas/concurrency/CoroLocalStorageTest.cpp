@@ -1,4 +1,4 @@
-#include <cfs/osal/quantum/CoroLocalStorageTest.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/CoroLocalStorageTest.hpp>
 
 using namespace cfs::osal::quantum::test;
 

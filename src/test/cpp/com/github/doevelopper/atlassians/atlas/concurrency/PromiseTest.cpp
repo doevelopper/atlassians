@@ -1,4 +1,4 @@
-#include <cfs/osal/quantum/PromiseTest.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/PromiseTest.hpp>
 
 using namespace cfs::osal::quantum::test;
 

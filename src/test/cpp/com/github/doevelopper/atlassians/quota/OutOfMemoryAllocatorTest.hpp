@@ -4,7 +4,7 @@
 
 #include <gtest/gtest.h>
 
-#include <com/github/doevelopper/night/owl/quota/OutOfMemoryAllocator.hpp>
+#include <com/github/doevelopper/atlassians/atlas/quota/OutOfMemoryAllocator.hpp>
 
 namespace  com::github::doevelopper::night::owl::quota::test
 {

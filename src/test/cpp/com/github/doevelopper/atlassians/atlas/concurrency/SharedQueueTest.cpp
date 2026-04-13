@@ -1,5 +1,5 @@
-#include <cfs/osal/quantum/SharedQueueTest.hpp>
-#include <cfs/osal/quantum/DispatcherSingleton.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/SharedQueueTest.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/DispatcherSingleton.hpp>
 
 using namespace cfs::osal::quantum::test;
 using ms = std::chrono::milliseconds;

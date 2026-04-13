@@ -1,4 +1,4 @@
-#include <cfs/osal/quantum/ExecutionTest.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/ExecutionTest.hpp>
 
 using namespace cfs::osal::quantum::test;
 

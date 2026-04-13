@@ -212,7 +212,7 @@ namespace Bloomberg::quantum
             for (size_t i = 0; i < num; ++i, ++inputIt)
             {
                 // Run the function
-                asyncResults.emplace_back(ctx->template post2([inputIt, &func](VoidContextPtr ctx) mutable -> RET {
+                asyncResults.emplace_back(ctx->post2([inputIt, &func](VoidContextPtr ctx) mutable -> RET {
                     return std::forward<FUNC>(func)(ctx, *inputIt);
                 }));
             }
@@ -239,7 +239,7 @@ namespace Bloomberg::quantum
                     break; // nothing to do
                 }
                 asyncResults.emplace_back(
-                    ctx->template post2([inputIt, batchSize, &func](VoidContextPtr ctx) mutable -> std::vector<RET> {
+                    ctx->post2([inputIt, batchSize, &func](VoidContextPtr ctx) mutable -> std::vector<RET> {
                         std::vector<RET> result;
                         result.reserve(batchSize);
                         for (size_t j = 0; j < batchSize; ++j, ++inputIt)

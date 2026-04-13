@@ -1,4 +1,4 @@
-#include <com/github/doevelopper/night/owl/io/ReaderMock.hpp>
+#include <com/github/doevelopper/atlassians/atlas/io/ReaderMock.hpp>
 
 using namespace com::github::doevelopper::night::owl::io::test;
 

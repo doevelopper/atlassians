@@ -605,6 +605,18 @@ cc_library(
     visibility = ["//visibility:public"],
 )
 
+cc_library(
+    name = "com.github.doevelopper.atlassians.main.atlas.concurrency.headers",
+    hdrs = glob([
+        "com/github/doevelopper/atlassians/atlas/concurrency/**/*.h",
+        "com/github/doevelopper/atlassians/atlas/concurrency/**/*.hpp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/**/*.ipp",
+        "com/github/doevelopper/atlassians/atlas/concurrency/**/*.cpp",
+    ]),
+    includes = ["."],
+    visibility = ["//visibility:public"],
+)
+
 # Main library containing core functionality
 cc_library(
     name = "com.github.doevelopper.atlassians.main",

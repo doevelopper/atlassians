@@ -1,4 +1,4 @@
-#include <com/github/doevelopper/night/owl/security/Crc32CTest.hpp>
+#include <com/github/doevelopper/atlassians/quota/security/Crc32CTest.hpp>
 
 using namespace com::github::doevelopper::night::owl::security;
 using namespace com::github::doevelopper::night::owl::security::test;

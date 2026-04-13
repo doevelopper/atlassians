@@ -3,7 +3,7 @@
 #define CFS_OSAL_QUANTUM_LOCKSTEST_HPP
 
 #include <gmock/gmock.h>
-#include <cfs/osal/quantum/quantum.h>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/quantum.h>
 #include <cfs/utils/log/LoggingService.hpp>
 
 namespace cfs::osal::quantum::test

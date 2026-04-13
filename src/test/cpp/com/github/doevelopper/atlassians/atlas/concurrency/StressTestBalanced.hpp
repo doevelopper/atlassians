@@ -2,7 +2,7 @@
 #ifndef CFS_OSAL_QUANTUM_STRESSTESTBALANCED_HPP
 #define CFS_OSAL_QUANTUM_STRESSTESTBALANCED_HPP
 
-#include <cfs/osal/quantum/Fixture.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/Fixture.hpp>
 
 namespace cfs::osal::quantum::test
 {

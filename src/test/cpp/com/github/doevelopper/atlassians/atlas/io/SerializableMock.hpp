@@ -1,8 +1,8 @@
 #ifndef COM_GITHUB_DOEVELOPPER_NIGHT_OWL_IO_SERIALIZABLEMOCK_HPP
 #define COM_GITHUB_DOEVELOPPER_NIGHT_OWL_IO_SERIALIZABLEMOCK_HPP
 
-#include <com/github/doevelopper/night/owl/io/ReaderMock.hpp>
-#include <com/github/doevelopper/night/owl/io/WriterMock.hpp>
+#include <com/github/doevelopper/atlassians/atlas/io/ReaderMock.hpp>
+#include <com/github/doevelopper/atlassians/atlas/io/WriterMock.hpp>
 
 namespace com::github::doevelopper::night::owl::io::test
 {

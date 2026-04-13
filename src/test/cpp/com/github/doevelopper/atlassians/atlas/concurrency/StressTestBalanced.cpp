@@ -1,4 +1,4 @@
-#include <cfs/osal/quantum/StressTestBalanced.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/StressTestBalanced.hpp>
 
 using namespace cfs::osal::quantum::test;
 

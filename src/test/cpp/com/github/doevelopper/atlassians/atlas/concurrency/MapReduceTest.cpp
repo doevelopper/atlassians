@@ -1,4 +1,4 @@
-#include <cfs/osal/quantum/MapReduceTest.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/MapReduceTest.hpp>
 
 using namespace cfs::osal::quantum::test;
 

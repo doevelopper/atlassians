@@ -3,7 +3,7 @@
 #define CFS_OSAL_QUANTUM_CLEANUPTEST_HPP
 
 #include <gtest/gtest.h>
-#include <com/github/doevelopper/night/owl/security/SslCrypto.hpp>
+#include <com/github/doevelopper/atlassians/atlas/security/SslCrypto.hpp>
 
 namespace com::github::doevelopper::night::owl::security::test
 {

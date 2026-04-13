@@ -1,5 +1,5 @@
 
-#include <com/github/doevelopper/night/owl/quota/OutOfMemoryAllocatorTest.hpp>
+#include <com/github/doevelopper/atlassians/quota/OutOfMemoryAllocatorTest.hpp>
 
 using namespace  com::github::doevelopper::night::owl::quota;
 using namespace  com::github::doevelopper::night::owl::quota::test;

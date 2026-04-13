@@ -1,5 +1,5 @@
 
-#include <com/github/doevelopper/night/owl/barriers/SpinLockTest.hpp>
+#include <com/github/doevelopper/atlassians/atlas/barriers/SpinLockTest.hpp>
 
 using namespace  com::github::doevelopper::night::owl::barriers;
 using namespace  com::github::doevelopper::night::owl::barriers::test;

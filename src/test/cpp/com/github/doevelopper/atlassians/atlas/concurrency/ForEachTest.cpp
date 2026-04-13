@@ -1,4 +1,4 @@
-#include <cfs/osal/quantum/ForEachTest.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/ForEachTest.hpp>
 
 using namespace cfs::osal::quantum::test;
 

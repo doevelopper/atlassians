@@ -4,7 +4,7 @@
 
 #include <gtest/gtest.h>
 
-#include <com/github/doevelopper/night/owl/quota/DeferredReclamationAllocator.hpp>
+#include <com/github/doevelopper/atlassians/atlas/quota/DeferredReclamationAllocator.hpp>
 
 namespace  com::github::doevelopper::night::owl::quota::test
 {
@@ -57,6 +57,6 @@ namespace  com::github::doevelopper::night::owl::quota::test
     private:
 
     };
-    TYPED_TEST_CASE_P(DeferredReclamationAllocatorTest);
+    TYPED_TEST_SUITE_P(DeferredReclamationAllocatorTest);
 }
 #endif

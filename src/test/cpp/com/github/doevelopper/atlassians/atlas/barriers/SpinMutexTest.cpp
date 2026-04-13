@@ -1,5 +1,5 @@
 
-#include <com/github/doevelopper/night/owl/barriers/SpinMutexTest.hpp>
+#include <com/github/doevelopper/atlassians/atlas/barriers/SpinMutexTest.hpp>
 
 #include <algorithm>
 #include <cassert>

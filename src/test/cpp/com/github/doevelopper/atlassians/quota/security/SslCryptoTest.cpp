@@ -1,4 +1,4 @@
-#include <com/github/doevelopper/night/owl/security/SslCryptoTest.hpp>
+#include <com/github/doevelopper/atlassians/quota/security/SslCryptoTest.hpp>
 
 using namespace com::github::doevelopper::night::owl::security;
 using namespace com::github::doevelopper::night::owl::security::test;

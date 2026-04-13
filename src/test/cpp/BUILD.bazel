@@ -58,8 +58,10 @@ cc_library(
     }),
 
     deps = [
+        "//src/main/cpp:com.github.doevelopper.atlassians.main",
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.atlas.concurrency.headers",
         "//src/main/cpp:com.github.doevelopper.atlassians.main.logging",
-        "@com_google_googletest//:gtest",
+        "@googletest//:gtest",
         #"@com_google_absl//absl/strings",
         #"@com_google_absl//absl/types:span",
     ],
@@ -77,73 +79,6 @@ cc_test(
         "com/github/doevelopper/atlassians/atlas/barriers/SpinLockTest.hpp",
         "com/github/doevelopper/atlassians/atlas/barriers/SpinMutexTest.cpp",
         "com/github/doevelopper/atlassians/atlas/barriers/SpinMutexTest.hpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/AuxiliaryTest.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/AuxiliaryTest.hpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/CleanupTest.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/CleanupTest.hpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/CoreTest.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/CoreTest.hpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/CoroLocalStorageTest.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/CoroLocalStorageTest.hpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/DispatcherCoroRangeTest.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/DispatcherCoroRangeTest.hpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/DispatcherSingleton.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/DispatcherSingleton.hpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/ExecutionTest.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/ExecutionTest.hpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/Fixture.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/Fixture.hpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/ForEachTest.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/ForEachTest.hpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/FutureJoinerTest.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/FutureJoinerTest.hpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/GenericFutureTest.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/GenericFutureTest.hpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/LocksTest.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/LocksTest.hpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/MapReduceTest.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/MapReduceTest.hpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/MockTaskId.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/MockTaskId.hpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/MutexTest.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/MutexTest.hpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/ParamtersTest.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/ParamtersTest.hpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/PromiseTest.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/PromiseTest.hpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/quantum_fixture.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/quantum_fixture.h",
-        "com/github/doevelopper/atlassians/atlas/concurrency/quantum_generic_future_tests.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/quantum_locks_tests.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/quantum_perf_utils.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/quantum_perf_utils.h",
-        "com/github/doevelopper/atlassians/atlas/concurrency/quantum_sequencer_experimental_tests.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/quantum_sequencer_test_common.h",
-        "com/github/doevelopper/atlassians/atlas/concurrency/quantum_sequencer_tests.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/quantum_task_state_handler_tests.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/quantum_tests.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/ResourceLimitTest.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/ResourceLimitTest.hpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/SequencerTest.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/SequencerTestData.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/SequencerTestData.hpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/SequencerTest.hpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/SharedQueueTest.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/SharedQueueTest.hpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/StressTestBalanced.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/StressTestBalanced.hpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/StressTest.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/StressTest.hpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/TaskIdTest.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/TaskIdTest.hpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/TestConfiguration.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/TestConfiguration.hpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/TestSequencerPerformance.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/TestSequencerPerformance.hpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/TestTaskStateHandler.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/TestTaskStateHandler.hpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/TestTaskStateHandlerPrivate.cpp",
-        "com/github/doevelopper/atlassians/atlas/concurrency/TestTaskStateHandlerPrivate.hpp",
         "com/github/doevelopper/atlassians/atlas/io/ReaderMock.cpp",
         "com/github/doevelopper/atlassians/atlas/io/ReaderMock.hpp",
         "com/github/doevelopper/atlassians/atlas/io/SerializableMock.cpp",
@@ -152,18 +87,15 @@ cc_test(
         "com/github/doevelopper/atlassians/atlas/io/WriterMock.hpp",
         "com/github/doevelopper/atlassians/atlas/NoOpTest.cpp",
         "com/github/doevelopper/atlassians/atlas/NoOpTest.hpp",
-        "com/github/doevelopper/atlassians/atlas/time/FakeClockTest.cpp",
-        "com/github/doevelopper/atlassians/atlas/time/FakeClockTest.hpp",
         "com/github/doevelopper/atlassians/atlas/time/ptp/PtpEngineTest.cpp",
         "com/github/doevelopper/atlassians/atlas/time/ptp/PtpEngineTest.hpp",
-        "com/github/doevelopper/atlassians/atlas/time/TimeFixtureTest.cpp",
-        "com/github/doevelopper/atlassians/atlas/time/TimeFixtureTest.hpp",
         "com/github/doevelopper/atlassians/atlas/utils/TaskTest.cpp",
         "com/github/doevelopper/atlassians/atlas/utils/TaskTest.hpp",
     ],
 
     copts = [
         "-D_REENTRANT",
+        "-std=c++23",
         "-DGTEST_REMOVE_LEGACY_TEST_CASEAPI_=1",
         # "-DROOT_DIR=$(workspace)",
     ] + select({
@@ -199,6 +131,7 @@ cc_test(
 
     copts = [
         "-D_REENTRANT",
+        "-std=c++23",
         "-DGTEST_REMOVE_LEGACY_TEST_CASEAPI_=1",
         # "-DROOT_DIR=$(workspace)",
     ] + select({
@@ -232,6 +165,7 @@ cc_test(
 
     copts = [
         "-D_REENTRANT",
+        "-std=c++23",
         "-DGTEST_REMOVE_LEGACY_TEST_CASEAPI_=1",
         # "-DROOT_DIR=$(workspace)",
     ] + select({
@@ -244,6 +178,7 @@ cc_test(
     deps = [
         "//src/main/cpp:com.github.doevelopper.atlassians.main.demo",
         "//src/test/cpp:com.github.doevelopper.atlassians.test",
+        "@googletest//:gtest_main",
     ],
 
     # env = [
@@ -272,6 +207,7 @@ cc_test(
 
     copts = [
         "-D_REENTRANT",
+        "-std=c++23",
         "-DGTEST_REMOVE_LEGACY_TEST_CASEAPI_=1",
         # "-DROOT_DIR=$(workspace)",
     ] + select({
@@ -310,6 +246,7 @@ cc_test(
 
     copts = [
         "-D_REENTRANT",
+        "-std=c++23",
         "-DGTEST_REMOVE_LEGACY_TEST_CASEAPI_=1",
         # "-DROOT_DIR=$(workspace)",
     ] + select({
@@ -343,6 +280,7 @@ cc_test(
 
     copts = [
         "-D_REENTRANT",
+        "-std=c++23",
         "-DGTEST_REMOVE_LEGACY_TEST_CASEAPI_=1",
         # "-DROOT_DIR=$(workspace)",
     ] + select({
@@ -380,6 +318,7 @@ cc_test(
 
     copts = [
         "-D_REENTRANT",
+        "-std=c++23",
         "-DGTEST_REMOVE_LEGACY_TEST_CASEAPI_=1",
         # "-DROOT_DIR=$(workspace)",
     ] + select({
@@ -414,6 +353,7 @@ cc_test(
 
     copts = [
         "-D_REENTRANT",
+        "-std=c++23",
         "-DGTEST_REMOVE_LEGACY_TEST_CASEAPI_=1",
         # "-DROOT_DIR=$(workspace)",
     ] + select({
@@ -452,6 +392,7 @@ cc_test(
 
     copts = [
         "-D_REENTRANT",
+        "-std=c++23",
         "-DGTEST_REMOVE_LEGACY_TEST_CASEAPI_=1",
         # "-DROOT_DIR=$(workspace)",
     ] + select({
@@ -486,6 +427,7 @@ cc_test(
 
     copts = [
         "-D_REENTRANT",
+        "-std=c++23",
         "-DGTEST_REMOVE_LEGACY_TEST_CASEAPI_=1",
         # "-DROOT_DIR=$(workspace)",
     ] + select({
@@ -515,7 +457,7 @@ cc_test(
 #     deps = [
 #         "@com_google_fuzztest//fuzztest",
 #         "@com_google_fuzztest//fuzztest:fuzztest_gtest_main",
-#         "@com_google_googletest//:gtest"
+#         "@googletest//:gtest"
 #     ],
 # )
 
@@ -540,7 +482,7 @@ cc_test(
 #         "@com_google_fuzztest//fuzztest:serialization",
 #         "@com_google_fuzztest//fuzztest:subprocess",
 #         "@com_google_fuzztest//fuzztest:type_support",
-#         "@com_google_googletest//:gtest_main",
+#         "@googletest//:gtest_main",
 #         "@com_googlesource_code_re2//:re2",
 #     ],
 # )
@@ -565,6 +507,7 @@ cc_test(
 
 pkg_tar(
     name = "com.github.doevelopper.atlassians.test.package",
+    testonly = 1,
     srcs = [
         ":com.github.doevelopper.atlassians.test.atlas.bin",
         ":com.github.doevelopper.atlassians.test.canary.bin",

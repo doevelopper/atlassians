@@ -1,4 +1,4 @@
-#include <cfs/osal/quantum/FutureJoinerTest.hpp>
+#include <com/github/doevelopper/atlassians/atlas/concurrency/FutureJoinerTest.hpp>
 
 using namespace cfs::osal::quantum::test;
 

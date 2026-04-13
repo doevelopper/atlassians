@@ -8,6 +8,7 @@
 
 #include <com/github/doevelopper/atlassians/licensing/LicenseStorageTest.hpp>
 #include <fstream>
+#include <thread>
 
 using namespace com::github::doevelopper::atlassians::licensing;
 using namespace com::github::doevelopper::atlassians::licensing::test;

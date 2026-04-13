@@ -1,4 +1,4 @@
-#include <com/github/doevelopper/night/owl/quota/BoundedAllocatorTest.hpp>
+#include <com/github/doevelopper/atlassians/quota/BoundedAllocatorTest.hpp>
 
 using namespace  com::github::doevelopper::night::owl::quota;
 using namespace  com::github::doevelopper::night::owl::quota::test;

@@ -1,7 +1,7 @@
 #ifndef COM_GITHUB_DOEVELOPPER_NIGHT_OWL_IO_WRITERMOCK_HPP
 #define COM_GITHUB_DOEVELOPPER_NIGHT_OWL_IO_WRITERMOCK_HPP
 
-#include <com/github/doevelopper/night/owl/io/Writer.hpp>
+#include <com/github/doevelopper/atlassians/atlas/io/Writer.hpp>
 
 namespace com::github::doevelopper::night::owl::io::test
 {

@@ -1,4 +1,4 @@
-#include <com/github/doevelopper/night/owl/io/WriterMock.hpp>
+#include <com/github/doevelopper/atlassians/atlas/io/WriterMock.hpp>
 
 using namespace com::github::doevelopper::night::owl::io::test;
 

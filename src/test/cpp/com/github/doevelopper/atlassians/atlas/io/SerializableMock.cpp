@@ -1,4 +1,4 @@
-#include <com/github/doevelopper/night/owl/io/SerializableMock.hpp>
+#include <com/github/doevelopper/atlassians/atlas/io/SerializableMock.hpp>
 
 using namespace com::github::doevelopper::night::owl::io::test;
 
