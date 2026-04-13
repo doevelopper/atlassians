@@ -1,6 +1,6 @@
-#include <com/github/doevelopper/atlas/time/TimeSlicingEvent.hpp>
+#include <com/github/doevelopper/atlassians/atlas/time/TimeSlicingEvent.hpp>
 
-using namespace com::github::doevelopper::atlas::time;
+using namespace com::github::doevelopper::atlassians::atlas::time;
 
 template <typename TimePoint>
 log4cxx::LoggerPtr TimeSlicingEvent<TimePoint>::logger =
@@ -14,7 +14,7 @@ TimeSlicingEvent<TimePoint>::TimeSlicingEvent() noexcept
 
 template <typename TimePoint>
 TimeSlicingEvent<TimePoint>::TimeSlicingEvent(TimeSlicingEvent&& rhs) noexcept
-    : utils::AdelsonVelskyLandisNode<TimeSlicingEvent>{std::move(static_cast<utils::AdelsonVelskyLandisNode<TimeSlicingEvent>&>(rhs))}
+    : AdelsonVelskyLandisNode<TimeSlicingEvent>{std::move(static_cast<AdelsonVelskyLandisNode<TimeSlicingEvent>&>(rhs))}
     , m_deadline{std::exchange(rhs.m_deadline, TimePoint::min())}
 {
     LOG4CXX_TRACE(logger, __LOG4CXX_FUNC__);

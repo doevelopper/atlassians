@@ -1,7 +1,7 @@
 
-#include <com/github/doevelopper/atlas/time/Timeslicing.hpp>
+#include <com/github/doevelopper/atlassians/atlas/time/Timeslicing.hpp>
 
-using namespace com::github::doevelopper::atlas::time;
+using namespace com::github::doevelopper::atlassians::atlas::time;
 
 template <typename Clock>
 log4cxx::LoggerPtr Timeslicing<Clock>::logger =

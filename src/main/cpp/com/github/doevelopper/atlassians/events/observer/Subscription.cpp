@@ -1,5 +1,5 @@
 
-#include <com/github/doevelopper/night/owl/observer/Subscription.hpp>
+#include <com/github/doevelopper/atlassians/events/observer/Subscription.hpp>
 using namespace com::github::doevelopper::night::owl::observer;
 
 log4cxx::LoggerPtr Subscription::logger =

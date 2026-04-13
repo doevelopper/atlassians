@@ -19,9 +19,9 @@
 #include <utility>
 #include <variant>
 
-#include <com/github/doevelopper/atlas/time/TimeSlicingEvent.hpp>
+#include <com/github/doevelopper/atlassians/atlas/time/TimeSlicingEvent.hpp>
 
-namespace com::github::doevelopper::atlas::time
+namespace com::github::doevelopper::atlassians::atlas::time
 {
 
     /// User callbacks shall satisfy this concept.
@@ -208,7 +208,7 @@ namespace com::github::doevelopper::atlas::time
     }
     protected:
     private:
-        using Tree = utils::AdelsonVelskyLandisTree<TimeSlicingEvent<time_point>>;
+        using Tree = AdelsonVelskyLandisTree<TimeSlicingEvent<time_point>>;
         Tree m_tree;
     };
 }

@@ -1,7 +1,7 @@
 #ifndef COM_GITHUB_DOEVELOPPER_NIGHT_OWL_OBSERVER_SUBSCRIPTION_HPP
 #define COM_GITHUB_DOEVELOPPER_NIGHT_OWL_OBSERVER_SUBSCRIPTION_HPP
 
-#include <com/github/doevelopper/night/owl/observer/AbstractSubscription.hpp>
+#include <com/github/doevelopper/atlassians/events/observer/AbstractSubscription.hpp>
 
 namespace com::github::doevelopper::night::owl::observer
 {

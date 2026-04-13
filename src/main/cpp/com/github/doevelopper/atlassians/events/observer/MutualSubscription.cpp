@@ -1,5 +1,5 @@
 
-#include <com/github/doevelopper/night/owl/observer/MutualSubscription.hpp>
+#include <com/github/doevelopper/atlassians/events/observer/MutualSubscription.hpp>
 using namespace com::github::doevelopper::night::owl::observer;
 
 log4cxx::LoggerPtr MutualSubscription::logger =

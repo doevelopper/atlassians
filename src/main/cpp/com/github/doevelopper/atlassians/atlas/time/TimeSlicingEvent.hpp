@@ -14,7 +14,7 @@
 #include <com/github/doevelopper/atlassians/atlas/time/AdelsonVelskyLandisNode.hpp>
 #include <com/github/doevelopper/atlassians/atlas/time/AdelsonVelskyLandisTree.hpp>
 
-namespace com::github::doevelopper::atlas::time
+namespace com::github::doevelopper::atlassians::atlas::time
 {
     template <typename TimePoint>
     class TimeSlicingEvent;
@@ -53,10 +53,10 @@ namespace com::github::doevelopper::atlas::time
     };
 
     template <typename TimePoint>
-    class TimeSlicingEvent : private utils::AdelsonVelskyLandisNode<TimeSlicingEvent<TimePoint>>
+    class TimeSlicingEvent : private AdelsonVelskyLandisNode<TimeSlicingEvent<TimePoint>>
     {
-        friend class utils::AdelsonVelskyLandisNode<TimeSlicingEvent>;  // This friendship is required for the AVL tree implementation,
-        friend class utils::AdelsonVelskyLandisTree<TimeSlicingEvent>;  // otherwise, we would have to use public inheritance, which is undesirable.
+        friend class AdelsonVelskyLandisNode<TimeSlicingEvent>;  // This friendship is required for the AVL tree implementation,
+        friend class AdelsonVelskyLandisTree<TimeSlicingEvent>;  // otherwise, we would have to use public inheritance, which is undesirable.
         LOG4CXX_DECLARE_STATIC_LOGGER
     public:
         TimeSlicingEvent(const TimeSlicingEvent&)            = default;
@@ -98,8 +98,8 @@ namespace com::github::doevelopper::atlas::time
         }
 
     protected:
-        using Tree = utils::AdelsonVelskyLandisTree<TimeSlicingEvent>;
-        using utils::AdelsonVelskyLandisNode<TimeSlicingEvent>::remove;
+        using Tree = AdelsonVelskyLandisTree<TimeSlicingEvent>;
+        using AdelsonVelskyLandisNode<TimeSlicingEvent>::remove;
 
         TimeSlicingEvent() noexcept;
         TimeSlicingEvent(TimeSlicingEvent&& rhs) noexcept;
@@ -116,7 +116,7 @@ namespace com::github::doevelopper::atlas::time
                 [dead](const TimeSlicingEvent& other) {
                     /// No two deadlines compare equal, which allows us to have multiple nodes with the same deadline in
                         /// the tree. With two nodes sharing the same deadline, the one added later is considered to be later.
-                    return (dead >= other.deadline_) ? +1 : -1;
+                    return (dead >= other.m_deadline) ? +1 : -1;
                 },
                 [this] { return this; });
             assert(std::get<0>(ptr_existing) == this);

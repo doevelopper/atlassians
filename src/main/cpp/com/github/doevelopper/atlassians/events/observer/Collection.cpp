@@ -1,5 +1,5 @@
 
-#include <com/github/doevelopper/night/owl/observer/Collection.hpp>
+#include <com/github/doevelopper/atlassians/events/observer/Collection.hpp>
 
 #include <atomic>
 using namespace com::github::doevelopper::night::owl::observer;

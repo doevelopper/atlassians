@@ -1,5 +1,5 @@
 
-#include <com/github/doevelopper/night/owl/security/SslCrypto.hpp>
+#include <com/github/doevelopper/atlassians/atlas/security/SslCrypto.hpp>
 
 #include <openssl/conf.h>
 // SSL I/F for all symmetric encryption algorithms

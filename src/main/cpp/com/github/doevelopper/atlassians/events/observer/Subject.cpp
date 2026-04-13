@@ -1,5 +1,5 @@
 
-#include <com/github/doevelopper/night/owl/observer/Subject.hpp>
+#include <com/github/doevelopper/atlassians/events/observer/Subject.hpp>
 using namespace com::github::doevelopper::night::owl::observer;
 
 template <typename... Args>

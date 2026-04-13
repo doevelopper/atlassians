@@ -26,6 +26,10 @@
 
 #include <cstdlib>
 
+#include <com/github/doevelopper/atlassians/launcher/Application.hpp>
+
+using namespace com::github::doevelopper::atlassians::launcher;
+
 /*!
  * @brief
  * @param argc number of string arguments passed via argv
@@ -38,7 +42,14 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char ** argv)
     std::uint_fast64_t runStatus = 0;
     try
     {
-        //TODO instatiate application entry point here and run it, then assign the result to runStatus
+        // Create and initialize the application
+        auto application = std::make_unique<Application>(argc, argv);
+
+        // Run the application and wait for it to complete
+        application->run().get();
+
+        // Application completed successfully
+        return EXIT_SUCCESS;
     }
     catch (const std::exception & e)
     {

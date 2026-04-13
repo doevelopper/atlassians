@@ -1,5 +1,5 @@
 
-#include <com/github/doevelopper/night/owl/observer/Value.hpp>
+#include <com/github/doevelopper/atlassians/events/observer/Value.hpp>
 using namespace com::github::doevelopper::night::owl::observer;
 
 template <typename ValueType>

@@ -1,5 +1,5 @@
 
-#include <com/github/doevelopper/night/owl/barriers/SpinGuard.hpp>
+#include <com/github/doevelopper/atlassians/atlas/barriers/SpinGuard.hpp>
 
 using namespace  com::github::doevelopper::night::owl::barriers;
 

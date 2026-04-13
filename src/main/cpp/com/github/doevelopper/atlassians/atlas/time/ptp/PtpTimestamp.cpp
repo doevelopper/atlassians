@@ -39,7 +39,8 @@ std::chrono::system_clock::time_point PtpTimestamp::toSystemTime() const
 {
     const auto secs = std::chrono::seconds(static_cast<std::int64_t>(m_seconds));
     const auto nanos = std::chrono::nanoseconds(static_cast<std::int64_t>(m_nanoseconds));
-    return std::chrono::system_clock::time_point(secs + nanos);
+    const auto sinceEpoch = std::chrono::duration_cast<std::chrono::system_clock::duration>(secs + nanos);
+    return std::chrono::system_clock::time_point(sinceEpoch);
 }
 
 std::vector<std::byte> PtpTimestamp::serialize() const

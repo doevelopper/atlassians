@@ -344,7 +344,7 @@ cc_library(
         "@bazel_tools//src/conditions:darwin": DARWIN_LINKOPTS,
     }),
     deps = [
-        "@boost.asio//:boost.asio",
+        "@boost//:asio",
         "//src/main/cpp:com.github.doevelopper.atlassians.main.logging",
         # TODO: Add rapidjson and other boost libs when configured
     ],
@@ -598,6 +598,8 @@ cc_library(
         "@boost//:signals2",
         "@boost//:variant2",
         "@boost//:conversion",
+        "@boost//:lexical_cast",
+        "@boost//:numeric_conversion",
         "//src/main/cpp:com.github.doevelopper.atlassians.main.logging",
     ],
     visibility = ["//visibility:public"],
@@ -689,6 +691,10 @@ cc_library(
 cc_binary(
     name = "com.github.doevelopper.atlassians.main.bin",
     srcs = ["main.cpp"],
+    copts = select({
+        "@bazel_tools//src/conditions:windows": ["/std:c++23"],
+        "//conditions:default": ["-D_REENTRANT", "-fPIC", "-std=c++23"],
+    }),
     deps = [
         ":com.github.doevelopper.atlassians.main"
     ],

@@ -1,5 +1,5 @@
 
-#include <com/github/doevelopper/night/owl/observer/Observable.hpp>
+#include <com/github/doevelopper/atlassians/events/observer/Observable.hpp>
 using namespace com::github::doevelopper::night::owl::observer;
 
 log4cxx::LoggerPtr Observable::logger =

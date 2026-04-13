@@ -664,11 +664,6 @@ boost_library(
 
 boost_library(
     name = "conversion",
-    hdrs = [
-        "libs/lexical_cast/include/boost/lexical_cast.hpp",
-        "libs/lexical_cast/include/boost/lexical_cast/bad_lexical_cast.hpp",
-        "libs/numeric/conversion/include/boost/cast.hpp",
-    ],
     deps = [
         ":assert",
         ":config",

@@ -1,9 +1,9 @@
 #ifndef COM_GITHUB_DOEVELOPPER_NIGHT_OWL_OBSERVER_SUBJECT_HPP
 #define COM_GITHUB_DOEVELOPPER_NIGHT_OWL_OBSERVER_SUBJECT_HPP
 
-#include <com/github/doevelopper/night/owl/observer/Collection.hpp>
-#include <com/github/doevelopper/night/owl/observer/TypeTraits.hpp>
-#include <com/github/doevelopper/night/owl/observer/AbstractSubscription.hpp>
+#include <com/github/doevelopper/atlassians/events/observer/Collection.hpp>
+#include <com/github/doevelopper/atlassians/events/observer/TypeTraits.hpp>
+#include <com/github/doevelopper/atlassians/events/observer/AbstractSubscription.hpp>
 
 
 namespace com::github::doevelopper::night::owl::observer
