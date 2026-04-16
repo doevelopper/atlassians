@@ -1,1 +1,253 @@
-<!-- placeholder -->
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+   ===============================================================================
+   Log4CXX Configuration File - STAGING ENVIRONMENT
+   ===============================================================================
+   Project: MSF EMS DevContainer
+   Environment: Staging/QA
+
+   Purpose: Production-like configuration with enhanced monitoring and debugging
+
+   Features:
+   - INFO level console output
+   - Comprehensive file logging with DEBUG level
+   - Performance monitoring enabled
+   - Moderate log retention
+   - Optional remote logging for testing infrastructure
+   - Time-based rotation for compliance testing
+   ===============================================================================
+-->
+
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/"
+                     threshold="all"
+                     debug="false">
+
+    <!-- ========================================================================
+         CONSOLE APPENDER - Moderate verbosity for staging
+         ======================================================================== -->
+    <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
+        <param name="Target" value="System.out"/>
+        <param name="Threshold" value="INFO"/>
+        <param name="Encoding" value="UTF-8"/>
+
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                   value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%-5p] [%t] %c{2} - %m%n"/>
+        </layout>
+
+        <filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="INFO"/>
+            <param name="LevelMax" value="FATAL"/>
+            <param name="AcceptOnMatch" value="true"/>
+        </filter>
+    </appender>
+
+    <!-- ========================================================================
+         ROLLING FILE APPENDER - Main application log
+         ======================================================================== -->
+    <appender name="ROLLING_FILE" class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="logs/staging/application.log"/>
+        <param name="Append" value="true"/>
+        <param name="MaxFileSize" value="20MB"/>
+        <param name="MaxBackupIndex" value="15"/>
+        <param name="Threshold" value="DEBUG"/>
+        <param name="Encoding" value="UTF-8"/>
+
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                   value="%d{ISO8601} [%-5p] [%t] %c{3} (%F:%L) - %m%n"/>
+        </layout>
+    </appender>
+
+    <!-- ========================================================================
+         DAILY ROLLING FILE APPENDER - Time-based for compliance testing
+         ======================================================================== -->
+    <appender name="DAILY_ROLLING_FILE" class="org.apache.log4j.DailyRollingFileAppender">
+        <param name="File" value="logs/staging/application-daily.log"/>
+        <param name="Append" value="true"/>
+        <param name="Threshold" value="INFO"/>
+        <param name="Encoding" value="UTF-8"/>
+        <param name="DatePattern" value="'.'yyyy-MM-dd"/>
+
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                   value="%d{ISO8601} %-5p [%c] (%t) %m%n"/>
+        </layout>
+    </appender>
+
+    <!-- ========================================================================
+         ERROR LOG FILE - Critical issues tracking
+         ======================================================================== -->
+    <appender name="ERROR_FILE" class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="logs/staging/errors.log"/>
+        <param name="Append" value="true"/>
+        <param name="MaxFileSize" value="10MB"/>
+        <param name="MaxBackupIndex" value="20"/>
+        <param name="Encoding" value="UTF-8"/>
+
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                   value="%d{ISO8601} [%-5p] %c{3} %t%n  Location: %F:%L%n  Message: %m%n  %n"/>
+        </layout>
+
+        <filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="ERROR"/>
+            <param name="LevelMax" value="FATAL"/>
+            <param name="AcceptOnMatch" value="true"/>
+        </filter>
+        <filter class="org.apache.log4j.varia.DenyAllFilter"/>
+    </appender>
+
+    <!-- ========================================================================
+         DEBUG LOG FILE - Detailed troubleshooting in staging
+         ======================================================================== -->
+    <appender name="DEBUG_FILE" class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="logs/staging/debug.log"/>
+        <param name="Append" value="true"/>
+        <param name="MaxFileSize" value="30MB"/>
+        <param name="MaxBackupIndex" value="5"/>
+        <param name="Encoding" value="UTF-8"/>
+
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                   value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%-5p] [%-15.15t] %c{4} (%F:%L)%n    %m%n"/>
+        </layout>
+
+        <filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="TRACE"/>
+            <param name="LevelMax" value="DEBUG"/>
+            <param name="AcceptOnMatch" value="true"/>
+        </filter>
+        <filter class="org.apache.log4j.varia.DenyAllFilter"/>
+    </appender>
+
+    <!-- ========================================================================
+         ASYNC APPENDER - Performance testing
+         ======================================================================== -->
+    <appender name="ASYNC" class="org.apache.log4j.AsyncAppender">
+        <param name="BufferSize" value="512"/>
+        <param name="Blocking" value="false"/>
+
+        <appender-ref ref="ROLLING_FILE"/>
+        <appender-ref ref="DAILY_ROLLING_FILE"/>
+    </appender>
+
+    <!-- ========================================================================
+         PERFORMANCE LOG - Load testing and profiling
+         ======================================================================== -->
+    <appender name="PERFORMANCE_FILE" class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="logs/staging/performance.log"/>
+        <param name="Append" value="true"/>
+        <param name="MaxFileSize" value="20MB"/>
+        <param name="MaxBackupIndex" value="10"/>
+        <param name="Encoding" value="UTF-8"/>
+
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                   value="%d{ISO8601},%m%n"/>
+        </layout>
+    </appender>
+
+    <!-- ========================================================================
+         SECURITY AUDIT LOG - Security testing validation
+         ======================================================================== -->
+    <appender name="SECURITY_AUDIT" class="org.apache.log4j.DailyRollingFileAppender">
+        <param name="File" value="logs/staging/security-audit.log"/>
+        <param name="Append" value="true"/>
+        <param name="DatePattern" value="'.'yyyy-MM-dd"/>
+        <param name="Encoding" value="UTF-8"/>
+
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                   value="%d{ISO8601} [SECURITY] %c - %m%n"/>
+        </layout>
+    </appender>
+
+    <!-- ========================================================================
+         SOCKET APPENDER - Optional remote logging for infrastructure testing
+         ======================================================================== -->
+    <appender name="SOCKET" class="org.apache.log4j.net.SocketAppender">
+        <param name="RemoteHost" value="staging-loghost.example.com"/>
+        <param name="Port" value="4560"/>
+        <param name="ReconnectionDelay" value="10000"/>
+        <param name="Threshold" value="INFO"/>
+    </appender>
+
+    <!-- ========================================================================
+         LOGGER CONFIGURATIONS - Staging settings
+         ======================================================================== -->
+
+    <!-- Root package logger -->
+    <logger name="com.github.doevelopper.premisses">
+        <level value="DEBUG"/>
+    </logger>
+
+    <!-- Licensing module -->
+    <logger name="com.github.doevelopper.premisses.licensing">
+        <level value="INFO"/>
+    </logger>
+
+    <!-- Launcher/Application module -->
+    <logger name="com.github.doevelopper.premisses.launcher">
+        <level value="INFO"/>
+    </logger>
+
+    <!-- Logging framework itself -->
+    <logger name="com.github.doevelopper.premisses.logging">
+        <level value="WARN"/>
+    </logger>
+
+    <!-- Triada error handling -->
+    <logger name="com.github.doevelopper.premisses.triada">
+        <level value="DEBUG"/>
+        <appender-ref ref="ERROR_FILE"/>
+    </logger>
+
+    <!-- Security/authentication related -->
+    <logger name="com.github.doevelopper.premisses.security" additivity="false">
+        <level value="INFO"/>
+        <appender-ref ref="SECURITY_AUDIT"/>
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <!-- Performance monitoring -->
+    <logger name="com.github.doevelopper.premisses.performance" additivity="false">
+        <level value="DEBUG"/>
+        <appender-ref ref="PERFORMANCE_FILE"/>
+    </logger>
+
+    <!-- Third-party libraries -->
+    <logger name="org.apache">
+        <level value="WARN"/>
+    </logger>
+
+    <!-- ========================================================================
+         ROOT LOGGER - Staging configuration
+         ======================================================================== -->
+    <root>
+        <priority value="INFO"/>
+
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNC"/>
+        <appender-ref ref="ERROR_FILE"/>
+        <appender-ref ref="DEBUG_FILE"/>
+
+        <!-- Uncomment to test remote logging infrastructure -->
+        <!-- <appender-ref ref="SOCKET"/> -->
+    </root>
+
+    <!-- ========================================================================
+         STAGING ENVIRONMENT NOTES
+         ========================================================================
+
+         1. Performance testing with realistic load
+         2. Security testing with comprehensive audit logs
+         3. Integration testing with external systems
+         4. Validate log rotation and retention policies
+         5. Test remote logging infrastructure
+         6. Monitor resource usage and optimize appenders
+         7. Validate alerting and monitoring integrations
+
+         ======================================================================== -->
+
+</log4j:configuration>

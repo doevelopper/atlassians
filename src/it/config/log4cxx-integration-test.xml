@@ -1,1 +1,362 @@
-<!-- placeholder -->
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+   ===============================================================================
+   Log4CXX Configuration File - INTEGRATION TEST ENVIRONMENT (BDD)
+   ===============================================================================
+   Project: MSF EMS DevContainer
+   Environment: Integration Testing / BDD
+
+   Purpose: Optimized configuration for integration and BDD test execution
+
+   Features:
+   - Scenario-focused logging for BDD (Given/When/Then)
+   - INFO level for clear test flow visibility
+   - Time-based rotation (integration tests may be long-running)
+   - Append mode (preserve logs across multiple BDD suite runs)
+   - Production-like logging for realistic integration testing
+   - Separate scenario log for BDD feature execution
+
+   Usage:
+   - Automatically loaded by BDD test harness
+   - Override via environment variable: LOG4CXX_IT_CONFIG
+   - CMake integration-test target sets path automatically
+   ===============================================================================
+-->
+
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/"
+                     threshold="all"
+                     debug="false">
+
+    <!-- ========================================================================
+         CONSOLE APPENDER - Scenario execution visibility
+         ======================================================================== -->
+    <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
+        <param name="Target" value="System.out"/>
+        <param name="Threshold" value="INFO"/>
+        <param name="Encoding" value="UTF-8"/>
+
+        <layout class="org.apache.log4j.PatternLayout">
+            <!-- Clear format for BDD scenario tracking -->
+            <param name="ConversionPattern"
+                   value="%d{HH:mm:ss.SSS} [%-5p] [BDD] %c{3} - %m%n"/>
+        </layout>
+    </appender>
+
+    <!-- ========================================================================
+         INTEGRATION TEST LOG FILE - Complete integration test run
+         ======================================================================== -->
+    <appender name="IT_FILE" class="org.apache.log4j.DailyRollingFileAppender">
+        <param name="File" value="logs/integration/integration-test.log"/>
+        <param name="Append" value="true"/>
+        <param name="DatePattern" value="'.'yyyy-MM-dd-HH"/>
+        <param name="Threshold" value="DEBUG"/>
+        <param name="Encoding" value="UTF-8"/>
+
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                   value="%d{ISO8601} [%-5p] [%t] %c{4} - %m%n"/>
+        </layout>
+    </appender>
+
+    <!-- ========================================================================
+         BDD SCENARIO LOG - Detailed scenario execution
+         ======================================================================== -->
+    <appender name="SCENARIO_FILE" class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="logs/integration/bdd-scenarios.log"/>
+        <param name="Append" value="true"/>
+        <param name="MaxFileSize" value="20MB"/>
+        <param name="MaxBackupIndex" value="10"/>
+        <param name="Threshold" value="INFO"/>
+        <param name="Encoding" value="UTF-8"/>
+
+        <layout class="org.apache.log4j.PatternLayout">
+            <!-- Scenario-friendly format -->
+            <param name="ConversionPattern"
+                   value="%d{HH:mm:ss.SSS} [%-5p] %c{2} - %m%n"/>
+        </layout>
+    </appender>
+
+    <!-- ========================================================================
+         ERROR LOG FILE - Integration test failures
+         ======================================================================== -->
+    <appender name="IT_ERROR_FILE" class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="logs/integration/integration-errors.log"/>
+        <param name="Append" value="true"/>
+        <param name="MaxFileSize" value="10MB"/>
+        <param name="MaxBackupIndex" value="10"/>
+        <param name="Encoding" value="UTF-8"/>
+
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                   value="%d{ISO8601} [%-5p] %c{3}%n  Thread: %t%n  Location: %F:%L%n  Message: %m%n  %n"/>
+        </layout>
+
+        <filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="ERROR"/>
+            <param name="LevelMax" value="FATAL"/>
+            <param name="AcceptOnMatch" value="true"/>
+        </filter>
+        <filter class="org.apache.log4j.varia.DenyAllFilter"/>
+    </appender>
+
+    <!-- ========================================================================
+         ASYNC APPENDER - Performance for long-running integration tests
+         ======================================================================== -->
+    <appender name="ASYNC" class="org.apache.log4j.AsyncAppender">
+        <param name="BufferSize" value="256"/>
+        <param name="Blocking" value="true"/>
+
+        <appender-ref ref="IT_FILE"/>
+    </appender>
+
+    <!-- ========================================================================
+         LOGGER CONFIGURATIONS - BDD/Integration Test Loggers
+         ======================================================================== -->
+
+    <!-- Root BDD logger -->
+    <logger name="com.github.doevelopper.premisses.bdd">
+        <level value="INFO"/>
+    </logger>
+
+    <!-- BDD main entry point -->
+    <logger name="com.github.doevelopper.premisses.bdd.main">
+        <level value="INFO"/>
+    </logger>
+
+    <!-- ========================================================================
+         BDD Driver Framework
+         ======================================================================== -->
+    <logger name="com.github.doevelopper.premisses.bdddriver">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.bdddriver.BddDriver">
+        <level value="INFO"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.bdddriver.BddEnvironment">
+        <level value="INFO"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.bdddriver.BddStaticInit">
+        <level value="INFO"/>
+    </logger>
+
+    <!-- ========================================================================
+         Module-Specific BDD Test Loggers
+         ======================================================================== -->
+
+    <!-- Atlas module BDD tests -->
+    <logger name="com.github.doevelopper.premisses.atlas.bdd">
+        <level value="DEBUG"/>
+    </logger>
+
+    <!-- Demo module BDD tests -->
+    <logger name="com.github.doevelopper.premisses.demo.bdd">
+        <level value="DEBUG"/>
+    </logger>
+
+    <!-- Launcher module BDD tests -->
+    <logger name="com.github.doevelopper.premisses.launcher.bdd">
+        <level value="DEBUG"/>
+    </logger>
+
+    <!-- Licensing module BDD tests -->
+    <logger name="com.github.doevelopper.premisses.licensing.bdd">
+        <level value="DEBUG"/>
+    </logger>
+
+    <!-- Logging module BDD tests -->
+    <logger name="com.github.doevelopper.premisses.logging.bdd">
+        <level value="DEBUG"/>
+    </logger>
+
+    <!-- Plugin module BDD tests -->
+    <logger name="com.github.doevelopper.premisses.plugin.bdd">
+        <level value="DEBUG"/>
+    </logger>
+
+    <!-- Semantic versioning BDD tests -->
+    <logger name="com.github.doevelopper.premisses.semver.bdd">
+        <level value="DEBUG"/>
+    </logger>
+
+    <!-- Triada error handling BDD tests -->
+    <logger name="com.github.doevelopper.premisses.triada.bdd">
+        <level value="DEBUG"/>
+    </logger>
+
+    <!-- ========================================================================
+         Production Code Loggers (code under integration test)
+         ======================================================================== -->
+
+    <!-- Main application modules - DEBUG to see integration behavior -->
+    <logger name="com.github.doevelopper.premisses.licensing">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.launcher">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.triada">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.semver">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.demo">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.atlas">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.plugin">
+        <level value="DEBUG"/>
+    </logger>
+
+    <!-- Logging framework itself - reduce verbosity -->
+    <logger name="com.github.doevelopper.premisses.logging">
+        <level value="INFO"/>
+    </logger>
+
+    <!-- Third-party libraries - reduce noise -->
+    <logger name="org.apache">
+        <level value="WARN"/>
+    </logger>
+
+    <!-- ========================================================================
+         ROOT LOGGER - Integration Test Configuration
+         ======================================================================== -->
+    <root>
+        <priority value="DEBUG"/>
+
+        <!-- Console for scenario visibility -->
+        <appender-ref ref="CONSOLE"/>
+
+        <!-- Async file logging for performance -->
+        <appender-ref ref="ASYNC"/>
+
+        <!-- Scenario tracking -->
+        <appender-ref ref="SCENARIO_FILE"/>
+
+        <!-- Error isolation -->
+        <appender-ref ref="IT_ERROR_FILE"/>
+    </root>
+
+    <!-- ========================================================================
+         INTEGRATION TEST CONFIGURATION NOTES
+         ========================================================================
+
+         DESIGN PHILOSOPHY:
+         - Scenario-focused logging for BDD readability
+         - Production-like behavior (INFO level for main flow)
+         - Append mode to preserve logs across multiple runs
+         - Time-based rotation for long-running test sessions
+         - Async appenders for performance in complex scenarios
+
+         LOG LEVELS:
+         - BDD framework: INFO (scenario flow visibility)
+         - BDD tests: DEBUG (detailed step execution)
+         - Production code: DEBUG (integration behavior visibility)
+         - Third-party: WARN (minimal noise)
+
+         FILE ORGANIZATION:
+         - logs/integration/integration-test.log: Complete run with timestamps
+         - logs/integration/bdd-scenarios.log: BDD scenario execution
+         - logs/integration/integration-errors.log: Failure diagnostics
+
+         INTEGRATION WITH BDD FRAMEWORKS:
+
+         1. Cucumber Integration:
+            - Step definitions log Given/When/Then execution
+            - Background steps logged with context
+            - Scenario hooks logged for setup/teardown
+            - Wire protocol communication logged
+
+         2. CTest Integration:
+            - Log files preserved across test runs
+            - Error logs available for CI/CD investigation
+            - Console output captured by CTest
+
+         3. BDD Best Practices:
+            - Log scenario name at start
+            - Log each step execution (Given/When/Then)
+            - Log assertions with expected vs actual
+            - Log scenario result (pass/fail with reason)
+
+         DEBUGGING STRATEGIES:
+
+         1. Failed Scenario Analysis:
+            - Check console for scenario context
+            - Review bdd-scenarios.log for step execution
+            - Examine integration-errors.log for failures
+            - Check integration-test.log for full trace
+
+         2. Intermittent Failures:
+            - Enable TRACE for specific module
+            - Check timing issues with timestamps
+            - Review external dependency logs
+            - Verify test data consistency
+
+         3. Performance Issues:
+            - Monitor log volume per scenario
+            - Profile scenario execution time
+            - Check async buffer usage
+            - Review external system latency
+
+         CUSTOMIZATION:
+
+         Enable TRACE for specific BDD module:
+         <logger name="com.github.doevelopper.premisses.licensing.bdd">
+             <level value="TRACE"/>
+         </logger>
+
+         Reduce console output for CI:
+         <appender name="CONSOLE">
+             <param name="Threshold" value="WARN"/>
+         </appender>
+
+         Enable production code TRACE:
+         <logger name="com.github.doevelopper.premisses.licensing">
+             <level value="TRACE"/>
+         </logger>
+
+         CONTINUOUS INTEGRATION:
+         - Archive bdd-scenarios.log as CI artifact
+         - Archive integration-errors.log on failure
+         - Parse scenario logs for failure patterns
+         - Track scenario execution time trends
+         - Set up alerts for integration failures
+
+         BEST PRACTICES:
+         1. Log scenario name and description at start
+         2. Log each Given/When/Then step clearly
+         3. Include test data values in logs
+         4. Log external system interactions
+         5. Use structured logging for metrics
+         6. Separate scenario runs with clear markers
+         7. Archive logs for compliance and audit
+         8. Review failed scenario logs promptly
+
+         BDD LOGGING CONVENTIONS:
+         - "SCENARIO: <name>" at start
+         - "  GIVEN <step>" for preconditions
+         - "  WHEN <step>" for actions
+         - "  THEN <step>" for assertions
+         - "SCENARIO RESULT: PASS/FAIL" at end
+
+         ENVIRONMENT DIFFERENCES FROM UNIT TESTS:
+         - Append=true (preserve across runs)
+         - Time-based rotation (long test sessions)
+         - Async appenders (better performance)
+         - INFO console (clearer scenario flow)
+         - Larger file sizes (more complex scenarios)
+
+         ======================================================================== -->
+
+</log4j:configuration>

@@ -31,3 +31,21 @@
 # - informs the rules_lint formatter not to apply formatting rules
 maven_install.json     linguist-generated=true
 githooks/pre-commit    rules-lint-ignored=true
+
+*.bzl linguist-language=Python
+BUILD linguist-language=Python
+site/* linguist-documentation
+
+# Github excludes files in 'build' directory from their search by default.
+# This negates the exclusion.
+#
+# For more information, see:
+#   https://docs.github.com/en/search-github/searching-on-github/finding-files-on-github#customizing-excluded-files
+**/build/** linguist-generated=false
+
+# Files should not use CRLF line endings, even on Windows.
+* -text
+
+# A custom merge driver for the Bazel lockfile.
+# https://bazel.build/external/lockfile#automatic-resolution
+MODULE.bazel.lock merge=bazel-lockfile-merge

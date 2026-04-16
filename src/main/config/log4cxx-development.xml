@@ -1,1 +1,148 @@
-<!-- placeholder -->
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+   ===============================================================================
+   Log4CXX Configuration File - DEVELOPMENT ENVIRONMENT
+   ===============================================================================
+   Project: MSF EMS DevContainer
+   Environment: Development
+
+   Purpose: Maximum verbosity for debugging and local development
+
+   Features:
+   - Verbose console output with DEBUG level
+   - Detailed file logging including TRACE level
+   - File location and line numbers in logs
+   - No remote appenders (local development only)
+   - Short log retention (disk space optimization)
+   ===============================================================================
+-->
+
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/"
+                     threshold="all"
+                     debug="false">
+
+    <!-- ========================================================================
+         CONSOLE APPENDER - Verbose output for development
+         ======================================================================== -->
+    <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
+        <param name="Target" value="System.out"/>
+        <param name="Threshold" value="TRACE"/>
+        <param name="Encoding" value="UTF-8"/>
+
+        <layout class="org.apache.log4j.PatternLayout">
+            <!-- Detailed format with file location for debugging -->
+            <param name="ConversionPattern"
+                   value="%d{HH:mm:ss.SSS} [%-5p] [%t] %c{2} (%F:%L) - %m%n"/>
+        </layout>
+    </appender>
+
+    <!-- ========================================================================
+         ROLLING FILE APPENDER - Main development log
+         ======================================================================== -->
+    <appender name="ROLLING_FILE" class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="logs/dev/application.log"/>
+        <param name="Append" value="true"/>
+        <param name="MaxFileSize" value="50MB"/>
+        <param name="MaxBackupIndex" value="3"/>
+        <param name="Threshold" value="TRACE"/>
+        <param name="Encoding" value="UTF-8"/>
+
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                   value="%d{ISO8601} [%-5p] [%t] %c{4} (%F:%L) - %m%n"/>
+        </layout>
+    </appender>
+
+    <!-- ========================================================================
+         ERROR LOG FILE - Quick access to errors during development
+         ======================================================================== -->
+    <appender name="ERROR_FILE" class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="logs/dev/errors.log"/>
+        <param name="Append" value="true"/>
+        <param name="MaxFileSize" value="10MB"/>
+        <param name="MaxBackupIndex" value="3"/>
+        <param name="Encoding" value="UTF-8"/>
+
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                   value="%d{ISO8601} [%-5p] %c{3} %t%n  Location: %F:%L%n  Message: %m%n  %n"/>
+        </layout>
+
+        <filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="ERROR"/>
+            <param name="LevelMax" value="FATAL"/>
+            <param name="AcceptOnMatch" value="true"/>
+        </filter>
+        <filter class="org.apache.log4j.varia.DenyAllFilter"/>
+    </appender>
+
+    <!-- ========================================================================
+         SECURITY AUDIT LOG - Even in dev, track security events
+         ======================================================================== -->
+    <appender name="SECURITY_AUDIT" class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="logs/dev/security-audit.log"/>
+        <param name="Append" value="true"/>
+        <param name="MaxFileSize" value="5MB"/>
+        <param name="MaxBackupIndex" value="2"/>
+        <param name="Encoding" value="UTF-8"/>
+
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                   value="%d{ISO8601} [SECURITY] %c{3} (%F:%L) - %m%n"/>
+        </layout>
+    </appender>
+
+    <!-- ========================================================================
+         LOGGER CONFIGURATIONS - Development settings
+         ======================================================================== -->
+
+    <!-- Root package logger - TRACE for maximum detail -->
+    <logger name="com.github.doevelopper.premisses">
+        <level value="TRACE"/>
+    </logger>
+
+    <!-- Licensing module -->
+    <logger name="com.github.doevelopper.premisses.licensing">
+        <level value="DEBUG"/>
+    </logger>
+
+    <!-- Launcher/Application module -->
+    <logger name="com.github.doevelopper.premisses.launcher">
+        <level value="DEBUG"/>
+    </logger>
+
+    <!-- Logging framework itself -->
+    <logger name="com.github.doevelopper.premisses.logging">
+        <level value="INFO"/>
+    </logger>
+
+    <!-- Triada error handling -->
+    <logger name="com.github.doevelopper.premisses.triada">
+        <level value="TRACE"/>
+        <appender-ref ref="ERROR_FILE"/>
+    </logger>
+
+    <!-- Security/authentication related -->
+    <logger name="com.github.doevelopper.premisses.security" additivity="false">
+        <level value="TRACE"/>
+        <appender-ref ref="SECURITY_AUDIT"/>
+        <appender-ref ref="CONSOLE"/>
+    </logger>
+
+    <!-- Third-party libraries - reduce noise even in development -->
+    <logger name="org.apache">
+        <level value="INFO"/>
+    </logger>
+
+    <!-- ========================================================================
+         ROOT LOGGER - Development configuration
+         ======================================================================== -->
+    <root>
+        <priority value="DEBUG"/>
+
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ROLLING_FILE"/>
+        <appender-ref ref="ERROR_FILE"/>
+    </root>
+
+</log4j:configuration>

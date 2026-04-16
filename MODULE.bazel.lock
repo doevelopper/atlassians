@@ -557,7 +557,7 @@
     },
     "//tools/off_the_shelf_software/boost:repositories.bzl%non_module_dependencies": {
       "general": {
-        "bzlTransitiveDigest": "BqFDvyZdwjrGo2X+qlFIP0dU6/2Cc5cdMqwC+iUr29g=",
+        "bzlTransitiveDigest": "EQMC9xKkPGIpIjxMVENaITsg53BOppBqFPvA5nklg9E=",
         "usagesDigest": "2I9uuL46Qg60SiemIa9RXw3TS+WFwjjlaPopbLFz6+o=",
         "recordedInputs": [
           "REPO_MAPPING:,bazel_tools bazel_tools",
