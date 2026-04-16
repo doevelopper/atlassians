@@ -9,19 +9,19 @@
 #include <gtest/gtest.h>
 #include <cucumber-cpp/autodetect.hpp>
 
-#include <com/github/doevelopper/premisses/licensing/ExpirationValidator.hpp>
-#include <com/github/doevelopper/premisses/licensing/FeatureValidator.hpp>
-#include <com/github/doevelopper/premisses/licensing/FileLicenseStorage.hpp>
-#include <com/github/doevelopper/premisses/licensing/HardwareIdValidator.hpp>
-#include <com/github/doevelopper/premisses/licensing/License.hpp>
-#include <com/github/doevelopper/premisses/licensing/LicenseManager.hpp>
-#include <com/github/doevelopper/premisses/licensing/LicenseTypes.hpp>
-#include <com/github/doevelopper/premisses/licensing/ValidationChain.hpp>
+#include <com/github/doevelopper/atlassians/licensing/ExpirationValidator.hpp>
+#include <com/github/doevelopper/atlassians/licensing/FeatureValidator.hpp>
+#include <com/github/doevelopper/atlassians/licensing/FileLicenseStorage.hpp>
+#include <com/github/doevelopper/atlassians/licensing/HardwareIdValidator.hpp>
+#include <com/github/doevelopper/atlassians/licensing/License.hpp>
+#include <com/github/doevelopper/atlassians/licensing/LicenseManager.hpp>
+#include <com/github/doevelopper/atlassians/licensing/LicenseTypes.hpp>
+#include <com/github/doevelopper/atlassians/licensing/ValidationChain.hpp>
 
 namespace
 {
 
-using namespace com::github::doevelopper::premisses::licensing;
+using namespace com::github::doevelopper::atlassians::licensing;
 using cucumber::ScenarioScope;
 
 /**

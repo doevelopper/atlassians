@@ -12,15 +12,15 @@
  * Copyright (C) 2024 ACME Technology Corp. All rights reserved.
  ********************************************************************/
 
-#ifndef COM_GITHUB_DOEVELOPPER_PREMISSES_BDDDRIVER_BDDENVIRONMENT_HPP
-#define COM_GITHUB_DOEVELOPPER_PREMISSES_BDDDRIVER_BDDENVIRONMENT_HPP
+#ifndef COM_GITHUB_DOEVELOPPER_ATLASSIANS_BDDDRIVER_BDDENVIRONMENT_HPP
+#define COM_GITHUB_DOEVELOPPER_ATLASSIANS_BDDDRIVER_BDDENVIRONMENT_HPP
 
 #include <memory>
 #include <string>
 
 #include <log4cxx/logger.h>
 
-namespace com::github::doevelopper::premisses::bdddriver
+namespace com::github::doevelopper::atlassians::bdddriver
 {
     /**
      * @class BddEnvironment
@@ -112,6 +112,6 @@ namespace com::github::doevelopper::premisses::bdddriver
         static log4cxx::LoggerPtr logger;
     };
 
-}  // namespace com::github::doevelopper::premisses::bdddriver
+}  // namespace com::github::doevelopper::atlassians::bdddriver
 
-#endif  // COM_GITHUB_DOEVELOPPER_PREMISSES_BDDDRIVER_BDDENVIRONMENT_HPP
+#endif  // COM_GITHUB_DOEVELOPPER_ATLASSIANS_BDDDRIVER_BDDENVIRONMENT_HPP

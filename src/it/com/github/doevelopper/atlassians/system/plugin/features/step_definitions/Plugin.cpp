@@ -10,11 +10,11 @@
 #include <gtest/gtest.h>
 #include <cucumber-cpp/autodetect.hpp>
 
-#include <com/github/doevelopper/premisses/plugin/core/BasePlugin.hpp>
-#include <com/github/doevelopper/premisses/plugin/core/PluginExport.hpp>
-#include <com/github/doevelopper/premisses/logging/LogMacros.hpp>
+#include <com/github/doevelopper/atlassians/plugin/core/BasePlugin.hpp>
+#include <com/github/doevelopper/atlassians/plugin/core/PluginExport.hpp>
+#include <com/github/doevelopper/atlassians/logging/LogMacros.hpp>
 
-using com::github::doevelopper::premisses::plugin::core::BasePlugin;
+using com::github::doevelopper::atlassians::plugin::core::BasePlugin;
 using cucumber::ScenarioScope;
 
 // ============================================

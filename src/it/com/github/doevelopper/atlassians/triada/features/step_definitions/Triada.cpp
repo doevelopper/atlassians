@@ -10,7 +10,7 @@
 #include <gtest/gtest.h>
 #include <cucumber-cpp/autodetect.hpp>
 
-#include <com/github/doevelopper/premisses/triada/Error.hpp>
+#include <com/github/doevelopper/atlassians/triada/Error.hpp>
 
-using namespace com::github::doevelopper::premisses::triada;
+using namespace com::github::doevelopper::atlassians::triada;
 using cucumber::ScenarioScope;

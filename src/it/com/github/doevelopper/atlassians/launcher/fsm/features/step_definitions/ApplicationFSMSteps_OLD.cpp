@@ -15,12 +15,12 @@
 #include <thread>
 #include <vector>
 
-#include <com/github/doevelopper/premisses/launcher/fsm/ApplicationFSM.hpp>
-#include <com/github/doevelopper/premisses/launcher/fsm/FSMContext.hpp>
-#include <com/github/doevelopper/premisses/launcher/fsm/FSMEvents.hpp>
-#include <com/github/doevelopper/premisses/logging/LogMacros.hpp>
+#include <com/github/doevelopper/atlassians/launcher/fsm/ApplicationFSM.hpp>
+#include <com/github/doevelopper/atlassians/launcher/fsm/FSMContext.hpp>
+#include <com/github/doevelopper/atlassians/launcher/fsm/FSMEvents.hpp>
+#include <com/github/doevelopper/atlassians/logging/LogMacros.hpp>
 
-using namespace com::github::doevelopper::premisses::launcher::fsm;
+using namespace com::github::doevelopper::atlassians::launcher::fsm;
 using cucumber::ScenarioScope;
 
 // ============================================
@@ -37,7 +37,7 @@ struct ApplicationFSMContext
     bool shutdownGraceful{false};
     
     log4cxx::LoggerPtr logger = log4cxx::Logger::getLogger(
-        std::string("com.github.doevelopper.premisses.it.fsm"));
+        std::string("com.github.doevelopper.atlassians.it.fsm"));
     
     void recordState(const std::string& state)
     {

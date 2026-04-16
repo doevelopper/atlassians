@@ -10,9 +10,9 @@
 #include <gtest/gtest.h>
 #include <cucumber-cpp/autodetect.hpp>
 
-#include <com/github/doevelopper/premisses/atlas/NoOp.hpp>
+#include <com/github/doevelopper/atlassians/atlas/NoOp.hpp>
 
-using com::github::doevelopper::premisses::atlas::NoOp;
+using com::github::doevelopper::atlassians::atlas::NoOp;
 using cucumber::ScenarioScope;
 
 // ============================================

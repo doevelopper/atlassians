@@ -10,11 +10,11 @@
 #include <gtest/gtest.h>
 #include <cucumber-cpp/autodetect.hpp>
 
-#include <com/github/doevelopper/premisses/logging/LoggingInitializer.hpp>
-#include <com/github/doevelopper/premisses/logging/DefaultInitializationStrategy.hpp>
+#include <com/github/doevelopper/atlassians/logging/LoggingInitializer.hpp>
+#include <com/github/doevelopper/atlassians/logging/DefaultInitializationStrategy.hpp>
 
-using com::github::doevelopper::premisses::logging::LoggingInitializer;
-using com::github::doevelopper::premisses::logging::DefaultInitializationStrategy;
+using com::github::doevelopper::atlassians::logging::LoggingInitializer;
+using com::github::doevelopper::atlassians::logging::DefaultInitializationStrategy;
 
 using cucumber::ScenarioScope;
 

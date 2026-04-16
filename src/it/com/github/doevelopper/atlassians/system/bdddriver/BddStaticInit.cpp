@@ -16,12 +16,12 @@
 #include <iostream>
 #include <memory>
 
-#include <com/github/doevelopper/premisses/bdddriver/BddEnvironment.hpp>
-#include <com/github/doevelopper/premisses/logging/LoggingInitializer.hpp>
-#include <com/github/doevelopper/premisses/logging/DefaultInitializationStrategy.hpp>
+#include <com/github/doevelopper/atlassians/bdddriver/BddEnvironment.hpp>
+#include <com/github/doevelopper/atlassians/logging/LoggingInitializer.hpp>
+#include <com/github/doevelopper/atlassians/logging/DefaultInitializationStrategy.hpp>
 
-using namespace com::github::doevelopper::premisses::bdddriver;
-using namespace com::github::doevelopper::premisses::logging;
+using namespace com::github::doevelopper::atlassians::bdddriver;
+using namespace com::github::doevelopper::atlassians::logging;
 
 namespace
 {
@@ -46,7 +46,7 @@ namespace
                     if (initializer.initialize(std::move(strategy)))
                     {
                         auto logger = log4cxx::Logger::getLogger(
-                            "com.github.doevelopper.premisses.bdd.init");
+                            "com.github.doevelopper.atlassians.bdd.init");
                         LOG4CXX_INFO(logger, "========================================");
                         LOG4CXX_INFO(logger, "  BDD Static Initialization Complete");
                         LOG4CXX_INFO(logger, "========================================");
@@ -77,7 +77,7 @@ namespace
                 env.TearDown();
 
                 auto logger = log4cxx::Logger::getLogger(
-                    "com.github.doevelopper.premisses.bdd.init");
+                    "com.github.doevelopper.atlassians.bdd.init");
                 LOG4CXX_INFO(logger, "========================================");
                 LOG4CXX_INFO(logger, "  BDD Static Cleanup Complete");
                 LOG4CXX_INFO(logger, "========================================");

@@ -26,19 +26,19 @@
 
 #include <log4cxx/logger.h>
 
-#include <com/github/doevelopper/premisses/bdddriver/BddDriver.hpp>
-#include <com/github/doevelopper/premisses/bdddriver/BddEnvironment.hpp>
-#include <com/github/doevelopper/premisses/logging/LoggingInitializer.hpp>
-#include <com/github/doevelopper/premisses/logging/DefaultInitializationStrategy.hpp>
+#include <com/github/doevelopper/atlassians/bdddriver/BddDriver.hpp>
+#include <com/github/doevelopper/atlassians/bdddriver/BddEnvironment.hpp>
+#include <com/github/doevelopper/atlassians/logging/LoggingInitializer.hpp>
+#include <com/github/doevelopper/atlassians/logging/DefaultInitializationStrategy.hpp>
 
-using namespace com::github::doevelopper::premisses::logging;
-using namespace com::github::doevelopper::premisses::bdddriver;
+using namespace com::github::doevelopper::atlassians::logging;
+using namespace com::github::doevelopper::atlassians::bdddriver;
 
 namespace
 {
     // Logger for main entry point
     log4cxx::LoggerPtr logger =
-        log4cxx::Logger::getLogger("com.github.doevelopper.premisses.bdd.main");
+        log4cxx::Logger::getLogger("com.github.doevelopper.atlassians.bdd.main");
 
     /**
      * @brief Extract program name from command line argument

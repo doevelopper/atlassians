@@ -21,16 +21,16 @@
 #include <cucumber-cpp/internal/connectors/wire/WireProtocol.hpp>
 #include <cucumber-cpp/internal/CukeEngineImpl.hpp>
 
-#include <com/github/doevelopper/premisses/bdddriver/BddDriver.hpp>
-#include <com/github/doevelopper/premisses/bdddriver/BddEnvironment.hpp>
-#include <com/github/doevelopper/premisses/logging/DefaultInitializationStrategy.hpp>
+#include <com/github/doevelopper/atlassians/bdddriver/BddDriver.hpp>
+#include <com/github/doevelopper/atlassians/bdddriver/BddEnvironment.hpp>
+#include <com/github/doevelopper/atlassians/logging/DefaultInitializationStrategy.hpp>
 
-using namespace com::github::doevelopper::premisses::bdddriver;
-using namespace com::github::doevelopper::premisses::logging;
+using namespace com::github::doevelopper::atlassians::bdddriver;
+using namespace com::github::doevelopper::atlassians::logging;
 
 // Initialize static logger
 log4cxx::LoggerPtr BddDriver::logger =
-    log4cxx::Logger::getLogger("com.github.doevelopper.premisses.bdddriver.BddDriver");
+    log4cxx::Logger::getLogger("com.github.doevelopper.atlassians.bdddriver.BddDriver");
 
 // ============================================
 // BddDriver Implementation

@@ -10,9 +10,9 @@
 #include <gtest/gtest.h>
 #include <cucumber-cpp/autodetect.hpp>
 
-#include <com/github/doevelopper/premisses/demo/Calculator.hpp>
+#include <com/github/doevelopper/atlassians/demo/Calculator.hpp>
 
-using com::github::doevelopper::premisses::demo::Calculator;
+using com::github::doevelopper::atlassians::demo::Calculator;
 using cucumber::ScenarioScope;
 
 // ============================================
@@ -413,11 +413,17 @@ WHEN("^I multiply the result by (-?\\d+\\.?\\d*)$")
     REGEX_PARAM(double, multiplier);
     ScenarioScope<CalculatorContext> context;
 
-    context->lastNumericResult = context->calculator->multiply(context->lastNumericResult, multiplier);
+    const double currentResult = context->lastNumericResult;
     context->lastVariantResult = context->calculator->calculate(
         Calculator::Operation::Multiply,
-        context->lastNumericResult,
+        currentResult,
         multiplier);
+
+    auto numericResult = context->getDoubleFromResult(context->lastVariantResult);
+    if (numericResult.has_value())
+    {
+        context->lastNumericResult = numericResult.value();
+    }
 }
 
 WHEN("^I add the result and (-?\\d+\\.?\\d*)$")
@@ -425,11 +431,17 @@ WHEN("^I add the result and (-?\\d+\\.?\\d*)$")
     REGEX_PARAM(double, addend);
     ScenarioScope<CalculatorContext> context;
 
-    context->lastNumericResult = context->calculator->add(context->lastNumericResult, addend);
+    const double currentResult = context->lastNumericResult;
     context->lastVariantResult = context->calculator->calculate(
         Calculator::Operation::Add,
-        context->lastNumericResult,
+        currentResult,
         addend);
+
+    auto numericResult = context->getDoubleFromResult(context->lastVariantResult);
+    if (numericResult.has_value())
+    {
+        context->lastNumericResult = numericResult.value();
+    }
 }
 
 WHEN("^I subtract (-?\\d+\\.?\\d*) from the result$")
@@ -437,11 +449,45 @@ WHEN("^I subtract (-?\\d+\\.?\\d*) from the result$")
     REGEX_PARAM(double, subtrahend);
     ScenarioScope<CalculatorContext> context;
 
-    context->lastNumericResult = context->calculator->subtract(context->lastNumericResult, subtrahend);
+    const double currentResult = context->lastNumericResult;
     context->lastVariantResult = context->calculator->calculate(
         Calculator::Operation::Subtract,
-        context->lastNumericResult,
+        currentResult,
         subtrahend);
+
+    auto numericResult = context->getDoubleFromResult(context->lastVariantResult);
+    if (numericResult.has_value())
+    {
+        context->lastNumericResult = numericResult.value();
+    }
+}
+
+WHEN("^I divide the result by (-?\\d+\\.?\\d*)$")
+{
+    REGEX_PARAM(double, divisor);
+    ScenarioScope<CalculatorContext> context;
+
+    const double currentResult = context->lastNumericResult;
+    context->lastVariantResult = context->calculator->calculate(
+        Calculator::Operation::Divide,
+        currentResult,
+        divisor);
+
+    auto numericResult = context->getDoubleFromResult(context->lastVariantResult);
+    if (numericResult.has_value())
+    {
+        context->lastNumericResult = numericResult.value();
+        context->operationFailed = false;
+    }
+    else
+    {
+        context->operationFailed = true;
+        auto errorMsg = context->getStringFromResult(context->lastVariantResult);
+        if (errorMsg.has_value())
+        {
+            context->lastErrorMessage = errorMsg.value();
+        }
+    }
 }
 
 THEN("^the final result should be (-?\\d+\\.?\\d*)$")

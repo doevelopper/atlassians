@@ -7,9 +7,9 @@
 #include <gtest/gtest.h>
 #include <cucumber-cpp/autodetect.hpp>
 
-#include "com/github/doevelopper/premisses/launcher/fsm/ApplicationFSM.hpp"
-#include "com/github/doevelopper/premisses/launcher/fsm/FSMContext.hpp"
-#include "com/github/doevelopper/premisses/launcher/fsm/FSMEvents.hpp"
+#include "com/github/doevelopper/atlassians/launcher/fsm/ApplicationFSM.hpp"
+#include "com/github/doevelopper/atlassians/launcher/fsm/FSMContext.hpp"
+#include "com/github/doevelopper/atlassians/launcher/fsm/FSMEvents.hpp"
 
 #include <memory>
 #include <string>
@@ -17,7 +17,7 @@
 #include <chrono>
 
 using cucumber::ScenarioScope;
-using namespace com::github::doevelopper::premisses::launcher::fsm;
+using namespace com::github::doevelopper::atlassians::launcher::fsm;
 
 namespace
 {

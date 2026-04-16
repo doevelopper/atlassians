@@ -19,10 +19,11 @@ cc_library(
         "com/github/doevelopper/atlassians/bdddriver/BddDriver.hpp",
         "com/github/doevelopper/atlassians/bdddriver/BddEnvironment.hpp",
     ],
-    include_prefix = "test/e2e",
+    includes = ["."],
     deps = [
         "@cucumber-cpp//:cucumber-cpp",
-        "@com_google_googletest//:gtest",
+        "@googletest//:gtest",
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.logging",
     ],
 )
 
@@ -33,18 +34,19 @@ cc_gherkin_steps(
         "com/github/doevelopper/atlassians/atlas/features/step_definitions/atlas.hpp",
     ],
     deps = [
+        ":com.github.doevelopper.atlassians.bdddriver",
         "//src/main/cpp:com.github.doevelopper.atlassians.main.atlas",
         "@cucumber-cpp//:cucumber-cpp",
-        "@com_google_googletest//:gtest",
+        "@googletest//:gtest",
     ],
-    visibility = ["//test/e2e:__subpackages__"],
+    visibility = ["//visibility:public"],
 )
 
 gherkin_test(
     name = "com.github.doevelopper.atlassians.atlas.atp",
-    steps = "//src/it:com.github.doevelopper.atlassians.atlas-steps",
+    steps = ":com.github.doevelopper.atlassians.atlas-steps",
     deps = [
-        "//src/main/cpp:com.github.doevelopper.atlassians.main.atlas",
+        ":com.github.doevelopper.atlassians.atlas.feature",
     ],
 )
 
@@ -63,18 +65,19 @@ cc_gherkin_steps(
         "com/github/doevelopper/atlassians/demo/features/step_definitions/Calculator.hpp",
     ],
     deps = [
+        ":com.github.doevelopper.atlassians.bdddriver",
         "//src/main/cpp:com.github.doevelopper.atlassians.main.demo",
         "@cucumber-cpp//:cucumber-cpp",
-        "@com_google_googletest//:gtest",
+        "@googletest//:gtest",
     ],
-    visibility = ["//test/e2e:__subpackages__"],
+    visibility = ["//visibility:public"],
 )
 
 gherkin_test(
     name = "com.github.doevelopper.atlassians.demo.atp",
-    steps = "//src/it:com.github.doevelopper.atlassians.demo-steps",
+    steps = ":com.github.doevelopper.atlassians.demo-steps",
     deps = [
-        "//src/main/cpp:com.github.doevelopper.atlassians.main.demo",
+        ":com.github.doevelopper.atlassians.demo.feature",
     ],
 )
 

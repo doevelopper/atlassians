@@ -11,16 +11,16 @@
 #include <iostream>
 #include <exception>
 
-#include <com/github/doevelopper/premisses/bdddriver/BddEnvironment.hpp>
-#include <com/github/doevelopper/premisses/logging/LoggingInitializer.hpp>
-#include <com/github/doevelopper/premisses/logging/DefaultInitializationStrategy.hpp>
+#include <com/github/doevelopper/atlassians/bdddriver/BddEnvironment.hpp>
+#include <com/github/doevelopper/atlassians/logging/LoggingInitializer.hpp>
+#include <com/github/doevelopper/atlassians/logging/DefaultInitializationStrategy.hpp>
 
-using namespace com::github::doevelopper::premisses::bdddriver;
-using namespace com::github::doevelopper::premisses::logging;
+using namespace com::github::doevelopper::atlassians::bdddriver;
+using namespace com::github::doevelopper::atlassians::logging;
 
 // Initialize static logger
 log4cxx::LoggerPtr BddEnvironment::logger =
-    log4cxx::Logger::getLogger("com.github.doevelopper.premisses.bdddriver.BddEnvironment");
+    log4cxx::Logger::getLogger("com.github.doevelopper.atlassians.bdddriver.BddEnvironment");
 
 // ============================================
 // BddEnvironment Implementation

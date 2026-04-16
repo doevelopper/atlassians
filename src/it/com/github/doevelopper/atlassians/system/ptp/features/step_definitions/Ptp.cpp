@@ -6,17 +6,17 @@
 #include <gtest/gtest.h>
 #include <cucumber-cpp/autodetect.hpp>
 
-#include <com/github/doevelopper/premisses/atlas/time/ptp/PtpEngine.hpp>
+#include <com/github/doevelopper/atlassians/atlas/time/ptp/PtpEngine.hpp>
 
 namespace {
 
-using com::github::doevelopper::premisses::atlas::time::ptp::PtpEngine;
-using com::github::doevelopper::premisses::atlas::time::ptp::PtpEngineBuilder;
+using com::github::doevelopper::atlassians::atlas::time::ptp::PtpEngine;
+using com::github::doevelopper::atlassians::atlas::time::ptp::PtpEngineBuilder;
 using cucumber::ScenarioScope;
 
 struct PtpContext {
     std::unique_ptr<PtpEngine> ptpEngine;
-    std::optional<com::github::doevelopper::premisses::atlas::time::ptp::ClockIdentity> selectedPtpMaster;
+    std::optional<com::github::doevelopper::atlassians::atlas::time::ptp::ClockIdentity> selectedPtpMaster;
 };
 
 }  // namespace
@@ -32,7 +32,7 @@ GIVEN("^a default PTP engine$")
 WHEN("^I provide PTP clock candidates$")
 {
     ScenarioScope<PtpContext> context;
-    using com::github::doevelopper::premisses::atlas::time::ptp::ClockIdentity;
+    using com::github::doevelopper::atlassians::atlas::time::ptp::ClockIdentity;
 
     const std::vector<ClockIdentity> candidates{
         ClockIdentity{128U, 248U, 0xFEU, 0xFFFFU, 128U, "clock-mid"},
@@ -77,8 +77,8 @@ GIVEN("^a started PTP engine$")
 WHEN("^I receive an announce message$")
 {
     ScenarioScope<PtpContext> context;
-    using com::github::doevelopper::premisses::atlas::time::ptp::AnnounceMessage;
-    using com::github::doevelopper::premisses::atlas::time::ptp::ClockIdentity;
+    using com::github::doevelopper::atlassians::atlas::time::ptp::AnnounceMessage;
+    using com::github::doevelopper::atlassians::atlas::time::ptp::ClockIdentity;
 
     const AnnounceMessage announce(ClockIdentity{});
     context->ptpEngine->onMessage(announce);

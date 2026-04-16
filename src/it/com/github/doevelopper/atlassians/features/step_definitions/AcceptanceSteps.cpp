@@ -6,9 +6,9 @@
 #include <string>
 #include <variant>
 
-#include <com/github/doevelopper/premisses/demo/Calculator.hpp>
+#include <com/github/doevelopper/atlassians/demo/Calculator.hpp>
 
-using com::github::doevelopper::premisses::demo::Calculator;
+using com::github::doevelopper::atlassians::demo::Calculator;
 using cucumber::ScenarioScope;
 
 namespace
