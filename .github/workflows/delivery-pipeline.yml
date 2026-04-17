@@ -159,14 +159,14 @@ jobs:
       - name: Build with warnings as errors
         shell: bash
         run: |
-          bazelisk build --config linux --config gnu-gcc \
+          bazelisk build  \
             --cxxopt=-Wall --cxxopt=-Wextra --cxxopt=-Werror \
             //src/main/cpp/... //src/test/cpp/...
 
       - name: Unit tests
         shell: bash
         run: |
-          bazelisk test --config linux --config gnu-gcc \
+          bazelisk test  \
             --test_output=errors \
             //src/test/cpp/...
 
@@ -177,7 +177,7 @@ jobs:
           needs.context.outputs.branch_type == 'hotfix'
         shell: bash
         run: |
-          bazelisk test --config linux --config gnu-gcc \
+          bazelisk test  \
             --test_output=errors \
             //src/it/...
 
@@ -198,7 +198,7 @@ jobs:
       - name: Test with ASan and UBSan
         shell: bash
         run: |
-          bazelisk test --config linux --config gnu-gcc \
+          bazelisk test  \
             --copt=-fsanitize=address,undefined \
             --linkopt=-fsanitize=address,undefined \
             --copt=-fno-omit-frame-pointer \
@@ -220,7 +220,7 @@ jobs:
       - name: Generate coverage report
         shell: bash
         run: |
-          bazelisk coverage --config linux --config gnu-gcc \
+          bazelisk coverage  \
             --combined_report=lcov \
             --instrumentation_filter=//... \
             --coverage_report_generator=@bazel_tools//tools/test:coverage_report_generator \
@@ -330,7 +330,7 @@ jobs:
       - name: Build for CodeQL
         shell: bash
         run: |
-          bazelisk build --config linux --config gnu-gcc //src/main/cpp/... //src/test/cpp/...
+          bazelisk build  //src/main/cpp/... //src/test/cpp/...
 
       - name: Analyze
         uses: github/codeql-action/analyze@v3
