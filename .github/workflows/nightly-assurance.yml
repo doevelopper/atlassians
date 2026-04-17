@@ -1,0 +1,214 @@
+name: Nightly Assurance
+
+on:
+  schedule:
+    - cron: '17 2 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly-${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  full_static_analysis:
+    name: Full Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install C/C++ quality tools
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format cppcheck include-what-you-use python3-pip
+          python3 -m pip install --upgrade pip cpplint
+
+      - name: Analyze all C/C++ sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          files=$(git ls-files | grep -E '\.(c|cc|cpp|cxx|h|hh|hpp|hxx)$' || true)
+          if [[ -z "$files" ]]; then
+            echo "No C/C++ files found"
+            exit 0
+          fi
+
+          clang-format --dry-run --Werror $files
+          cpplint --quiet --filter=-legal/copyright $files
+          cppcheck --error-exitcode=1 --enable=warning,style,performance,portability --std=c++20 $files
+
+          if command -v include-what-you-use >/dev/null 2>&1; then
+            set +e
+            for f in $files; do
+              case "$f" in
+                *.c|*.cc|*.cpp|*.cxx)
+                  include-what-you-use "$f" -Xiwyu --mapping_file=/dev/null -- -std=c++20 -I. -Isrc || true
+                  ;;
+              esac
+            done
+            set -e
+          fi
+
+  tsan:
+    name: TSan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run thread sanitizer test suite
+        shell: bash
+        run: |
+          bazelisk test --config linux --config gnu-gcc \
+            --copt=-fsanitize=thread \
+            --linkopt=-fsanitize=thread \
+            --copt=-fno-omit-frame-pointer \
+            --test_output=errors \
+            //src/test/cpp/...
+
+  msan:
+    name: MSan (best-effort)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run memory sanitizer test suite
+        shell: bash
+        run: |
+          bazelisk test --config linux --config gnu-gcc \
+            --copt=-fsanitize=memory \
+            --linkopt=-fsanitize=memory \
+            --copt=-fno-omit-frame-pointer \
+            --test_output=errors \
+            //src/test/cpp/...
+
+  valgrind:
+    name: Valgrind Memcheck
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Valgrind
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y valgrind
+
+      - name: Build test binary targets
+        shell: bash
+        run: |
+          bazelisk build --config linux --config gnu-gcc //src/test/cpp/...
+
+      - name: Run Valgrind on discovered test binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          bins=$(find bazel-bin/src/test/cpp -type f -perm -111 | head -n 10 || true)
+          if [[ -z "$bins" ]]; then
+            echo "No executable test binaries discovered under bazel-bin/src/test/cpp"
+            exit 0
+          fi
+
+          for bin in $bins; do
+            echo "Valgrind: $bin"
+            valgrind --error-exitcode=1 --leak-check=full "$bin" --gtest_brief=1 || exit 1
+          done
+
+  deep_security:
+    name: Deep Security
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install scanners
+        shell: bash
+        run: |
+          python3 -m pip install --upgrade pip semgrep
+
+      - name: Semgrep full scan
+        shell: bash
+        run: |
+          semgrep scan --config auto --error --exclude bazel-atlassians-from-kitchen-sink --exclude bazel-bin --exclude bazel-out --exclude bazel-testlogs
+
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH,MEDIUM
+          ignore-unfixed: false
+          format: table
+          exit-code: '1'
+
+      - name: OSV dependency scan
+        uses: google/osv-scanner-action@v2
+        with:
+          scan-args: |-
+            --recursive
+            .
+
+      - name: Scorecard
+        uses: ossf/scorecard-action@v2.4.0
+        with:
+          results_file: scorecard-results.sarif
+          results_format: sarif
+          publish_results: false
+
+      - name: Upload Scorecard SARIF
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: scorecard-results.sarif
+
+  sbom:
+    name: SBOM
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate SBOM (SPDX)
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: spdx-json
+          output-file: sbom.spdx.json
+
+      - name: Upload SBOM artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-spdx
+          path: sbom.spdx.json
+
+  dast_preview:
+    name: DAST Preview
+    runs-on: ubuntu-latest
+    if: ${{ secrets.STAGING_BASE_URL != '' }}
+    continue-on-error: true
+    steps:
+      - name: Run OWASP ZAP baseline
+        uses: zaproxy/action-baseline@v0.14.0
+        with:
+          target: ${{ secrets.STAGING_BASE_URL }}

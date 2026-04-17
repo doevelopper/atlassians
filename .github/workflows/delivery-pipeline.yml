@@ -1,0 +1,336 @@
+name: Delivery Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+      - feature/**
+      - bugfix/**
+      - release/**
+      - hotfix/**
+  pull_request:
+    branches:
+      - main
+      - develop
+      - release/**
+      - hotfix/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: delivery-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  context:
+    name: Context
+    runs-on: ubuntu-latest
+    outputs:
+      branch_type: ${{ steps.branch.outputs.branch_type }}
+      changed_cc_files: ${{ steps.changes.outputs.changed_cc_files }}
+      has_cc_files: ${{ steps.changes.outputs.has_cc_files }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Classify Branch
+        id: branch
+        shell: bash
+        run: |
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            target="${{ github.base_ref }}"
+          else
+            target="${GITHUB_REF_NAME}"
+          fi
+
+          case "$target" in
+            main|master) branch_type="main" ;;
+            develop) branch_type="develop" ;;
+            release/*) branch_type="release" ;;
+            hotfix/*) branch_type="hotfix" ;;
+            feature/*) branch_type="feature" ;;
+            bugfix/*) branch_type="bugfix" ;;
+            *) branch_type="other" ;;
+          esac
+
+          echo "branch_type=$branch_type" >> "$GITHUB_OUTPUT"
+          echo "Resolved branch type: $branch_type"
+
+      - name: Resolve Changed C/C++ Files
+        id: changes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            git fetch --no-tags --depth=1 origin "${{ github.base_ref }}"
+            diff_files=$(git diff --name-only "origin/${{ github.base_ref }}"...HEAD)
+          else
+            if [[ "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ]]; then
+              diff_files=$(git diff --name-only HEAD~1...HEAD || true)
+            else
+              diff_files=$(git diff --name-only "${{ github.event.before }}"..."${{ github.sha }}")
+            fi
+          fi
+
+          cc_files=$(printf '%s\n' "$diff_files" | grep -E '\.(c|cc|cpp|cxx|h|hh|hpp|hxx)$' || true)
+
+          if [[ -z "$cc_files" ]]; then
+            echo "has_cc_files=false" >> "$GITHUB_OUTPUT"
+            echo "changed_cc_files=" >> "$GITHUB_OUTPUT"
+            echo "No C/C++ changes detected"
+            exit 0
+          fi
+
+          cc_files_single_line=$(printf '%s' "$cc_files" | tr '\n' ' ')
+          echo "has_cc_files=true" >> "$GITHUB_OUTPUT"
+          echo "changed_cc_files=$cc_files_single_line" >> "$GITHUB_OUTPUT"
+          printf 'Changed C/C++ files: %s\n' "$cc_files_single_line"
+
+  format_lint_diff:
+    name: Format and Lint (Diff)
+    runs-on: ubuntu-latest
+    needs: context
+    if: >-
+      needs.context.outputs.has_cc_files == 'true' &&
+      (
+        github.event_name == 'pull_request' ||
+        needs.context.outputs.branch_type == 'feature' ||
+        needs.context.outputs.branch_type == 'bugfix' ||
+        needs.context.outputs.branch_type == 'develop' ||
+        needs.context.outputs.branch_type == 'hotfix'
+      )
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install C/C++ quality tools
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format cppcheck include-what-you-use python3-pip
+          python3 -m pip install --upgrade pip cpplint
+
+      - name: Run clang-format, cpplint, cppcheck, IWYU on diff
+        shell: bash
+        run: |
+          set -euo pipefail
+          files="${{ needs.context.outputs.changed_cc_files }}"
+
+          echo "Checking formatting"
+          clang-format --dry-run --Werror $files
+
+          echo "Running cpplint"
+          cpplint --quiet --filter=-legal/copyright $files
+
+          echo "Running cppcheck"
+          cppcheck --error-exitcode=1 --enable=warning,style,performance,portability --std=c++20 $files
+
+          if command -v include-what-you-use >/dev/null 2>&1; then
+            echo "Running IWYU (non-blocking advisory for diff)"
+            set +e
+            for f in $files; do
+              case "$f" in
+                *.c|*.cc|*.cpp|*.cxx)
+                  include-what-you-use "$f" -Xiwyu --mapping_file=/dev/null -- -std=c++20 -I. -Isrc >/tmp/iwyu.out 2>&1
+                  rc=$?
+                  if [[ $rc -ne 0 ]]; then
+                    cat /tmp/iwyu.out
+                  fi
+                  ;;
+              esac
+            done
+            set -e
+          fi
+
+  build_test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    needs: context
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build with warnings as errors
+        shell: bash
+        run: |
+          bazelisk build --config linux --config gnu-gcc \
+            --cxxopt=-Wall --cxxopt=-Wextra --cxxopt=-Werror \
+            //src/main/cpp/... //src/test/cpp/...
+
+      - name: Unit tests
+        shell: bash
+        run: |
+          bazelisk test --config linux --config gnu-gcc \
+            --test_output=errors \
+            //src/test/cpp/...
+
+      - name: Integration tests (main/release/hotfix)
+        if: >-
+          needs.context.outputs.branch_type == 'main' ||
+          needs.context.outputs.branch_type == 'release' ||
+          needs.context.outputs.branch_type == 'hotfix'
+        shell: bash
+        run: |
+          bazelisk test --config linux --config gnu-gcc \
+            --test_output=errors \
+            //src/it/...
+
+  asan_ubsan:
+    name: ASan and UBSan
+    runs-on: ubuntu-latest
+    needs: context
+    if: >-
+      github.event_name == 'pull_request' ||
+      needs.context.outputs.branch_type == 'main' ||
+      needs.context.outputs.branch_type == 'release' ||
+      needs.context.outputs.branch_type == 'hotfix' ||
+      needs.context.outputs.branch_type == 'develop'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Test with ASan and UBSan
+        shell: bash
+        run: |
+          bazelisk test --config linux --config gnu-gcc \
+            --copt=-fsanitize=address,undefined \
+            --linkopt=-fsanitize=address,undefined \
+            --copt=-fno-omit-frame-pointer \
+            --test_output=errors \
+            //src/test/cpp/...
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    needs: context
+    if: >-
+      github.event_name == 'pull_request' ||
+      needs.context.outputs.branch_type == 'main' ||
+      needs.context.outputs.branch_type == 'develop'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate coverage report
+        shell: bash
+        run: |
+          bazelisk coverage --config linux --config gnu-gcc \
+            --combined_report=lcov \
+            --instrumentation_filter=//... \
+            --coverage_report_generator=@bazel_tools//tools/test:coverage_report_generator \
+            //src/test/cpp/...
+
+      - name: Archive lcov report
+        uses: actions/upload-artifact@v4
+        with:
+          name: lcov-report
+          path: |
+            bazel-out/_coverage/_coverage_report.dat
+            bazel-testlogs/**/test.log
+
+  dependency_review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Dependency review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+
+  semgrep:
+    name: Semgrep SAST
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install Semgrep
+        shell: bash
+        run: |
+          python3 -m pip install --upgrade pip semgrep
+
+      - name: Run Semgrep
+        shell: bash
+        run: |
+          semgrep scan --config auto --error --exclude bazel-atlassians-from-kitchen-sink --exclude bazel-bin --exclude bazel-out --exclude bazel-testlogs
+
+  trivy:
+    name: Trivy SCA
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Trivy filesystem scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          format: table
+          exit-code: '1'
+
+  secret_scan:
+    name: Secret Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  codeql:
+    name: CodeQL
+    runs-on: ubuntu-latest
+    needs: context
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    if: >-
+      github.event_name == 'pull_request' ||
+      needs.context.outputs.branch_type == 'main' ||
+      needs.context.outputs.branch_type == 'release' ||
+      needs.context.outputs.branch_type == 'hotfix'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: cpp
+
+      - name: Build for CodeQL
+        shell: bash
+        run: |
+          bazelisk build --config linux --config gnu-gcc //src/main/cpp/... //src/test/cpp/...
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v3
