@@ -12,14 +12,14 @@
 
 #include <com/github/doevelopper/atlassians/atlas/NoOp.hpp>
 
-using com::github::doevelopper::atlassians::atlas::NoOp;
+using com::github::doevelopper::atlassians::atlas::utils::NoOp;
 using cucumber::ScenarioScope;
 
 // ============================================
 // Context Structure for Sharing State
 // ============================================
 
-struct NoOp
+struct NoOpTestContext
 {
     std::unique_ptr<NoOp> noop;
 };
@@ -29,7 +29,7 @@ struct NoOp
 // ============================================
 
 GIVEN("^a NoOp instance$") {
-    ScenarioScope<NoOp> context;
+    ScenarioScope<NoOpTestContext> context;
     context->noop = std::make_unique<NoOp>();
 }
 
@@ -38,7 +38,7 @@ WHEN("^the NoOp instance is created$") {
 }
 
 THEN("^the NoOp instance should not be null$") {
-    ScenarioScope<NoOp> context;
+    ScenarioScope<NoOpTestContext> context;
     ASSERT_NE(context->noop, nullptr);
 }
 
