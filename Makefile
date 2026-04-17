@@ -118,11 +118,12 @@ export GIT_BRANCHES        := $(shell git for-each-ref --format='%(refname:short
 export GIT_REMOTES         := $(shell git remote | xargs echo )
 export GIT_ROOTDIR         := $(shell git rev-parse --show-toplevel)
 export GIT_DIRTY           := $(shell git diff --shortstat 2> /dev/null | tail -n1 )
-export LAST_TAG_COMMIT     := $(shell git rev-list --tags --max-count=1)
-export LAST_TAG := $(shell git describe --tags $(LAST_TAG_COMMIT) )
-export GIT_COMMITS         := $(shell git log --oneline ${LAST_TAG}..HEAD | wc -l | tr -d ' ')
-export GIT_REVISION        := $(shell git rev-parse --short=8 HEAD || echo unknown)
-export GIT_DESC            := $(shell git log --format=%B -n 1 $(git log -1 --pretty=format:"%h") | cat -)
+export LAST_TAG_COMMIT     := $(shell git rev-list --tags --max-count=1 2>/dev/null)
+export LAST_TAG            := $(shell git describe --tags $(LAST_TAG_COMMIT) 2>/dev/null || echo "0.0.0")
+export GIT_COMMITS         := $(shell git log --oneline $(LAST_TAG)..HEAD 2>/dev/null | wc -l | tr -d ' ')
+export GIT_REVISION        := $(shell git rev-parse --short=8 HEAD 2>/dev/null || echo unknown)
+export GIT_COMMIT_VERSION  := $(shell git rev-parse --short=8 HEAD 2>/dev/null || echo unknown)
+export GIT_DESC            := $(shell git log --format=%B -n 1 HEAD 2>/dev/null | cat -)
 # total number of commits
 export BUILD := $(shell git log --oneline | wc -l | sed -e "s/[ \t]*//g")
 
@@ -131,24 +132,28 @@ export HAS_GCC := $(shell which gcc > /dev/null 2> /dev/null && echo true || ech
 export HAS_CC := $(shell which cc > /dev/null 2> /dev/null && echo true || echo false)
 export HAS_CLANG := $(shell which clang > /dev/null 2> /dev/null && echo true || echo false)
 
-ifeq ($(BRANCH),master)
-    RELEASE_LEVEL := "CANDIDATE"
-else ifeq ($(BRANCH),develop)
-    RELEASE_LEVEL := "STABLE"
-else ifeq ($(BRANCH),release)
-    RELEASE_LEVEL := "FINAL"
-else ifeq ($(BRANCH),hotfix)
-    RELEASE_LEVEL := "BETA"
-else ifeq ($(BRANCH),feature)
-    RELEASE_LEVEL := "SNAPSHOOT"
-else ifeq ($(BRANCH),support)
-    RELEASE_LEVEL := "SNAPSHOOT"
-else ifeq ($(BRANCH),bugfix)
-    RELEASE_LEVEL := "ALPHA"
-else ifneq ($(BRANCH) | egrep "feature"),)
-    RELEASE_LEVEL := "ALPHA"
+# Extract the base branch type (e.g. "feature" from "feature/from-kitchen-sink")
+BRANCH_BASE := $(firstword $(subst /, ,$(BRANCH)))
+
+ifeq ($(BRANCH_BASE),master)
+    RELEASE_LEVEL := CANDIDATE
+else ifeq ($(BRANCH_BASE),main)
+    RELEASE_LEVEL := CANDIDATE
+else ifeq ($(BRANCH_BASE),develop)
+    RELEASE_LEVEL := STABLE
+else ifeq ($(BRANCH_BASE),release)
+    RELEASE_LEVEL := FINAL
+else ifeq ($(BRANCH_BASE),hotfix)
+    RELEASE_LEVEL := BETA
+else ifeq ($(BRANCH_BASE),feature)
+    RELEASE_LEVEL := SNAPSHOT
+else ifeq ($(BRANCH_BASE),support)
+    RELEASE_LEVEL := SNAPSHOT
+else ifeq ($(BRANCH_BASE),bugfix)
+    RELEASE_LEVEL := ALPHA
 else
-    $(error Bad branch $(BRANCH) name provided, should be one of gitflow guidelines)
+    RELEASE_LEVEL := DEV
+    $(warning Branch '$(BRANCH)' does not follow gitflow naming; defaulting RELEASE_LEVEL to DEV)
 endif
 
 ifeq ($(HAS_CC),true)
@@ -169,12 +174,12 @@ else
     endif
 endif
 
-export BAZEL_BIN=$(bazelisk info bazel-bin)/external
-export BAZEL_OUTPUT_BASE=$(bazelisk info output_base)
-export BAZEL_SERVER_PID=$(bazelisk info server_pid)
-export BAZEL_TESTLOGS=$(bazelisk info bazel-testlogs)
-export BAZEL_GENFILES=$(bazelisk info bazel-genfiles)
-export BAZEL_EXTERNAL=$(bazelisk info output_base)/external
+export BAZEL_BIN         := $(shell bazelisk info bazel-bin 2>/dev/null)/external
+export BAZEL_OUTPUT_BASE := $(shell bazelisk info output_base 2>/dev/null)
+export BAZEL_SERVER_PID  := $(shell bazelisk info server_pid 2>/dev/null)
+export BAZEL_TESTLOGS    := $(shell bazelisk info bazel-testlogs 2>/dev/null)
+export BAZEL_GENFILES    := $(shell bazelisk info bazel-genfiles 2>/dev/null)
+export BAZEL_EXTERNAL    := $(shell bazelisk info output_base 2>/dev/null)/external
 
 export VERSIONFILE     = VERSION_FILE
 export SEM_VERSION     := $(shell [ -f $(VERSIONFILE) ] && head $(VERSIONFILE) || echo "0.0.1")
@@ -237,7 +242,8 @@ export BAZEL_BUILD_ARGS = \
     --define=VERSION=$(RELEASE_LEVEL) --define=GIT_BRANCH=$(CURRENT_BRANCH)  --define=DATE=$(DATE)  --define=HASH=$(HASH) --define=GIT_COMMIT_VERSION=$(GIT_COMMIT_VERSION) \
     --define=BUILD=$(BUILD) --define=GIT_CUR_COMMITS=$(GIT_CUR_COMMITS) --define=GIT_ALL_COMMITS=$(GIT_ALL_COMMITS)
 
-style:
+.PHONY: style
+style: ## Apply clang-format and clang-tidy naming checks
 	@for src in $(SOURCES) ; do \
 		echo "Formatting $$src..." ; \
 		clang-format -i "$(SRC_DIR)/$$src" ; \
@@ -253,7 +259,8 @@ style:
 	done
 	@echo "Done"
 
-check-style:
+.PHONY: check-style
+check-style: ## Verify sources conform to coding style
 	@for src in $(SOURCES) ; do \
 		var=`clang-format "$(SRC_DIR)/$$src" | diff "$(SRC_DIR)/$$src" - | wc -l` ; \
 		if [ $$var -ne 0 ] ; then \
@@ -341,23 +348,23 @@ deps:
 
 .PHONY: main-compile
 main-compile: ## Build all main target rules
-	@bazelisk build --config linux $(BAZEL_BUILD_ARGS)  --action_env CC=gcc --action_env CXX=g++ --client_env=CC=gcc --client_env=CXX=g++ //src/main/cpp/...
+	@bazelisk build  //src/main/cpp/...
 
 .PHONY: test-compile
 test-compile: ## Build all Test target rules
-	@bazelisk build --config linux $(BAZEL_BUILD_ARGS)--action_env CC=gcc --action_env CXX=g++ --client_env=CC=gcc --client_env=CXX=g++ //src/test/cpp/...
+	@bazelisk build  //src/test/cpp/...
 
 .PHONY: compile
 compile: main-compile test-compile ## Build projects main and test sources
-	@bazelisk build --config linux --define=VERSION=$(RELEASE_LEVEL) --action_env CC=gcc --action_env CXX=g++ --client_env=CC=gcc --client_env=CXX=g++ //...
+	@bazelisk build  //...
 
 .PHONY: test
-test: compile ## Build projects sources and run unit test
-	@bazelisk build --config linux --define=VERSION=$(RELEASE_LEVEL) --action_env CC=gcc --action_env CXX=g++ --client_env=CC=gcc --client_env=CXX=g++ //src/test/cpp/... --test_output=all
+test: compile ## Build projects sources and run unit tests
+	@bazelisk test //src/test/cpp/... --test_output=all
 
 .PHONY: integration-test
-integration-test: test ## Build projects sources and run unit test
-	@bazelisk build --config linux --define=VERSION=$(RELEASE_LEVEL) --action_env CC=gcc --action_env CXX=g++ --client_env=CC=gcc --client_env=CXX=g++ //src/it/... --test_output=all
+integration-test: test ## Build projects sources and run integration/BDD tests
+	@bazelisk test //src/it/... --test_output=all
 
 .PHONY: coverage
 coverage:  ## Generates code coverage report
