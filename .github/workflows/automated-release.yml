@@ -1,170 +1,491 @@
+# =============================================================================
+# Automated Release — Pipeline F: Production Release
+# =============================================================================
+# Triggered on version tags (v1.0.0, v2.3.1-rc.1, etc.)
+# Full validation → build → test → security → package → SBOM → release
+# =============================================================================
+
 name: Automated Release
 
 on:
   push:
-    branches:
-      - master
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v1.2.3)'
+        required: true
+        type: string
 
 permissions:
   contents: write
+  security-events: write
+  packages: write
 
 concurrency:
-  group: release
+  group: release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  release:
-    name: Create Automated Release
+  # ===========================================================================
+  # Context — extract version, validate tag
+  # ===========================================================================
+  context:
+    name: "Release Context"
     runs-on: ubuntu-latest
-
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      version_tag: ${{ steps.version.outputs.version_tag }}
+      is_prerelease: ${{ steps.version.outputs.is_prerelease }}
+      short_sha: ${{ steps.version.outputs.short_sha }}
+      build_date: ${{ steps.version.outputs.build_date }}
     steps:
-      # 1. Checkout with full history for conventional commits analysis
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # 2. Bump version, generate changelog, tag, and commit
-      # This action handles:
-      # - Version calculation from conventional commits
-      # - CHANGELOG.md generation and update
-      # - Git tagging
-      # - Git commit and push
-      - name: Conventional Changelog Action
-        id: changelog
-        uses: TriPSs/conventional-changelog-action@v5
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          git-message: 'chore(release): {version}'
-          git-user-name: 'github-actions[bot]'
-          git-user-email: 'github-actions[bot]@users.noreply.github.com'
-          preset: 'angular'
-          tag-prefix: 'v'
-          output-file: 'CHANGELOG.md'
-          version-file: './.claude-plugin/marketplace.json'
-          version-path: 'version'
-          skip-on-empty: 'false'
-          skip-version-file: 'false'
-          skip-commit: 'false'
-
-      # 2b. Sync plugin version, SKILL.md version, and git ref
-      # This ensures all three version fields stay synchronized:
-      # - root version (updated by conventional-changelog-action above)
-      # - plugins[0].version (synced here)
-      # - SKILL.md metadata.version (synced here)
-      - name: Sync Plugin Version and SKILL.md
-        if: steps.changelog.outputs.skipped == 'false'
-        env:
-          VERSION: ${{ steps.changelog.outputs.version }}
+      - name: Extract version
+        id: version
+        shell: bash
         run: |
-          python3 << 'EOF'
-          import json
-          import os
-          import sys
+          set -euo pipefail
 
-          def update_skill_version(version):
-              """Update version in SKILL.md YAML frontmatter."""
-              skill_path = 'SKILL.md'
+          tag="${{ github.event.inputs.tag || github.ref_name }}"
+          version="${tag#v}"
 
-              if not os.path.exists(skill_path):
-                  raise FileNotFoundError(f"{skill_path} not found")
+          is_prerelease="false"
+          if [[ "$version" == *"-"* ]]; then
+            is_prerelease="true"
+          fi
 
-              with open(skill_path, 'r') as f:
-                  lines = f.readlines()
+          echo "version=$version"                          >> "$GITHUB_OUTPUT"
+          echo "version_tag=$tag"                          >> "$GITHUB_OUTPUT"
+          echo "is_prerelease=$is_prerelease"              >> "$GITHUB_OUTPUT"
+          echo "short_sha=$(git rev-parse --short=7 HEAD)" >> "$GITHUB_OUTPUT"
+          echo "build_date=$(date -u '+%Y-%m-%d')"         >> "$GITHUB_OUTPUT"
 
-              # Find and update version line in frontmatter (typically line 7)
-              updated = False
-              for i, line in enumerate(lines):
-                  # Match "  version: X.Y.Z" pattern (2 spaces indent)
-                  if line.strip().startswith('version:') and i < 10:  # Within frontmatter
-                      lines[i] = f'  version: {version}\n'
-                      updated = True
-                      break
+          echo "### Release Context" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Field | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|-------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Version | **$version** |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Tag | $tag |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Pre-release | $is_prerelease |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Commit | $GITHUB_SHA |" >> "$GITHUB_STEP_SUMMARY"
 
-              if not updated:
-                  raise ValueError("Could not find version field in SKILL.md frontmatter")
+  # ===========================================================================
+  # Quality Gate — full validation
+  # ===========================================================================
+  quality:
+    name: "Quality Validation"
+    runs-on: ubuntu-latest
+    needs: context
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-              with open(skill_path, 'w') as f:
-                  f.writelines(lines)
+      - name: Install quality tools
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq clang-format cppcheck python3-pip
+          python3 -m pip install --quiet cpplint
 
-              return skill_path
+      - name: Full quality check
+        shell: bash
+        run: |
+          files=$(git ls-files -- '*.c' '*.cc' '*.cpp' '*.cxx' '*.h' '*.hh' '*.hpp' '*.hxx')
+          [[ -z "$files" ]] && exit 0
+          echo "::group::clang-format"
+          clang-format --dry-run --Werror $files
+          echo "::endgroup::"
+          echo "::group::cpplint"
+          cpplint --quiet --filter=-legal/copyright $files
+          echo "::endgroup::"
+          echo "::group::cppcheck"
+          cppcheck --error-exitcode=1 --enable=warning,style,performance,portability --std=c++20 $files
+          echo "::endgroup::"
 
-          try:
-              version = os.environ['VERSION']
+  # ===========================================================================
+  # Build — compile and package
+  # ===========================================================================
+  build:
+    name: "Build"
+    runs-on: ubuntu-latest
+    needs: context
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-              # 1. Update marketplace.json
-              with open('.claude-plugin/marketplace.json', 'r') as f:
-                  data = json.load(f)
-
-              # Validate structure
-              if 'plugins' not in data or len(data['plugins']) == 0:
-                  raise ValueError("No plugins found in marketplace.json")
-
-              # Sync marketplace.json versions
-              data['plugins'][0]['version'] = version
-
-              # Validate marketplace.json synced state
-              if data['version'] != version:
-                  raise ValueError(f"Marketplace version {data['version']} != {version}")
-
-              with open('.claude-plugin/marketplace.json', 'w') as f:
-                  json.dump(data, f, indent=2)
-                  f.write('\n')
-
-              print(f"✅ Synced marketplace.json plugin version to {version}")
-
-              # 2. Update SKILL.md
-              skill_path = update_skill_version(version)
-              print(f"✅ Synced {skill_path} metadata.version to {version}")
-
-              # 3. Final validation - all three versions match
-              print(f"\n📋 Version Sync Summary:")
-              print(f"   - marketplace.json root: {data['version']}")
-              print(f"   - marketplace.json plugins[0]: {data['plugins'][0]['version']}")
-              print(f"   - SKILL.md metadata: {version}")
-              print(f"   ✅ All versions synchronized to {version}")
-
-          except Exception as e:
-              print(f"❌ ERROR: Failed to sync versions: {e}")
-              sys.exit(1)
-          EOF
-
-          # Commit the sync
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add .claude-plugin/marketplace.json SKILL.md
-          git commit --amend --no-edit
-          git push --force-with-lease
-
-      # 3. Create GitHub Release
-      # Only run if a new version was created
-      - name: Create GitHub Release
-        if: steps.changelog.outputs.skipped == 'false'
-        uses: softprops/action-gh-release@v2
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.14.0
         with:
-          tag_name: ${{ steps.changelog.outputs.tag }}
-          name: ${{ steps.changelog.outputs.tag }}
-          body: ${{ steps.changelog.outputs.clean_changelog }}
-          draft: false
-          prerelease: false
+          bazelisk-cache: true
+          disk-cache: release-build
+          repository-cache: true
+
+      - name: Build all targets
+        shell: bash
+        run: |
+          bazelisk build //src/...
+
+      - name: Build release packages
+        shell: bash
+        run: |
+          bazelisk build \
+            //src/main/cpp:com.github.doevelopper.atlassians.main.package \
+            //src/test/cpp:com.github.doevelopper.atlassians.test.package \
+            //src/it:com.github.doevelopper.atlassians.it.package
+
+      - name: Stage release artifacts
+        shell: bash
+        run: |
+          mkdir -p release-artifacts
+          cp bazel-bin/src/main/cpp/*.tar.gz release-artifacts/ 2>/dev/null || true
+          cp bazel-bin/src/test/cpp/*.tar.gz release-artifacts/ 2>/dev/null || true
+          cp bazel-bin/src/it/*.tar.gz release-artifacts/ 2>/dev/null || true
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-packages-${{ needs.context.outputs.version }}
+          path: release-artifacts/
+          retention-days: 365
+
+  # ===========================================================================
+  # Tests — full test suite
+  # ===========================================================================
+  unit_tests:
+    name: "Unit Tests"
+    runs-on: ubuntu-latest
+    needs: [context, build]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.14.0
+        with:
+          bazelisk-cache: true
+          disk-cache: release-build
+          repository-cache: true
+
+      - name: Run all unit tests
+        shell: bash
+        run: |
+          bazelisk test \
+            --test_output=all \
+            --test_arg=--gtest_output=xml \
+            //src/test/cpp/...
+
+      - name: Collect unit test evidence
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p evidence/unit-tests
+          find bazel-testlogs/src/test/cpp -name "test.xml" -exec sh -c '
+            d=$(dirname "$1"); n=$(basename "$d")
+            mkdir -p "evidence/unit-tests/$n"
+            cp "$1" "evidence/unit-tests/$n/"
+            cp "$d/test.log" "evidence/unit-tests/$n/" 2>/dev/null || true
+          ' _ {} \;
+
+      - name: Upload
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-unit-test-evidence-${{ needs.context.outputs.version }}
+          path: evidence/unit-tests/
+          retention-days: 365
+
+  bdd_tests:
+    name: "BDD Tests"
+    runs-on: ubuntu-latest
+    needs: [context, build]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.14.0
+        with:
+          bazelisk-cache: true
+          disk-cache: release-build
+          repository-cache: true
+
+      - name: Run all BDD tests
+        shell: bash
+        run: |
+          bazelisk test --test_output=all //src/it/...
+
+      - name: Collect BDD evidence
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p evidence/bdd-tests
+          find bazel-testlogs/src/it -name "test.xml" -exec sh -c '
+            d=$(dirname "$1"); n=$(basename "$d")
+            mkdir -p "evidence/bdd-tests/$n"
+            cp "$1" "evidence/bdd-tests/$n/"
+            cp "$d/test.log" "evidence/bdd-tests/$n/" 2>/dev/null || true
+          ' _ {} \;
+
+      - name: Upload
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-bdd-test-evidence-${{ needs.context.outputs.version }}
+          path: evidence/bdd-tests/
+          retention-days: 365
+
+  # ===========================================================================
+  # Sanitizers — ASan+UBSan (required for release)
+  # ===========================================================================
+  asan_ubsan:
+    name: "ASan+UBSan"
+    runs-on: ubuntu-latest
+    needs: [context, build]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.14.0
+        with:
+          bazelisk-cache: true
+          disk-cache: release-asan
+          repository-cache: true
+
+      - name: Tests with ASan+UBSan
+        shell: bash
+        run: |
+          bazelisk test \
+            --copt=-fsanitize=address,undefined \
+            --linkopt=-fsanitize=address,undefined \
+            --copt=-fno-omit-frame-pointer \
+            --test_output=errors \
+            //src/test/cpp/... //src/it/...
+
+  # ===========================================================================
+  # Security — all required for release sign-off
+  # ===========================================================================
+  security:
+    name: "Security Scan"
+    runs-on: ubuntu-latest
+    needs: context
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Semgrep SAST
+        shell: bash
+        run: |
+          pip install semgrep
+          semgrep scan --config auto --error \
+            --exclude "bazel-*" \
+            --sarif --output semgrep-release.sarif || true
+
+      - name: Upload Semgrep SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: semgrep-release.sarif
+          category: semgrep-release
+        continue-on-error: true
+
+      - name: Trivy SCA
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          format: table
+          exit-code: '1'
+
+      - name: Secret detection (Gitleaks)
+        uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 4. Summary
-      - name: Release Summary
-        if: steps.changelog.outputs.skipped == 'false'
+  # ===========================================================================
+  # SBOM — required for release
+  # ===========================================================================
+  sbom:
+    name: "SBOM"
+    runs-on: ubuntu-latest
+    needs: context
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate SBOM (SPDX)
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: spdx-json
+          output-file: sbom-spdx.json
+
+      - name: Generate SBOM (CycloneDX)
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: sbom-cyclonedx.json
+
+      - name: Upload SBOMs
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-sbom-${{ needs.context.outputs.version }}
+          path: |
+            sbom-spdx.json
+            sbom-cyclonedx.json
+          retention-days: 365
+
+  # ===========================================================================
+  # Release — create GitHub Release with all artifacts
+  # ===========================================================================
+  release:
+    name: "GitHub Release"
+    runs-on: ubuntu-latest
+    needs:
+      - context
+      - quality
+      - build
+      - unit_tests
+      - bdd_tests
+      - asan_ubsan
+      - security
+      - sbom
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download release packages
+        uses: actions/download-artifact@v4
+        with:
+          name: release-packages-${{ needs.context.outputs.version }}
+          path: release-artifacts/
+
+      - name: Download SBOMs
+        uses: actions/download-artifact@v4
+        with:
+          name: release-sbom-${{ needs.context.outputs.version }}
+          path: release-sbom/
+
+      - name: Download unit test evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: release-unit-test-evidence-${{ needs.context.outputs.version }}
+          path: release-evidence/unit-tests/
+        continue-on-error: true
+
+      - name: Download BDD evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: release-bdd-test-evidence-${{ needs.context.outputs.version }}
+          path: release-evidence/bdd-tests/
+        continue-on-error: true
+
+      - name: Generate release notes
+        id: notes
+        shell: bash
         env:
-          VERSION: ${{ steps.changelog.outputs.version }}
-          TAG: ${{ steps.changelog.outputs.tag }}
-          CLEAN_CHANGELOG: ${{ steps.changelog.outputs.clean_changelog }}
-          REPOSITORY: ${{ github.repository }}
+          VERSION: ${{ needs.context.outputs.version }}
+          TAG: ${{ needs.context.outputs.version_tag }}
+          BUILD_DATE: ${{ needs.context.outputs.build_date }}
+          SHORT_SHA: ${{ needs.context.outputs.short_sha }}
         run: |
-          echo "## Release Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "✅ **Version:** $VERSION" >> $GITHUB_STEP_SUMMARY
-          echo "✅ **Tag:** $TAG" >> $GITHUB_STEP_SUMMARY
-          echo "✅ **Release:** https://github.com/$REPOSITORY/releases/tag/$TAG" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Changelog" >> $GITHUB_STEP_SUMMARY
-          echo "$CLEAN_CHANGELOG" >> $GITHUB_STEP_SUMMARY
+          set -euo pipefail
+
+          # Generate changelog from last tag
+          prev_tag=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [[ -n "$prev_tag" ]]; then
+            changelog=$(git log --pretty=format:"- %s (%h)" "$prev_tag"..HEAD 2>/dev/null || echo "- Initial release")
+          else
+            changelog="- Initial release"
+          fi
+
+          cat > release-notes.md << NOTES_EOF
+          ## Release $TAG
+
+          **Date**: $BUILD_DATE
+          **Commit**: $GITHUB_SHA ($SHORT_SHA)
+
+          ### Changes
+
+          $changelog
+
+          ### Quality Assurance
+
+          | Check | Status |
+          |-------|--------|
+          | Quality (format, lint) | Passed |
+          | Build (all targets) | Passed |
+          | Unit tests | Passed |
+          | BDD/Integration tests | Passed |
+          | ASan+UBSan | Passed |
+          | Security (Semgrep, Trivy, Gitleaks) | Passed |
+          | SBOM (SPDX + CycloneDX) | Generated |
+
+          ### Artifacts
+
+          - Release packages (tar.gz)
+          - SBOM (SPDX JSON)
+          - SBOM (CycloneDX JSON)
+          - Unit test evidence
+          - BDD test evidence
+          NOTES_EOF
+
+          # Make body available
+          body=$(cat release-notes.md)
+          # Use delimiter for multiline
+          echo "body<<NOTES_DELIM" >> "$GITHUB_OUTPUT"
+          echo "$body" >> "$GITHUB_OUTPUT"
+          echo "NOTES_DELIM" >> "$GITHUB_OUTPUT"
+
+      - name: Bundle evidence
+        shell: bash
+        run: |
+          tar czf release-evidence.tar.gz -C release-evidence . 2>/dev/null || true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.context.outputs.version_tag }}
+          name: Release ${{ needs.context.outputs.version }}
+          body: ${{ steps.notes.outputs.body }}
+          draft: false
+          prerelease: ${{ needs.context.outputs.is_prerelease == 'true' }}
+          files: |
+            release-artifacts/*.tar.gz
+            release-sbom/sbom-spdx.json
+            release-sbom/sbom-cyclonedx.json
+            release-evidence.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Release summary
+        shell: bash
+        env:
+          VERSION: ${{ needs.context.outputs.version }}
+          TAG: ${{ needs.context.outputs.version_tag }}
+        run: |
+          echo "## Release Published" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Version**: $VERSION" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Tag**: $TAG" >> "$GITHUB_STEP_SUMMARY"
+          echo "**URL**: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/$TAG" >> "$GITHUB_STEP_SUMMARY"

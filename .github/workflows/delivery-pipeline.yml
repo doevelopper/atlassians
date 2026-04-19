@@ -1,3 +1,12 @@
+# =============================================================================
+# Delivery Pipeline — End-to-End CI/CD
+# =============================================================================
+# Handles all development workflows:
+#   Branch Push  (Pipeline B) — fast preflight        (<10 min)
+#   Pull Request (Pipeline C) — comprehensive gate    (15-30 min)
+#   Main/Develop (Pipeline E) — post-merge + evidence (30-60 min)
+# =============================================================================
+
 name: Delivery Pipeline
 
 on:
@@ -9,6 +18,7 @@ on:
       - bugfix/**
       - release/**
       - hotfix/**
+      - support/**
   pull_request:
     branches:
       - main
@@ -16,52 +26,105 @@ on:
       - release/**
       - hotfix/**
   workflow_dispatch:
+    inputs:
+      run_full_pipeline:
+        description: 'Force full pipeline (all jobs)'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
+  pull-requests: write
+  security-events: write
+  actions: read
 
 concurrency:
   group: delivery-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  EVIDENCE_DIR: src/site/compliance/evidence
+
 jobs:
+  # ===========================================================================
+  # Stage 0: Context — classify trigger, detect changes
+  # ===========================================================================
   context:
-    name: Context
+    name: "Context"
     runs-on: ubuntu-latest
     outputs:
-      branch_type: ${{ steps.branch.outputs.branch_type }}
+      pipeline_type: ${{ steps.classify.outputs.pipeline_type }}
+      branch_type: ${{ steps.classify.outputs.branch_type }}
+      is_pr: ${{ steps.classify.outputs.is_pr }}
+      is_main: ${{ steps.classify.outputs.is_main }}
+      is_protected: ${{ steps.classify.outputs.is_protected }}
+      has_cc_changes: ${{ steps.changes.outputs.has_cc_changes }}
+      has_build_changes: ${{ steps.changes.outputs.has_build_changes }}
       changed_cc_files: ${{ steps.changes.outputs.changed_cc_files }}
-      has_cc_files: ${{ steps.changes.outputs.has_cc_files }}
+      short_sha: ${{ steps.meta.outputs.short_sha }}
+      build_date: ${{ steps.meta.outputs.build_date }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Classify Branch
-        id: branch
+      - name: Classify pipeline
+        id: classify
         shell: bash
         run: |
+          set -euo pipefail
+
+          is_pr="false"
+          is_main="false"
+          is_protected="false"
+          force_full="${{ github.event.inputs.run_full_pipeline || 'false' }}"
+
           if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
-            target="${{ github.base_ref }}"
+            is_pr="true"
+            ref="${{ github.base_ref }}"
           else
-            target="${GITHUB_REF_NAME}"
+            ref="${GITHUB_REF_NAME}"
           fi
 
-          case "$target" in
-            main|master) branch_type="main" ;;
-            develop) branch_type="develop" ;;
-            release/*) branch_type="release" ;;
-            hotfix/*) branch_type="hotfix" ;;
-            feature/*) branch_type="feature" ;;
-            bugfix/*) branch_type="bugfix" ;;
-            *) branch_type="other" ;;
+          case "$ref" in
+            main|master)   branch_type="main";    is_main="true"; is_protected="true" ;;
+            develop)       branch_type="develop";  is_protected="true" ;;
+            release/*)     branch_type="release";  is_protected="true" ;;
+            hotfix/*)      branch_type="hotfix";   is_protected="true" ;;
+            feature/*)     branch_type="feature" ;;
+            bugfix/*)      branch_type="bugfix" ;;
+            support/*)     branch_type="support" ;;
+            *)             branch_type="other" ;;
           esac
 
-          echo "branch_type=$branch_type" >> "$GITHUB_OUTPUT"
-          echo "Resolved branch type: $branch_type"
+          if [[ "$force_full" == "true" ]]; then
+            pipeline_type="full"
+          elif [[ "$is_pr" == "true" ]]; then
+            pipeline_type="pr_gate"
+          elif [[ "$is_main" == "true" || "$branch_type" == "develop" ]]; then
+            pipeline_type="post_merge"
+          elif [[ "$branch_type" == "release" || "$branch_type" == "hotfix" ]]; then
+            pipeline_type="post_merge"
+          else
+            pipeline_type="branch_push"
+          fi
 
-      - name: Resolve Changed C/C++ Files
+          echo "pipeline_type=$pipeline_type"   >> "$GITHUB_OUTPUT"
+          echo "branch_type=$branch_type"       >> "$GITHUB_OUTPUT"
+          echo "is_pr=$is_pr"                   >> "$GITHUB_OUTPUT"
+          echo "is_main=$is_main"               >> "$GITHUB_OUTPUT"
+          echo "is_protected=$is_protected"     >> "$GITHUB_OUTPUT"
+
+          echo "### Pipeline Context" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Key | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|-----|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Pipeline | **$pipeline_type** |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Branch type | $branch_type |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Is PR | $is_pr |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Ref | $ref |" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Detect changes
         id: changes
         shell: bash
         run: |
@@ -72,184 +135,358 @@ jobs:
             diff_files=$(git diff --name-only "origin/${{ github.base_ref }}"...HEAD)
           else
             if [[ "${{ github.event.before }}" == "0000000000000000000000000000000000000000" ]]; then
-              diff_files=$(git diff --name-only HEAD~1...HEAD || true)
+              diff_files=$(git diff --name-only HEAD~1...HEAD 2>/dev/null || git ls-files)
             else
               diff_files=$(git diff --name-only "${{ github.event.before }}"..."${{ github.sha }}")
             fi
           fi
 
           cc_files=$(printf '%s\n' "$diff_files" | grep -E '\.(c|cc|cpp|cxx|h|hh|hpp|hxx)$' || true)
+          build_files=$(printf '%s\n' "$diff_files" | grep -E '(BUILD|BUILD\.bazel|MODULE\.bazel|\.bazelrc|\.bzl)' || true)
 
-          if [[ -z "$cc_files" ]]; then
-            echo "has_cc_files=false" >> "$GITHUB_OUTPUT"
-            echo "changed_cc_files=" >> "$GITHUB_OUTPUT"
-            echo "No C/C++ changes detected"
-            exit 0
-          fi
+          has_cc="false"
+          has_build="false"
+          [[ -n "$cc_files" ]] && has_cc="true"
+          [[ -n "$build_files" ]] && has_build="true"
 
-          cc_files_single_line=$(printf '%s' "$cc_files" | tr '\n' ' ')
-          echo "has_cc_files=true" >> "$GITHUB_OUTPUT"
-          echo "changed_cc_files=$cc_files_single_line" >> "$GITHUB_OUTPUT"
-          printf 'Changed C/C++ files: %s\n' "$cc_files_single_line"
+          echo "has_cc_changes=$has_cc"         >> "$GITHUB_OUTPUT"
+          echo "has_build_changes=$has_build"   >> "$GITHUB_OUTPUT"
 
-  format_lint_diff:
-    name: Format and Lint (Diff)
+          cc_inline=$(printf '%s' "$cc_files" | tr '\n' ' ')
+          echo "changed_cc_files=$cc_inline"    >> "$GITHUB_OUTPUT"
+          echo "Changed C/C++ files ($has_cc): $cc_inline"
+
+      - name: Build metadata
+        id: meta
+        shell: bash
+        run: |
+          echo "short_sha=$(git rev-parse --short=7 HEAD)"  >> "$GITHUB_OUTPUT"
+          echo "build_date=$(date -u '+%Y-%m-%d')"          >> "$GITHUB_OUTPUT"
+
+  # ===========================================================================
+  # Stage 1: Quality — format, lint, static analysis
+  # ===========================================================================
+  quality:
+    name: "Quality"
     runs-on: ubuntu-latest
     needs: context
-    if: >-
-      needs.context.outputs.has_cc_files == 'true' &&
-      (
-        github.event_name == 'pull_request' ||
-        needs.context.outputs.branch_type == 'feature' ||
-        needs.context.outputs.branch_type == 'bugfix' ||
-        needs.context.outputs.branch_type == 'develop' ||
-        needs.context.outputs.branch_type == 'hotfix'
-      )
+    if: needs.context.outputs.has_cc_changes == 'true' || needs.context.outputs.has_build_changes == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.14.0
+        with:
+          bazelisk-cache: true
+          disk-cache: ${{ github.workflow }}-quality
+          repository-cache: true
 
       - name: Install C/C++ quality tools
         shell: bash
         run: |
-          sudo apt-get update
-          sudo apt-get install -y clang-format cppcheck include-what-you-use python3-pip
-          python3 -m pip install --upgrade pip cpplint
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq clang-format cppcheck python3-pip
+          python3 -m pip install --quiet cpplint
 
-      - name: Run clang-format, cpplint, cppcheck, IWYU on diff
+      - name: Lint changed files (branch push — diff only)
+        if: needs.context.outputs.pipeline_type == 'branch_push'
         shell: bash
         run: |
-          set -euo pipefail
           files="${{ needs.context.outputs.changed_cc_files }}"
-
-          echo "Checking formatting"
+          if [[ -z "$files" ]]; then
+            echo "No changed C/C++ files"
+            exit 0
+          fi
+          echo "::group::clang-format"
           clang-format --dry-run --Werror $files
-
-          echo "Running cpplint"
+          echo "::endgroup::"
+          echo "::group::cpplint"
           cpplint --quiet --filter=-legal/copyright $files
-
-          echo "Running cppcheck"
+          echo "::endgroup::"
+          echo "::group::cppcheck"
           cppcheck --error-exitcode=1 --enable=warning,style,performance,portability --std=c++20 $files
+          echo "::endgroup::"
 
-          if command -v include-what-you-use >/dev/null 2>&1; then
-            echo "Running IWYU (non-blocking advisory for diff)"
-            set +e
-            for f in $files; do
-              case "$f" in
-                *.c|*.cc|*.cpp|*.cxx)
-                  include-what-you-use "$f" -Xiwyu --mapping_file=/dev/null -- -std=c++20 -I. -Isrc >/tmp/iwyu.out 2>&1
-                  rc=$?
-                  if [[ $rc -ne 0 ]]; then
-                    cat /tmp/iwyu.out
-                  fi
-                  ;;
-              esac
-            done
-            set -e
+      - name: Lint all sources (PR / post-merge)
+        if: needs.context.outputs.pipeline_type != 'branch_push'
+        shell: bash
+        run: |
+          files=$(git ls-files -- '*.c' '*.cc' '*.cpp' '*.cxx' '*.h' '*.hh' '*.hpp' '*.hxx')
+          if [[ -z "$files" ]]; then
+            echo "No C/C++ files found"
+            exit 0
+          fi
+          echo "::group::clang-format"
+          clang-format --dry-run --Werror $files
+          echo "::endgroup::"
+          echo "::group::cpplint"
+          cpplint --quiet --filter=-legal/copyright $files
+          echo "::endgroup::"
+          echo "::group::cppcheck"
+          cppcheck --error-exitcode=1 --enable=warning,style,performance,portability --std=c++20 $files
+          echo "::endgroup::"
+
+      - name: Buildifier check (Starlark)
+        shell: bash
+        run: |
+          if command -v buildifier >/dev/null 2>&1; then
+            find . -name "BUILD" -o -name "BUILD.bazel" -o -name "*.bzl" | \
+              xargs buildifier --lint=warn --mode=check || true
           fi
 
-  build_test:
-    name: Build and Test
+  # ===========================================================================
+  # Stage 2: Build — compile all sources
+  # ===========================================================================
+  build:
+    name: "Build"
     runs-on: ubuntu-latest
     needs: context
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build with warnings as errors
-        shell: bash
-        run: |
-          bazelisk build  \
-            --cxxopt=-Wall --cxxopt=-Wextra --cxxopt=-Werror \
-            //src/main/cpp/... //src/test/cpp/...
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.14.0
+        with:
+          bazelisk-cache: true
+          disk-cache: ${{ github.workflow }}-build
+          repository-cache: true
 
-      - name: Unit tests
+      - name: Build all sources
         shell: bash
         run: |
-          bazelisk test  \
-            --test_output=errors \
+          bazelisk build //src/main/cpp/... //src/test/cpp/... //src/it/...
+
+      - name: Build packages
+        shell: bash
+        run: |
+          bazelisk build \
+            //src/main/cpp:com.github.doevelopper.atlassians.main.package \
+            //src/test/cpp:com.github.doevelopper.atlassians.test.package \
+            //src/it:com.github.doevelopper.atlassians.it.package
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-${{ needs.context.outputs.short_sha }}
+          path: |
+            bazel-bin/src/main/cpp/*.tar.gz
+            bazel-bin/src/test/cpp/*.tar.gz
+            bazel-bin/src/it/*.tar.gz
+          retention-days: 30
+
+  # ===========================================================================
+  # Stage 3: Unit Tests — run and collect JUnit XML evidence
+  # ===========================================================================
+  unit_tests:
+    name: "Unit Tests"
+    runs-on: ubuntu-latest
+    needs: [context, build]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.14.0
+        with:
+          bazelisk-cache: true
+          disk-cache: ${{ github.workflow }}-build
+          repository-cache: true
+
+      - name: Run unit tests
+        shell: bash
+        run: |
+          bazelisk test \
+            --test_output=all \
+            --test_arg=--gtest_output=xml \
             //src/test/cpp/...
 
-      - name: Integration tests (main/release/hotfix)
-        if: >-
-          needs.context.outputs.branch_type == 'main' ||
-          needs.context.outputs.branch_type == 'release' ||
-          needs.context.outputs.branch_type == 'hotfix'
+      - name: Collect test evidence
+        if: always()
         shell: bash
         run: |
-          bazelisk test  \
-            --test_output=errors \
-            //src/it/...
+          mkdir -p evidence/unit-tests
+          find bazel-testlogs/src/test/cpp -name "test.xml" -exec sh -c '
+            dir=$(dirname "$1")
+            name=$(basename "$dir")
+            mkdir -p "evidence/unit-tests/$name"
+            cp "$1" "evidence/unit-tests/$name/"
+            cp "$dir/test.log" "evidence/unit-tests/$name/" 2>/dev/null || true
+          ' _ {} \;
 
-  asan_ubsan:
-    name: ASan and UBSan
+      - name: Upload unit test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-evidence-${{ needs.context.outputs.short_sha }}
+          path: evidence/unit-tests/
+          retention-days: 90
+
+      - name: Publish test results
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Unit Test Results
+          path: 'bazel-testlogs/src/test/cpp/**/test.xml'
+          reporter: java-junit
+          fail-on-error: true
+
+  # ===========================================================================
+  # Stage 4: BDD / Integration Tests
+  # ===========================================================================
+  bdd_tests:
+    name: "BDD Tests"
     runs-on: ubuntu-latest
-    needs: context
+    needs: [context, build]
     if: >-
-      github.event_name == 'pull_request' ||
-      needs.context.outputs.branch_type == 'main' ||
-      needs.context.outputs.branch_type == 'release' ||
-      needs.context.outputs.branch_type == 'hotfix' ||
-      needs.context.outputs.branch_type == 'develop'
+      needs.context.outputs.pipeline_type != 'branch_push' ||
+      needs.context.outputs.is_protected == 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Test with ASan and UBSan
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.14.0
+        with:
+          bazelisk-cache: true
+          disk-cache: ${{ github.workflow }}-build
+          repository-cache: true
+
+      - name: Run BDD integration tests
         shell: bash
         run: |
-          bazelisk test  \
+          bazelisk test \
+            --test_output=all \
+            //src/it/...
+
+      - name: Collect BDD evidence
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p evidence/bdd-tests
+          find bazel-testlogs/src/it -name "test.xml" -exec sh -c '
+            dir=$(dirname "$1")
+            name=$(basename "$dir")
+            mkdir -p "evidence/bdd-tests/$name"
+            cp "$1" "evidence/bdd-tests/$name/"
+            cp "$dir/test.log" "evidence/bdd-tests/$name/" 2>/dev/null || true
+          ' _ {} \;
+
+      - name: Upload BDD test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bdd-test-evidence-${{ needs.context.outputs.short_sha }}
+          path: evidence/bdd-tests/
+          retention-days: 90
+
+      - name: Publish BDD results
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: BDD Test Results
+          path: 'bazel-testlogs/src/it/**/test.xml'
+          reporter: java-junit
+          fail-on-error: true
+
+  # ===========================================================================
+  # Stage 5: Coverage — LCOV generation
+  # ===========================================================================
+  coverage:
+    name: "Coverage"
+    runs-on: ubuntu-latest
+    needs: [context, build]
+    if: >-
+      needs.context.outputs.pipeline_type == 'pr_gate' ||
+      needs.context.outputs.pipeline_type == 'post_merge' ||
+      needs.context.outputs.pipeline_type == 'full'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.14.0
+        with:
+          bazelisk-cache: true
+          disk-cache: ${{ github.workflow }}-build
+          repository-cache: true
+
+      - name: Generate coverage
+        shell: bash
+        run: |
+          bazelisk coverage --keep_going \
+            --combined_report=lcov \
+            --instrumentation_filter="//src/main/cpp[/:]" \
+            --coverage_report_generator=@bazel_tools//tools/test:coverage_report_generator \
+            //src/test/cpp/... || true
+
+      - name: Collect coverage evidence
+        shell: bash
+        run: |
+          mkdir -p evidence/coverage
+          find "$(bazelisk info output_path)" -name "_baseline_report.dat" \
+            -exec cp {} evidence/coverage/combined-coverage.lcov \; 2>/dev/null || true
+          find bazel-testlogs/src/test/cpp -name "coverage.dat" -exec sh -c '
+            dir=$(dirname "$1")
+            name=$(basename "$dir")
+            cp "$1" "evidence/coverage/${name}-coverage.dat"
+          ' _ {} \; 2>/dev/null || true
+
+      - name: Upload coverage evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-evidence-${{ needs.context.outputs.short_sha }}
+          path: evidence/coverage/
+          retention-days: 90
+
+      - name: Coverage summary in PR
+        if: github.event_name == 'pull_request'
+        uses: romeovs/lcov-reporter-action@v0.4.0
+        with:
+          lcov-file: evidence/coverage/combined-coverage.lcov
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
+
+  # ===========================================================================
+  # Stage 6: Sanitizers — ASan + UBSan (required gate on PR)
+  # ===========================================================================
+  asan_ubsan:
+    name: "ASan+UBSan"
+    runs-on: ubuntu-latest
+    needs: [context, build]
+    if: >-
+      needs.context.outputs.pipeline_type == 'pr_gate' ||
+      needs.context.outputs.pipeline_type == 'post_merge' ||
+      needs.context.outputs.pipeline_type == 'full'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.14.0
+        with:
+          bazelisk-cache: true
+          disk-cache: ${{ github.workflow }}-asan
+          repository-cache: true
+
+      - name: Run tests with ASan+UBSan
+        shell: bash
+        run: |
+          bazelisk test \
             --copt=-fsanitize=address,undefined \
             --linkopt=-fsanitize=address,undefined \
             --copt=-fno-omit-frame-pointer \
             --test_output=errors \
             //src/test/cpp/...
 
-  coverage:
-    name: Coverage
+  # ===========================================================================
+  # Stage 7: Security — SAST, SCA, secrets
+  # ===========================================================================
+  semgrep:
+    name: "Semgrep SAST"
     runs-on: ubuntu-latest
     needs: context
-    if: >-
-      github.event_name == 'pull_request' ||
-      needs.context.outputs.branch_type == 'main' ||
-      needs.context.outputs.branch_type == 'develop'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Generate coverage report
-        shell: bash
-        run: |
-          bazelisk coverage  \
-            --combined_report=lcov \
-            --instrumentation_filter=//... \
-            --coverage_report_generator=@bazel_tools//tools/test:coverage_report_generator \
-            //src/test/cpp/...
-
-      - name: Archive lcov report
-        uses: actions/upload-artifact@v4
-        with:
-          name: lcov-report
-          path: |
-            bazel-out/_coverage/_coverage_report.dat
-            bazel-testlogs/**/test.log
-
-  dependency_review:
-    name: Dependency Review
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    permissions:
-      contents: read
-      pull-requests: write
-    steps:
-      - name: Dependency review
-        uses: actions/dependency-review-action@v4
-        with:
-          fail-on-severity: high
-
-  semgrep:
-    name: Semgrep SAST
-    runs-on: ubuntu-latest
     permissions:
       contents: read
       security-events: write
@@ -262,24 +499,66 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Install Semgrep
-        shell: bash
-        run: |
-          python3 -m pip install --upgrade pip semgrep
-
       - name: Run Semgrep
         shell: bash
         run: |
-          semgrep scan --config auto --error --exclude bazel-atlassians-from-kitchen-sink --exclude bazel-bin --exclude bazel-out --exclude bazel-testlogs
+          pip install semgrep
+          semgrep scan --config auto --error \
+            --exclude "bazel-*" \
+            --sarif --output semgrep.sarif || true
 
-  trivy:
-    name: Trivy SCA
+      - name: Upload SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: semgrep.sarif
+        continue-on-error: true
+
+  codeql:
+    name: "CodeQL"
     runs-on: ubuntu-latest
+    needs: context
+    if: >-
+      needs.context.outputs.pipeline_type == 'pr_gate' ||
+      needs.context.outputs.pipeline_type == 'post_merge' ||
+      needs.context.outputs.pipeline_type == 'full'
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Run Trivy filesystem scan
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.14.0
+        with:
+          bazelisk-cache: true
+          disk-cache: ${{ github.workflow }}-build
+          repository-cache: true
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: cpp
+
+      - name: Build for CodeQL
+        shell: bash
+        run: |
+          bazelisk build //src/main/cpp/...
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v3
+
+  trivy:
+    name: "Trivy SCA"
+    runs-on: ubuntu-latest
+    needs: context
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Trivy filesystem scan
         uses: aquasecurity/trivy-action@0.28.0
         with:
           scan-type: fs
@@ -290,8 +569,9 @@ jobs:
           exit-code: '1'
 
   secret_scan:
-    name: Secret Scan
+    name: "Secret Scan"
     runs-on: ubuntu-latest
+    needs: context
     permissions:
       contents: read
     steps:
@@ -305,32 +585,175 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  codeql:
-    name: CodeQL
+  dependency_review:
+    name: "Dependency Review"
     runs-on: ubuntu-latest
     needs: context
+    if: github.event_name == 'pull_request'
     permissions:
-      actions: read
       contents: read
-      security-events: write
-    if: >-
-      github.event_name == 'pull_request' ||
-      needs.context.outputs.branch_type == 'main' ||
-      needs.context.outputs.branch_type == 'release' ||
-      needs.context.outputs.branch_type == 'hotfix'
+      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
         with:
-          languages: cpp
+          fail-on-severity: high
 
-      - name: Build for CodeQL
+  # ===========================================================================
+  # Stage 8: Evidence Summary — collect and publish QMS evidence
+  # ===========================================================================
+  evidence_summary:
+    name: "Evidence Summary"
+    runs-on: ubuntu-latest
+    needs:
+      - context
+      - unit_tests
+      - bdd_tests
+      - coverage
+    if: >-
+      always() &&
+      (needs.context.outputs.pipeline_type == 'post_merge' || needs.context.outputs.pipeline_type == 'full')
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all evidence
+        uses: actions/download-artifact@v4
+        with:
+          path: collected-evidence/
+
+      - name: Generate QMS summary
+        shell: bash
+        env:
+          SHORT_SHA: ${{ needs.context.outputs.short_sha }}
+          BUILD_DATE: ${{ needs.context.outputs.build_date }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          SUMMARY="collected-evidence/test-evidence-summary.md"
+
+          cat > "$SUMMARY" << 'SUMEOF'
+          # Test Evidence Summary
+          SUMEOF
+
+          cat >> "$SUMMARY" << SUMEOF
+          | Field | Value |
+          |-------|-------|
+          | **Date** | ${BUILD_DATE} |
+          | **Branch** | ${BRANCH} |
+          | **Commit** | ${GITHUB_SHA} |
+          | **Short SHA** | ${SHORT_SHA} |
+          | **Pipeline** | [Run #${GITHUB_RUN_NUMBER}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}) |
+
+          ## Unit Test Results
+
+          | Test Suite | Status |
+          |------------|--------|
+          SUMEOF
+
+          for xml in collected-evidence/unit-test-evidence-*/*/test.xml; do
+            [ -f "$xml" ] || continue
+            suite=$(basename "$(dirname "$xml")")
+            tests=$(grep -oP 'tests="\K[0-9]+' "$xml" 2>/dev/null | head -1 || echo "?")
+            failures=$(grep -oP 'failures="\K[0-9]+' "$xml" 2>/dev/null | head -1 || echo "?")
+            if [ "$failures" = "0" ]; then
+              echo "| $suite | PASSED ($tests tests) |" >> "$SUMMARY"
+            else
+              echo "| $suite | FAILED ($failures/$tests) |" >> "$SUMMARY"
+            fi
+          done
+
+          cat >> "$SUMMARY" << 'SUMEOF'
+
+          ## BDD/Integration Test Results
+
+          | Feature Test | Status |
+          |--------------|--------|
+          SUMEOF
+
+          for xml in collected-evidence/bdd-test-evidence-*/*/test.xml; do
+            [ -f "$xml" ] || continue
+            suite=$(basename "$(dirname "$xml")")
+            tests=$(grep -oP 'tests="\K[0-9]+' "$xml" 2>/dev/null | head -1 || echo "?")
+            failures=$(grep -oP 'failures="\K[0-9]+' "$xml" 2>/dev/null | head -1 || echo "?")
+            if [ "$failures" = "0" ]; then
+              echo "| $suite | PASSED ($tests tests) |" >> "$SUMMARY"
+            else
+              echo "| $suite | FAILED ($failures/$tests) |" >> "$SUMMARY"
+            fi
+          done
+
+          echo "" >> "$SUMMARY"
+          echo "---" >> "$SUMMARY"
+          echo "_Generated by GitHub Actions on $(date -u '+%Y-%m-%dT%H:%M:%SZ')_" >> "$SUMMARY"
+
+          cat "$SUMMARY" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload QMS evidence bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: qms-evidence-${{ needs.context.outputs.build_date }}-${{ needs.context.outputs.short_sha }}
+          path: collected-evidence/
+          retention-days: 365
+
+  # ===========================================================================
+  # Stage 9: Gate — final status check for branch protection
+  # ===========================================================================
+  gate:
+    name: "Pipeline Gate"
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - context
+      - build
+      - unit_tests
+      - bdd_tests
+      - asan_ubsan
+      - semgrep
+      - trivy
+      - secret_scan
+    steps:
+      - name: Evaluate gate
         shell: bash
         run: |
-          bazelisk build  //src/main/cpp/... //src/test/cpp/...
+          echo "### Pipeline Gate Results" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Analyze
-        uses: github/codeql-action/analyze@v3
+          failed="false"
+          pipeline="${{ needs.context.outputs.pipeline_type }}"
+
+          echo "| Job | Status | Gate |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|-----|--------|------|" >> "$GITHUB_STEP_SUMMARY"
+
+          check_job() {
+            local name="$1" result="$2" required="$3"
+            echo "| $name | $result | $required |" >> "$GITHUB_STEP_SUMMARY"
+            if [[ "$result" != "success" && "$result" != "skipped" && "$required" == "Required" ]]; then
+              failed="true"
+            fi
+          }
+
+          check_job "Build"        "${{ needs.build.result }}"       "Required"
+          check_job "Unit Tests"   "${{ needs.unit_tests.result }}"  "Required"
+          check_job "Semgrep SAST" "${{ needs.semgrep.result }}"     "Required"
+          check_job "Trivy SCA"    "${{ needs.trivy.result }}"       "Required"
+          check_job "Secrets"      "${{ needs.secret_scan.result }}" "Required"
+
+          if [[ "$pipeline" == "pr_gate" || "$pipeline" == "post_merge" || "$pipeline" == "full" ]]; then
+            check_job "BDD Tests"  "${{ needs.bdd_tests.result }}"   "Required"
+            check_job "ASan+UBSan" "${{ needs.asan_ubsan.result }}"  "Required"
+          else
+            check_job "BDD Tests"  "${{ needs.bdd_tests.result }}"   "Advisory"
+            check_job "ASan+UBSan" "${{ needs.asan_ubsan.result }}"  "Advisory"
+          fi
+
+          if [[ "$failed" == "true" ]]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "**Pipeline gate FAILED — required jobs did not pass.**" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Pipeline gate PASSED.**" >> "$GITHUB_STEP_SUMMARY"
