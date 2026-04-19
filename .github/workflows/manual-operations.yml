@@ -1,0 +1,180 @@
+# =============================================================================
+# Manual Operations — Pipeline H: On-Demand Tasks
+# =============================================================================
+# Manually triggered operational workflows:
+#   - Emergency security rescan
+#   - On-demand benchmark run
+#   - Dependency rescan for new CVEs
+# =============================================================================
+
+name: Manual Operations
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: 'Operation to run'
+        required: true
+        type: choice
+        options:
+          - security-rescan
+          - dependency-rescan
+          - full-build-test
+          - coverage-report
+      branch:
+        description: 'Target branch (default: main)'
+        required: false
+        default: 'main'
+        type: string
+
+permissions:
+  contents: read
+  security-events: write
+
+concurrency:
+  group: manual-${{ github.event.inputs.operation }}
+  cancel-in-progress: false
+
+jobs:
+  security_rescan:
+    name: "Security Rescan"
+    runs-on: ubuntu-latest
+    if: github.event.inputs.operation == 'security-rescan'
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Semgrep
+        shell: bash
+        run: |
+          pip install semgrep
+          semgrep scan --config auto --error \
+            --exclude "bazel-*" \
+            --sarif --output semgrep-manual.sarif || true
+
+      - name: Upload SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: semgrep-manual.sarif
+          category: semgrep-manual
+        continue-on-error: true
+
+      - name: Trivy
+        uses: aquasecurity/trivy-action@v0.35.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH,MEDIUM
+          ignore-unfixed: false
+          format: table
+          exit-code: '1'
+
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  dependency_rescan:
+    name: "Dependency Rescan"
+    runs-on: ubuntu-latest
+    if: github.event.inputs.operation == 'dependency-rescan'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+
+      - name: Trivy SCA (all severities)
+        uses: aquasecurity/trivy-action@v0.35.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH,MEDIUM,LOW
+          ignore-unfixed: false
+          format: table
+          exit-code: '0'
+
+      - name: OSV dependency scan
+        uses: google/osv-scanner-action@v2
+        with:
+          scan-args: |-
+            --recursive
+            .
+
+  full_build_test:
+    name: "Full Build + Test"
+    runs-on: ubuntu-latest
+    if: github.event.inputs.operation == 'full-build-test'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.14.0
+        with:
+          bazelisk-cache: true
+          disk-cache: manual-build
+          repository-cache: true
+
+      - name: Build all
+        shell: bash
+        run: bazelisk build //src/...
+
+      - name: Test all
+        shell: bash
+        run: |
+          bazelisk test --test_output=all //src/test/cpp/... //src/it/...
+
+  coverage_report:
+    name: "Coverage Report"
+    runs-on: ubuntu-latest
+    if: github.event.inputs.operation == 'coverage-report'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.14.0
+        with:
+          bazelisk-cache: true
+          disk-cache: manual-build
+          repository-cache: true
+
+      - name: Generate coverage
+        shell: bash
+        run: |
+          bazelisk coverage --keep_going \
+            --combined_report=lcov \
+            --instrumentation_filter="//src/main/cpp[/:]" \
+            --coverage_report_generator=@bazel_tools//tools/test:coverage_report_generator \
+            //src/test/cpp/... || true
+
+      - name: Collect and upload
+        shell: bash
+        run: |
+          mkdir -p coverage-report
+          find "$(bazelisk info output_path)" -name "_baseline_report.dat" \
+            -exec cp {} coverage-report/combined-coverage.lcov \; 2>/dev/null || true
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: manual-coverage-report
+          path: coverage-report/
+          retention-days: 30

@@ -1,0 +1,295 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_gherkin//gherkin:defs.bzl", "gherkin_library", "cc_gherkin_steps", "gherkin_test")
+#load("//tools/starlark/rules/cc_bdd:defs.bzl", "cc_gherkin_steps")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+
+package(
+    default_visibility = ["//visibility:public"],
+)
+
+
+cc_library(
+    name = "com.github.doevelopper.atlassians.bdddriver",
+    srcs = [
+        "com/github/doevelopper/atlassians/bdddriver/BddDriver.cpp",
+        "com/github/doevelopper/atlassians/bdddriver/BddEnvironment.cpp",
+        "com/github/doevelopper/atlassians/bdddriver/BddStaticInit.cpp",
+    ],
+    hdrs = [
+        "com/github/doevelopper/atlassians/bdddriver/BddDriver.hpp",
+        "com/github/doevelopper/atlassians/bdddriver/BddEnvironment.hpp",
+    ],
+    includes = ["."],
+    deps = [
+        "@cucumber-cpp//:cucumber-cpp",
+        "@googletest//:gtest",
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.logging",
+    ],
+)
+
+# Atlas Feature Group
+cc_gherkin_steps(
+    name = "com.github.doevelopper.atlassians.atlas-steps",
+    srcs = [
+        "com/github/doevelopper/atlassians/atlas/features/step_definitions/atlas.cpp",
+        "com/github/doevelopper/atlassians/atlas/features/step_definitions/atlas.hpp",
+    ],
+    deps = [
+        ":com.github.doevelopper.atlassians.bdddriver",
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.atlas",
+        "@cucumber-cpp//:cucumber-cpp",
+        "@googletest//:gtest",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+gherkin_test(
+    name = "com.github.doevelopper.atlassians.atlas.atp",
+    steps = ":com.github.doevelopper.atlassians.atlas-steps",
+    deps = [
+        ":com.github.doevelopper.atlassians.atlas.feature",
+    ],
+)
+
+gherkin_library(
+    name = "com.github.doevelopper.atlassians.atlas.feature",
+    srcs = [
+        "com/github/doevelopper/atlassians/atlas/features/atlas.feature",
+    ],
+)
+
+# Demo Feature Group
+cc_gherkin_steps(
+    name = "com.github.doevelopper.atlassians.demo-steps",
+    srcs = [
+        "com/github/doevelopper/atlassians/demo/features/step_definitions/Calculator.cpp",
+        "com/github/doevelopper/atlassians/demo/features/step_definitions/Calculator.hpp",
+    ],
+    deps = [
+        ":com.github.doevelopper.atlassians.bdddriver",
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.demo",
+        "@cucumber-cpp//:cucumber-cpp",
+        "@googletest//:gtest",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+gherkin_test(
+    name = "com.github.doevelopper.atlassians.demo.atp",
+    steps = ":com.github.doevelopper.atlassians.demo-steps",
+    deps = [
+        ":com.github.doevelopper.atlassians.demo.feature",
+    ],
+)
+
+gherkin_library(
+    name = "com.github.doevelopper.atlassians.demo.feature",
+    srcs = [
+        "com/github/doevelopper/atlassians/demo/features/calculator.feature",
+    ],
+)
+
+# Logging Feature Group
+cc_gherkin_steps(
+    name = "com.github.doevelopper.atlassians.logging-steps",
+    srcs = [
+        "com/github/doevelopper/atlassians/logging/features/step_definitions/Logging.cpp",
+    ],
+    deps = [
+        ":com.github.doevelopper.atlassians.bdddriver",
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.logging",
+        "@cucumber-cpp//:cucumber-cpp",
+        "@googletest//:gtest",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+gherkin_test(
+    name = "com.github.doevelopper.atlassians.logging.atp",
+    steps = ":com.github.doevelopper.atlassians.logging-steps",
+    deps = [
+        ":com.github.doevelopper.atlassians.logging.feature",
+    ],
+)
+
+gherkin_library(
+    name = "com.github.doevelopper.atlassians.logging.feature",
+    srcs = [
+        "com/github/doevelopper/atlassians/logging/features/logging_initialization.feature",
+    ],
+)
+
+# Semver Feature Group
+cc_gherkin_steps(
+    name = "com.github.doevelopper.atlassians.semver-steps",
+    srcs = [
+        "com/github/doevelopper/atlassians/semver/features/step_definitions/Version.cpp",
+    ],
+    copts = ["-std=c++20"],
+    deps = [
+        ":com.github.doevelopper.atlassians.bdddriver",
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.semver",
+        "@cucumber-cpp//:cucumber-cpp",
+        "@googletest//:gtest",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+gherkin_test(
+    name = "com.github.doevelopper.atlassians.semver.atp",
+    steps = ":com.github.doevelopper.atlassians.semver-steps",
+    deps = [
+        ":com.github.doevelopper.atlassians.semver.feature",
+    ],
+)
+
+gherkin_library(
+    name = "com.github.doevelopper.atlassians.semver.feature",
+    srcs = [
+        "com/github/doevelopper/atlassians/semver/features/semver.feature",
+    ],
+)
+
+# Triada Feature Group
+cc_gherkin_steps(
+    name = "com.github.doevelopper.atlassians.triada-steps",
+    srcs = [
+        "com/github/doevelopper/atlassians/triada/features/step_definitions/Triada.cpp",
+    ],
+    copts = ["-std=c++20"],
+    deps = [
+        ":com.github.doevelopper.atlassians.bdddriver",
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.triada",
+        "@cucumber-cpp//:cucumber-cpp",
+        "@googletest//:gtest",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+gherkin_test(
+    name = "com.github.doevelopper.atlassians.triada.atp",
+    steps = ":com.github.doevelopper.atlassians.triada-steps",
+    deps = [
+        ":com.github.doevelopper.atlassians.triada.feature",
+    ],
+)
+
+gherkin_library(
+    name = "com.github.doevelopper.atlassians.triada.feature",
+    srcs = [
+        "com/github/doevelopper/atlassians/triada/features/triada.feature",
+    ],
+)
+
+# Launcher Feature Group
+cc_gherkin_steps(
+    name = "com.github.doevelopper.atlassians.launcher-steps",
+    srcs = [
+        "com/github/doevelopper/atlassians/launcher/features/step_definitions/launcher.cpp",
+    ],
+    copts = ["-std=c++23"],
+    deps = [
+        ":com.github.doevelopper.atlassians.bdddriver",
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.atlas",
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.launcher",
+        "@cucumber-cpp//:cucumber-cpp",
+        "@googletest//:gtest",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+gherkin_test(
+    name = "com.github.doevelopper.atlassians.launcher.atp",
+    steps = ":com.github.doevelopper.atlassians.launcher-steps",
+    deps = [
+        ":com.github.doevelopper.atlassians.launcher.feature",
+    ],
+)
+
+gherkin_library(
+    name = "com.github.doevelopper.atlassians.launcher.feature",
+    srcs = [
+        "com/github/doevelopper/atlassians/launcher/features/launcher.feature",
+    ],
+)
+
+# Plugin Feature Group
+cc_gherkin_steps(
+    name = "com.github.doevelopper.atlassians.plugin-steps",
+    srcs = [
+        "com/github/doevelopper/atlassians/plugin/features/step_definitions/Plugin.cpp",
+    ],
+    deps = [
+        ":com.github.doevelopper.atlassians.bdddriver",
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.plugin",
+        "@cucumber-cpp//:cucumber-cpp",
+        "@googletest//:gtest",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+gherkin_test(
+    name = "com.github.doevelopper.atlassians.plugin.atp",
+    steps = ":com.github.doevelopper.atlassians.plugin-steps",
+    deps = [
+        ":com.github.doevelopper.atlassians.plugin.feature",
+    ],
+)
+
+gherkin_library(
+    name = "com.github.doevelopper.atlassians.plugin.feature",
+    srcs = [
+        "com/github/doevelopper/atlassians/plugin/features/pluging.feature",
+    ],
+)
+
+# System Integration Feature Group
+cc_gherkin_steps(
+    name = "com.github.doevelopper.atlassians.system-steps",
+    srcs = [
+        "com/github/doevelopper/atlassians/features/step_definitions/AcceptanceSteps.cpp",
+        "com/github/doevelopper/atlassians/features/step_definitions/AcceptanceSteps.hpp",
+    ],
+    deps = [
+        ":com.github.doevelopper.atlassians.bdddriver",
+        "//src/main/cpp:com.github.doevelopper.atlassians.main",
+        "//src/main/cpp:com.github.doevelopper.atlassians.main.demo",
+        "@cucumber-cpp//:cucumber-cpp",
+        "@googletest//:gtest",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+gherkin_test(
+    name = "com.github.doevelopper.atlassians.system.atp",
+    steps = ":com.github.doevelopper.atlassians.system-steps",
+    deps = [
+        ":com.github.doevelopper.atlassians.system.feature",
+    ],
+)
+
+gherkin_library(
+    name = "com.github.doevelopper.atlassians.system.feature",
+    srcs = [
+        "com/github/doevelopper/atlassians/features/acceptance-test-plan.feature",
+        "com/github/doevelopper/atlassians/features/smoke.feature",
+        "com/github/doevelopper/atlassians/features/regression.feature",
+    ],
+)
+
+pkg_tar(
+    name = "com.github.doevelopper.atlassians.it.package",
+    srcs = [
+        ":com.github.doevelopper.atlassians.atlas-steps",
+        ":com.github.doevelopper.atlassians.demo-steps",
+        ":com.github.doevelopper.atlassians.logging-steps",
+        ":com.github.doevelopper.atlassians.semver-steps",
+        ":com.github.doevelopper.atlassians.triada-steps",
+        ":com.github.doevelopper.atlassians.launcher-steps",
+        ":com.github.doevelopper.atlassians.plugin-steps",
+        ":com.github.doevelopper.atlassians.system-steps",
+    ],
+    extension = "tar.gz",
+    package_dir = "/opt/atlassians/it",
+    visibility = ["//visibility:public"],
+)

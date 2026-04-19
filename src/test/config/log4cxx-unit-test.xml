@@ -1,0 +1,360 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+   ===============================================================================
+   Log4CXX Configuration File - UNIT TEST ENVIRONMENT
+   ===============================================================================
+   Project: MSF EMS DevContainer
+   Environment: Unit Testing
+
+   Purpose: Optimized configuration for unit test execution
+
+   Features:
+   - Verbose console output for immediate test feedback
+   - DEBUG level logging for comprehensive test debugging
+   - Lightweight file appenders (tests are short-lived)
+   - No async appenders (tests complete quickly)
+   - No remote logging (local test execution)
+   - Isolated from production logs
+   - Test-specific logger hierarchies
+
+   Usage:
+   - Automatically loaded by test harness
+   - Override via environment variable: LOG4CXX_TEST_CONFIG
+   - CMake test target sets path automatically
+   ===============================================================================
+-->
+
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/"
+                     threshold="all"
+                     debug="false">
+
+    <!-- ========================================================================
+         CONSOLE APPENDER - Primary output for test execution
+         ======================================================================== -->
+    <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
+        <param name="Target" value="System.out"/>
+        <param name="Threshold" value="DEBUG"/>
+        <param name="Encoding" value="UTF-8"/>
+
+        <layout class="org.apache.log4j.PatternLayout">
+            <!-- Detailed format with test context -->
+            <param name="ConversionPattern"
+                   value="%d{HH:mm:ss.SSS} [%-5p] [TEST] %c{3} - %m%n"/>
+        </layout>
+    </appender>
+
+    <!-- ========================================================================
+         TEST LOG FILE - Detailed log for test run analysis
+         ======================================================================== -->
+    <appender name="TEST_FILE" class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="logs/test/unit-test.log"/>
+        <param name="Append" value="false"/>
+        <param name="MaxFileSize" value="10MB"/>
+        <param name="MaxBackupIndex" value="3"/>
+        <param name="Threshold" value="TRACE"/>
+        <param name="Encoding" value="UTF-8"/>
+
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                   value="%d{ISO8601} [%-5p] [%t] %c{4} (%F:%L) - %m%n"/>
+        </layout>
+    </appender>
+
+    <!-- ========================================================================
+         TEST ERROR FILE - Failed test diagnostics
+         ======================================================================== -->
+    <appender name="TEST_ERROR_FILE" class="org.apache.log4j.FileAppender">
+        <param name="File" value="logs/test/unit-test-errors.log"/>
+        <param name="Append" value="false"/>
+        <param name="Encoding" value="UTF-8"/>
+
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                   value="%d{ISO8601} [%-5p] %c{3}%n  Test: %t%n  Location: %F:%L%n  Message: %m%n  %n"/>
+        </layout>
+
+        <filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="ERROR"/>
+            <param name="LevelMax" value="FATAL"/>
+            <param name="AcceptOnMatch" value="true"/>
+        </filter>
+        <filter class="org.apache.log4j.varia.DenyAllFilter"/>
+    </appender>
+
+    <!-- ========================================================================
+         LOGGER CONFIGURATIONS - Test Module Loggers
+         ======================================================================== -->
+
+    <!-- Root test logger -->
+    <logger name="com.github.doevelopper.premisses.test">
+        <level value="DEBUG"/>
+    </logger>
+
+    <!-- Test main entry point -->
+    <logger name="com.github.doevelopper.premisses.test.main">
+        <level value="INFO"/>
+    </logger>
+
+    <!-- ========================================================================
+         Semantic Versioning Tests
+         ======================================================================== -->
+    <logger name="com.github.doevelopper.premisses.semver.test">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.semver.test.VersionTest">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.semver.test.VersionConstraintTest">
+        <level value="DEBUG"/>
+    </logger>
+
+    <!-- ========================================================================
+         Licensing Module Tests
+         ======================================================================== -->
+    <logger name="com.github.doevelopper.premisses.licensing.test">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.licensing.test.LicenseTest">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.licensing.test.LicenseValidatorTest">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.licensing.test.LicenseStorageTest">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.licensing.test.LicenseManagerTest">
+        <level value="DEBUG"/>
+    </logger>
+
+    <!-- ========================================================================
+         Launcher and Command-Line Argument Tests
+         ======================================================================== -->
+    <logger name="com.github.doevelopper.premisses.launcher.test">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.launcher.args.test">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.launcher.args.test.CommandLineParserTest">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.launcher.args.test.ConfigurationTest">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.launcher.args.test.TypedOptionTest">
+        <level value="DEBUG"/>
+    </logger>
+
+    <!-- ========================================================================
+         Triada Error Handling Tests
+         ======================================================================== -->
+    <logger name="com.github.doevelopper.premisses.triada.test">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.triada.test.ErrorTest">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.triada.test.ResultTest">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.triada.test.ErrorCodeTest">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.triada.test.ErrorSeverityTest">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.triada.test.ServiceIdTest">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.triada.test.ErrorStateMachineTest">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.triada.test.ErrorStateManagerTest">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.triada.test.RetryPolicyTest">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.triada.test.CircuitBreakerTest">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.triada.test.FallbackChainTest">
+        <level value="DEBUG"/>
+    </logger>
+
+    <!-- ========================================================================
+         Demo/Example Tests
+         ======================================================================== -->
+    <logger name="com.github.doevelopper.premisses.demo.test">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.demo.test.CalculatorTest">
+        <level value="DEBUG"/>
+    </logger>
+
+    <!-- ========================================================================
+         Production Code Loggers (when called from tests)
+         ======================================================================== -->
+
+    <!-- Main application modules - DEBUG level to see code under test behavior -->
+    <logger name="com.github.doevelopper.premisses.licensing">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.launcher">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.triada">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.semver">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="com.github.doevelopper.premisses.demo">
+        <level value="DEBUG"/>
+    </logger>
+
+    <!-- Logging framework itself - reduce verbosity -->
+    <logger name="com.github.doevelopper.premisses.logging">
+        <level value="INFO"/>
+    </logger>
+
+    <!-- Third-party libraries - reduce noise during tests -->
+    <logger name="org.apache">
+        <level value="WARN"/>
+    </logger>
+
+    <!-- ========================================================================
+         ROOT LOGGER - Unit Test Configuration
+         ======================================================================== -->
+    <root>
+        <priority value="DEBUG"/>
+
+        <!-- Console is primary output for test runners -->
+        <appender-ref ref="CONSOLE"/>
+
+        <!-- File outputs for detailed analysis -->
+        <appender-ref ref="TEST_FILE"/>
+        <appender-ref ref="TEST_ERROR_FILE"/>
+    </root>
+
+    <!-- ========================================================================
+         UNIT TEST CONFIGURATION NOTES
+         ========================================================================
+
+         DESIGN PHILOSOPHY:
+         - Maximum verbosity for debugging failed tests
+         - Fast startup and shutdown (no async appenders)
+         - Console-first (doeveloppers watch console during test runs)
+         - Fresh logs each run (Append=false for clean state)
+         - No remote logging (tests are local)
+
+         LOG LEVELS:
+         - Test loggers: DEBUG (detailed test execution)
+         - Production code: DEBUG (see behavior of code under test)
+         - Logging framework: INFO (reduce meta-logging noise)
+         - Third-party: WARN (minimal noise)
+
+         FILE ORGANIZATION:
+         - logs/test/unit-test.log: Complete test run log
+         - logs/test/unit-test-errors.log: Failed test diagnostics
+
+         INTEGRATION WITH TEST FRAMEWORKS:
+
+         1. Google Test Integration:
+            - Test failures automatically captured with context
+            - ASSERT/EXPECT failures show in error log
+            - Test fixture setup/teardown logged
+
+         2. CTest Integration:
+            - Log files available after test run
+            - Error logs useful for CI/CD investigation
+            - Console output captured by CTest
+
+         3. IDE Integration:
+            - Console output visible in IDE test runners
+            - File locations clickable in most IDEs
+            - Error patterns recognized by IDE parsers
+
+         DEBUGGING STRATEGIES:
+
+         1. Failed Test Analysis:
+            - Check console output first (immediate context)
+            - Review unit-test-errors.log for error details
+            - Examine unit-test.log for full execution trace
+
+         2. Intermittent Failures:
+            - Enable TRACE level for specific test logger
+            - Add timing information to identify race conditions
+            - Check thread safety in multi-threaded tests
+
+         3. Performance Issues:
+            - Monitor log message volume
+            - Profile test execution with performance logger
+            - Consider async appenders for stress tests
+
+         CUSTOMIZATION:
+
+         Enable TRACE for specific test:
+         <logger name="com.github.doevelopper.premisses.licensing.test.LicenseTest">
+             <level value="TRACE"/>
+         </logger>
+
+         Disable console for headless CI:
+         <appender name="CONSOLE">
+             <param name="Threshold" value="ERROR"/>
+         </appender>
+
+         Reduce production code verbosity if too noisy:
+         <logger name="com.github.doevelopper.premisses.licensing">
+             <level value="INFO"/>
+         </logger>
+
+         Enable TRACE for production code when debugging:
+         <logger name="com.github.doevelopper.premisses.triada">
+             <level value="TRACE"/>
+         </logger>
+
+         CONTINUOUS INTEGRATION:
+         - Archive unit-test-errors.log as CI artifact
+         - Parse error log for failure patterns
+         - Set up alerts for new error types
+         - Track log volume as code smell metric
+
+         BEST PRACTICES:
+         1. Keep test logs focused on test logic
+         2. Use appropriate log levels in test code
+         3. Log test setup and teardown clearly
+         4. Include expected vs actual values in assertions
+         5. Use structured logging for test metrics
+         6. Clean up test log files periodically
+         7. Review error logs after CI failures
+
+         ======================================================================== -->
+
+</log4j:configuration>

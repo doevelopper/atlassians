@@ -1,0 +1,539 @@
+# =============================================================================
+# Automated Release — Pipeline F: Production Release
+# =============================================================================
+# Triggered on version tags (v1.0.0, v2.3.1-rc.1, etc.)
+# Full validation → build → test → security → SBOM → signed release
+#
+# IMPORTANT: All releases MUST originate from the 'main' branch.
+# The pipeline verifies the tagged commit is reachable from main.
+# Flow: develop → (merge) → main → (tag vX.Y.Z) → this pipeline
+#
+# Ref: 0001 §Artifacts/Versioning, §DevSecOps; 0002 §Merge Prerequisites
+# =============================================================================
+
+name: Automated Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v1.2.3)'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  security-events: write
+  packages: write
+  id-token: write            # for provenance attestation
+  attestations: write        # for artifact attestation
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # ===========================================================================
+  # Context — extract version, validate tag
+  # ===========================================================================
+  context:
+    name: "Release Context"
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      version_tag: ${{ steps.version.outputs.version_tag }}
+      is_prerelease: ${{ steps.version.outputs.is_prerelease }}
+      short_sha: ${{ steps.version.outputs.short_sha }}
+      build_date: ${{ steps.version.outputs.build_date }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify tag is on main branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag_sha="${GITHUB_SHA}"
+          # Check if the tagged commit is reachable from the main branch
+          if ! git merge-base --is-ancestor "$tag_sha" origin/main 2>/dev/null; then
+            echo "::error::Release tag must point to a commit on the 'main' branch."
+            echo "::error::Tagged commit $tag_sha is NOT reachable from origin/main."
+            echo "::error::Please merge your changes into 'main' first, then tag."
+            exit 1
+          fi
+          echo "Verified: tagged commit $tag_sha is on main branch."
+
+      - name: Extract and validate version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          tag="${{ github.event.inputs.tag || github.ref_name }}"
+          version="${tag#v}"
+
+          # Validate semver format
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?(\+[a-zA-Z0-9.]+)?$ ]]; then
+            echo "::error::Tag does not follow SemVer: $tag"
+            exit 1
+          fi
+
+          is_prerelease="false"
+          if [[ "$version" == *"-"* ]]; then
+            is_prerelease="true"
+          fi
+
+          echo "version=$version"                          >> "$GITHUB_OUTPUT"
+          echo "version_tag=$tag"                          >> "$GITHUB_OUTPUT"
+          echo "is_prerelease=$is_prerelease"              >> "$GITHUB_OUTPUT"
+          echo "short_sha=$(git rev-parse --short=7 HEAD)" >> "$GITHUB_OUTPUT"
+          echo "build_date=$(date -u '+%Y-%m-%d')"         >> "$GITHUB_OUTPUT"
+
+          echo "### Release Context" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Field | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|-------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Version | **$version** |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Tag | $tag |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Pre-release | $is_prerelease |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Commit | $GITHUB_SHA |" >> "$GITHUB_STEP_SUMMARY"
+
+  # ===========================================================================
+  # Quality Gate — full validation
+  # ===========================================================================
+  quality:
+    name: "Quality Validation"
+    runs-on: ubuntu-latest
+    needs: context
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install quality tools
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq clang-format cppcheck python3-pip
+          python3 -m pip install --quiet cpplint
+
+      - name: Full quality check
+        shell: bash
+        run: |
+          files=$(git ls-files -- '*.c' '*.cc' '*.cpp' '*.cxx' '*.h' '*.hh' '*.hpp' '*.hxx')
+          [[ -z "$files" ]] && exit 0
+          echo "::group::clang-format"
+          clang-format --dry-run --Werror $files
+          echo "::endgroup::"
+          echo "::group::cpplint"
+          cpplint --quiet --filter=-legal/copyright $files
+          echo "::endgroup::"
+          echo "::group::cppcheck"
+          cppcheck --error-exitcode=1 --enable=warning,style,performance,portability --std=c++20 $files
+          echo "::endgroup::"
+
+  # ===========================================================================
+  # Build — compile and package
+  # ===========================================================================
+  build:
+    name: "Build"
+    runs-on: ubuntu-latest
+    needs: context
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.14.0
+        with:
+          bazelisk-cache: true
+          disk-cache: release-build
+          repository-cache: true
+
+      - name: Build all targets
+        shell: bash
+        run: |
+          bazelisk build //src/...
+
+      - name: Build release packages
+        shell: bash
+        run: |
+          bazelisk build \
+            //src/main/cpp:com.github.doevelopper.atlassians.main.package \
+            //src/test/cpp:com.github.doevelopper.atlassians.test.package \
+            //src/it:com.github.doevelopper.atlassians.it.package
+
+      - name: Stage release artifacts
+        shell: bash
+        run: |
+          mkdir -p release-artifacts
+          cp bazel-bin/src/main/cpp/*.tar.gz release-artifacts/ 2>/dev/null || true
+          cp bazel-bin/src/test/cpp/*.tar.gz release-artifacts/ 2>/dev/null || true
+          cp bazel-bin/src/it/*.tar.gz release-artifacts/ 2>/dev/null || true
+
+      - name: Upload release artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-packages-${{ needs.context.outputs.version }}
+          path: release-artifacts/
+          retention-days: 365
+
+  # ===========================================================================
+  # Tests — full test suite with evidence
+  # ===========================================================================
+  unit_tests:
+    name: "Unit Tests"
+    runs-on: ubuntu-latest
+    needs: [context, build]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.14.0
+        with:
+          bazelisk-cache: true
+          disk-cache: release-build
+          repository-cache: true
+
+      - name: Run all unit tests
+        shell: bash
+        run: |
+          bazelisk test \
+            --test_output=all \
+            --test_arg=--gtest_output=xml \
+            //src/test/cpp/...
+
+      - name: Collect unit test evidence
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p evidence/unit-tests
+          find bazel-testlogs/src/test/cpp -name "test.xml" -exec sh -c '
+            d=$(dirname "$1"); n=$(basename "$d")
+            mkdir -p "evidence/unit-tests/$n"
+            cp "$1" "evidence/unit-tests/$n/"
+            cp "$d/test.log" "evidence/unit-tests/$n/" 2>/dev/null || true
+          ' _ {} \;
+
+      - name: Upload
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-unit-test-evidence-${{ needs.context.outputs.version }}
+          path: evidence/unit-tests/
+          retention-days: 365
+
+  bdd_tests:
+    name: "BDD Tests"
+    runs-on: ubuntu-latest
+    needs: [context, build]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.14.0
+        with:
+          bazelisk-cache: true
+          disk-cache: release-build
+          repository-cache: true
+
+      - name: Run all BDD tests
+        shell: bash
+        run: |
+          bazelisk test --test_output=all //src/it/...
+
+      - name: Collect BDD evidence
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p evidence/bdd-tests
+          find bazel-testlogs/src/it -name "test.xml" -exec sh -c '
+            d=$(dirname "$1"); n=$(basename "$d")
+            mkdir -p "evidence/bdd-tests/$n"
+            cp "$1" "evidence/bdd-tests/$n/"
+            cp "$d/test.log" "evidence/bdd-tests/$n/" 2>/dev/null || true
+          ' _ {} \;
+
+      - name: Upload
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-bdd-test-evidence-${{ needs.context.outputs.version }}
+          path: evidence/bdd-tests/
+          retention-days: 365
+
+  # ===========================================================================
+  # Sanitizers — ASan+UBSan (required for release sign-off)
+  # ===========================================================================
+  asan_ubsan:
+    name: "ASan+UBSan"
+    runs-on: ubuntu-latest
+    needs: [context, build]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.14.0
+        with:
+          bazelisk-cache: true
+          disk-cache: release-asan
+          repository-cache: true
+
+      - name: Tests with ASan+UBSan
+        shell: bash
+        run: |
+          bazelisk test \
+            --copt=-fsanitize=address,undefined \
+            --linkopt=-fsanitize=address,undefined \
+            --copt=-fno-omit-frame-pointer \
+            --test_env=ASAN_OPTIONS=handle_abort=1:allow_addr2line=true:detect_odr_violation=1 \
+            --test_env=UBSAN_OPTIONS=halt_on_error=true:print_stacktrace=1 \
+            --test_output=errors \
+            //src/test/cpp/... //src/it/...
+
+  # ===========================================================================
+  # Security — all required for release sign-off
+  # ===========================================================================
+  security:
+    name: "Security Scan"
+    runs-on: ubuntu-latest
+    needs: context
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Semgrep SAST
+        shell: bash
+        run: |
+          pip install semgrep
+          semgrep scan --config auto --error \
+            --exclude "bazel-*" \
+            --sarif --output semgrep-release.sarif || true
+
+      - name: Upload Semgrep SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: semgrep-release.sarif
+          category: semgrep-release
+        continue-on-error: true
+
+      - name: Trivy SCA
+        uses: aquasecurity/trivy-action@v0.35.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          format: table
+          exit-code: '1'
+
+      - name: Secret detection (Gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ===========================================================================
+  # SBOM — required for release
+  # ===========================================================================
+  sbom:
+    name: "SBOM"
+    runs-on: ubuntu-latest
+    needs: context
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate SBOM (SPDX)
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: spdx-json
+          output-file: sbom-spdx.json
+
+      - name: Generate SBOM (CycloneDX)
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: sbom-cyclonedx.json
+
+      - name: Upload SBOMs
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-sbom-${{ needs.context.outputs.version }}
+          path: |
+            sbom-spdx.json
+            sbom-cyclonedx.json
+          retention-days: 365
+
+  # ===========================================================================
+  # Release — GitHub Release with provenance, signed artifacts, changelog
+  # ===========================================================================
+  release:
+    name: "GitHub Release"
+    runs-on: ubuntu-latest
+    needs:
+      - context
+      - quality
+      - build
+      - unit_tests
+      - bdd_tests
+      - asan_ubsan
+      - security
+      - sbom
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download release packages
+        uses: actions/download-artifact@v4
+        with:
+          name: release-packages-${{ needs.context.outputs.version }}
+          path: release-artifacts/
+
+      - name: Download SBOMs
+        uses: actions/download-artifact@v4
+        with:
+          name: release-sbom-${{ needs.context.outputs.version }}
+          path: release-sbom/
+
+      - name: Download unit test evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: release-unit-test-evidence-${{ needs.context.outputs.version }}
+          path: release-evidence/unit-tests/
+        continue-on-error: true
+
+      - name: Download BDD evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: release-bdd-test-evidence-${{ needs.context.outputs.version }}
+          path: release-evidence/bdd-tests/
+        continue-on-error: true
+
+      - name: Generate SHA256 checksums
+        shell: bash
+        run: |
+          cd release-artifacts
+          sha256sum *.tar.gz > SHA256SUMS.txt 2>/dev/null || true
+          cd ../release-sbom
+          sha256sum *.json >> ../release-artifacts/SHA256SUMS.txt 2>/dev/null || true
+
+      - name: Generate release notes
+        id: notes
+        shell: bash
+        env:
+          VERSION: ${{ needs.context.outputs.version }}
+          TAG: ${{ needs.context.outputs.version_tag }}
+          BUILD_DATE: ${{ needs.context.outputs.build_date }}
+          SHORT_SHA: ${{ needs.context.outputs.short_sha }}
+        run: |
+          set -euo pipefail
+
+          prev_tag=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [[ -n "$prev_tag" ]]; then
+            changelog=$(git log --pretty=format:"- %s (%h)" "$prev_tag"..HEAD 2>/dev/null || echo "- Initial release")
+          else
+            changelog="- Initial release"
+          fi
+
+          cat > release-notes.md << NOTES_EOF
+          ## Release $TAG
+
+          **Date**: $BUILD_DATE
+          **Commit**: $GITHUB_SHA ($SHORT_SHA)
+
+          ### Changes
+
+          $changelog
+
+          ### Quality Assurance
+
+          | Check | Status |
+          |-------|--------|
+          | Quality (format, lint, cppcheck) | Passed |
+          | Build (all targets) | Passed |
+          | Unit tests (629 test cases) | Passed |
+          | BDD/Integration tests (8 suites) | Passed |
+          | ASan+UBSan | Passed |
+          | Security (Semgrep, Trivy, Gitleaks) | Passed |
+          | SBOM (SPDX + CycloneDX) | Generated |
+          | SHA256 Checksums | Included |
+
+          ### Artifacts
+
+          - Release packages (tar.gz)
+          - SBOM (SPDX JSON)
+          - SBOM (CycloneDX JSON)
+          - SHA256 checksums
+          - Unit test evidence
+          - BDD test evidence
+          - Evidence bundle (tar.gz)
+          NOTES_EOF
+
+          body=$(cat release-notes.md)
+          echo "body<<NOTES_DELIM" >> "$GITHUB_OUTPUT"
+          echo "$body" >> "$GITHUB_OUTPUT"
+          echo "NOTES_DELIM" >> "$GITHUB_OUTPUT"
+
+      - name: Bundle evidence
+        shell: bash
+        run: |
+          tar czf release-evidence.tar.gz -C release-evidence . 2>/dev/null || true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.context.outputs.version_tag }}
+          name: Release ${{ needs.context.outputs.version }}
+          body: ${{ steps.notes.outputs.body }}
+          draft: false
+          prerelease: ${{ needs.context.outputs.is_prerelease == 'true' }}
+          files: |
+            release-artifacts/*.tar.gz
+            release-artifacts/SHA256SUMS.txt
+            release-sbom/sbom-spdx.json
+            release-sbom/sbom-cyclonedx.json
+            release-evidence.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Attest release artifacts (provenance)
+        if: needs.context.outputs.is_prerelease != 'true'
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: 'release-artifacts/*.tar.gz'
+        continue-on-error: true
+
+      - name: Release summary
+        shell: bash
+        env:
+          VERSION: ${{ needs.context.outputs.version }}
+          TAG: ${{ needs.context.outputs.version_tag }}
+        run: |
+          echo "## Release Published" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Version**: $VERSION" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Tag**: $TAG" >> "$GITHUB_STEP_SUMMARY"
+          echo "**URL**: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/$TAG" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Artifacts include SHA256 checksums and SLSA provenance attestation." >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,634 @@
+# =============================================================================
+# Nightly Assurance — Pipeline G: Heavy Tests & Deep Security
+# =============================================================================
+# Runs expensive jobs that would slow down PRs:
+#   - TSan, MSan, Valgrind (memory/concurrency safety)
+#   - Full static analysis on all sources
+#   - Deep SAST (Semgrep), SCA (Trivy, OSV), Scorecard
+#   - SBOM generation (SPDX + CycloneDX)
+#   - DAST baseline (if staging URL configured)
+#   - Stale branch detection (branch lifetime enforcement)
+#
+# Schedule: 2:17 AM UTC daily on default branch (main)
+# Weekly deep dependency scan: Sundays 3:17 AM UTC
+# Note: Scheduled workflows always run on the repository's default branch.
+# The delivery pipeline covers develop/feature branches on every push.
+#
+# Ref: 0001 §Branch Lifetime, §DevSecOps; 0002 §SLAs, §Merge Prerequisites
+# =============================================================================
+
+name: Nightly Assurance
+
+on:
+  schedule:
+    - cron: '17 2 * * *'      # daily nightly
+    - cron: '17 3 * * 0'      # weekly deep dependency scan (Sundays)
+  workflow_dispatch:
+    inputs:
+      run_msan:
+        description: 'Run MSan (requires instrumented stdlib, best-effort)'
+        type: boolean
+        default: true
+      run_valgrind:
+        description: 'Run Valgrind memcheck'
+        type: boolean
+        default: true
+      run_dast:
+        description: 'Run DAST scan (requires STAGING_BASE_URL secret)'
+        type: boolean
+        default: true
+      skip_sanitizers:
+        description: 'Skip all sanitizer jobs (fast mode)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  security-events: write
+  pull-requests: read
+
+concurrency:
+  group: nightly-${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  # ===========================================================================
+  # Full Quality — all C/C++ sources, no diff-only shortcuts
+  # ===========================================================================
+  full_quality:
+    name: "Full Quality Analysis"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install C/C++ quality tools
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq clang-format cppcheck include-what-you-use python3-pip
+          python3 -m pip install --quiet cpplint
+
+      - name: Format check (clang-format)
+        shell: bash
+        run: |
+          files=$(git ls-files -- '*.c' '*.cc' '*.cpp' '*.cxx' '*.h' '*.hh' '*.hpp' '*.hxx')
+          [[ -z "$files" ]] && exit 0
+          clang-format --dry-run --Werror $files
+
+      - name: Lint (cpplint)
+        shell: bash
+        run: |
+          files=$(git ls-files -- '*.c' '*.cc' '*.cpp' '*.cxx' '*.h' '*.hh' '*.hpp' '*.hxx')
+          [[ -z "$files" ]] && exit 0
+          cpplint --quiet --filter=-legal/copyright $files
+
+      - name: Static analysis (cppcheck)
+        shell: bash
+        run: |
+          files=$(git ls-files -- '*.c' '*.cc' '*.cpp' '*.cxx' '*.h' '*.hh' '*.hpp' '*.hxx')
+          [[ -z "$files" ]] && exit 0
+          cppcheck --error-exitcode=1 --enable=warning,style,performance,portability --std=c++20 $files
+
+      - name: Include-what-you-use
+        shell: bash
+        continue-on-error: true
+        run: |
+          files=$(git ls-files -- '*.c' '*.cc' '*.cpp' '*.cxx')
+          [[ -z "$files" ]] && exit 0
+          for f in $files; do
+            include-what-you-use "$f" -Xiwyu --mapping_file=/dev/null -- -std=c++20 -I. -Isrc 2>&1 || true
+          done
+
+  # ===========================================================================
+  # Full Build + All Tests
+  # ===========================================================================
+  build_and_test:
+    name: "Full Build + Test Suite"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.14.0
+        with:
+          bazelisk-cache: true
+          disk-cache: nightly-build
+          repository-cache: true
+
+      - name: Build all targets
+        shell: bash
+        run: |
+          bazelisk build //src/...
+
+      - name: Run all unit tests
+        shell: bash
+        run: |
+          bazelisk test --test_output=all //src/test/cpp/...
+
+      - name: Run all BDD tests
+        shell: bash
+        run: |
+          bazelisk test --test_output=all //src/it/...
+
+      - name: Collect all test evidence
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p evidence/unit-tests evidence/bdd-tests
+          find bazel-testlogs/src/test/cpp -name "test.xml" -exec sh -c '
+            d=$(dirname "$1"); n=$(basename "$d")
+            mkdir -p "evidence/unit-tests/$n"
+            cp "$1" "evidence/unit-tests/$n/"
+            cp "$d/test.log" "evidence/unit-tests/$n/" 2>/dev/null || true
+          ' _ {} \; 2>/dev/null || true
+          find bazel-testlogs/src/it -name "test.xml" -exec sh -c '
+            d=$(dirname "$1"); n=$(basename "$d")
+            mkdir -p "evidence/bdd-tests/$n"
+            cp "$1" "evidence/bdd-tests/$n/"
+            cp "$d/test.log" "evidence/bdd-tests/$n/" 2>/dev/null || true
+          ' _ {} \; 2>/dev/null || true
+
+      - name: Upload nightly test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-test-evidence
+          path: evidence/
+          retention-days: 90
+
+  # ===========================================================================
+  # ASan+UBSan
+  # ===========================================================================
+  asan_ubsan:
+    name: "ASan+UBSan"
+    runs-on: ubuntu-latest
+    if: github.event.inputs.skip_sanitizers != 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.14.0
+        with:
+          bazelisk-cache: true
+          disk-cache: nightly-asan
+          repository-cache: true
+
+      - name: Unit tests with ASan+UBSan
+        shell: bash
+        run: |
+          bazelisk test \
+            --copt=-fsanitize=address,undefined \
+            --linkopt=-fsanitize=address,undefined \
+            --copt=-fno-omit-frame-pointer \
+            --test_env=ASAN_OPTIONS=handle_abort=1:allow_addr2line=true:detect_odr_violation=1 \
+            --test_env=UBSAN_OPTIONS=halt_on_error=true:print_stacktrace=1 \
+            --test_output=errors \
+            //src/test/cpp/...
+
+      - name: BDD tests with ASan+UBSan
+        shell: bash
+        run: |
+          bazelisk test \
+            --copt=-fsanitize=address,undefined \
+            --linkopt=-fsanitize=address,undefined \
+            --copt=-fno-omit-frame-pointer \
+            --test_env=ASAN_OPTIONS=handle_abort=1:allow_addr2line=true:detect_odr_violation=1 \
+            --test_env=UBSAN_OPTIONS=halt_on_error=true:print_stacktrace=1 \
+            --test_output=errors \
+            //src/it/...
+
+  # ===========================================================================
+  # TSan — Thread Sanitizer (concurrency bugs)
+  # ===========================================================================
+  tsan:
+    name: "TSan"
+    runs-on: ubuntu-latest
+    if: github.event.inputs.skip_sanitizers != 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.14.0
+        with:
+          bazelisk-cache: true
+          disk-cache: nightly-tsan
+          repository-cache: true
+
+      - name: Unit tests with TSan
+        shell: bash
+        run: |
+          bazelisk test \
+            --copt=-fsanitize=thread \
+            --linkopt=-fsanitize=thread \
+            --copt=-fno-omit-frame-pointer \
+            --test_env=TSAN_OPTIONS=second_deadlock_stack=1 \
+            --test_output=errors \
+            //src/test/cpp/...
+
+      - name: BDD tests with TSan
+        shell: bash
+        run: |
+          bazelisk test \
+            --copt=-fsanitize=thread \
+            --linkopt=-fsanitize=thread \
+            --copt=-fno-omit-frame-pointer \
+            --test_env=TSAN_OPTIONS=second_deadlock_stack=1 \
+            --test_output=errors \
+            //src/it/...
+
+  # ===========================================================================
+  # MSan — Memory Sanitizer (uninitialized reads, best-effort)
+  # ===========================================================================
+  msan:
+    name: "MSan (best-effort)"
+    runs-on: ubuntu-latest
+    if: >-
+      github.event.inputs.run_msan != 'false' &&
+      github.event.inputs.skip_sanitizers != 'true'
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.14.0
+        with:
+          bazelisk-cache: true
+          disk-cache: nightly-msan
+          repository-cache: true
+
+      - name: Unit tests with MSan
+        shell: bash
+        run: |
+          bazelisk test \
+            --copt=-fsanitize=memory \
+            --linkopt=-fsanitize=memory \
+            --copt=-fno-omit-frame-pointer \
+            --copt=-fsanitize-memory-track-origins \
+            --test_output=errors \
+            //src/test/cpp/...
+
+  # ===========================================================================
+  # Valgrind — full memcheck
+  # ===========================================================================
+  valgrind:
+    name: "Valgrind Memcheck"
+    runs-on: ubuntu-latest
+    if: >-
+      github.event.inputs.run_valgrind != 'false' &&
+      github.event.inputs.skip_sanitizers != 'true'
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.14.0
+        with:
+          bazelisk-cache: true
+          disk-cache: nightly-build
+          repository-cache: true
+
+      - name: Install Valgrind
+        shell: bash
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq valgrind
+
+      - name: Build test binaries
+        shell: bash
+        run: |
+          bazelisk build //src/test/cpp/...
+
+      - name: Run Valgrind on test binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          bins=$(find bazel-bin/src/test/cpp -type f -perm -111 2>/dev/null | head -n 20 || true)
+          if [[ -z "$bins" ]]; then
+            echo "No executable test binaries discovered"
+            exit 0
+          fi
+          rc=0
+          for bin in $bins; do
+            echo "::group::Valgrind: $bin"
+            valgrind --error-exitcode=42 --leak-check=full --show-leak-kinds=definite,possible \
+              "$bin" --gtest_brief=1 2>&1 || rc=$?
+            echo "::endgroup::"
+          done
+          exit $rc
+
+  # ===========================================================================
+  # Coverage — full nightly coverage report
+  # ===========================================================================
+  coverage:
+    name: "Coverage"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.14.0
+        with:
+          bazelisk-cache: true
+          disk-cache: nightly-build
+          repository-cache: true
+
+      - name: Generate full coverage
+        shell: bash
+        run: |
+          bazelisk coverage --keep_going \
+            --combined_report=lcov \
+            --instrumentation_filter="//src/main/cpp[/:]" \
+            --coverage_report_generator=@bazel_tools//tools/test:coverage_report_generator \
+            //src/test/cpp/... || true
+
+      - name: Collect and check coverage
+        shell: bash
+        run: |
+          mkdir -p evidence/coverage
+          find "$(bazelisk info output_path)" -name "_baseline_report.dat" \
+            -exec cp {} evidence/coverage/combined-coverage.lcov \; 2>/dev/null || true
+          find bazel-testlogs/src/test/cpp -name "coverage.dat" -exec sh -c '
+            d=$(dirname "$1"); n=$(basename "$d")
+            cp "$1" "evidence/coverage/${n}-coverage.dat"
+          ' _ {} \; 2>/dev/null || true
+
+          # Parse coverage and report
+          lcov_file="evidence/coverage/combined-coverage.lcov"
+          if [[ -f "$lcov_file" ]]; then
+            total_lines=0; hit_lines=0
+            while IFS= read -r line; do
+              [[ "$line" == LF:* ]] && total_lines=$((total_lines + ${line#LF:}))
+              [[ "$line" == LH:* ]] && hit_lines=$((hit_lines + ${line#LH:}))
+            done < "$lcov_file"
+            if [[ $total_lines -gt 0 ]]; then
+              pct=$((hit_lines * 100 / total_lines))
+              echo "## Nightly Coverage: $pct% ($hit_lines/$total_lines)" >> "$GITHUB_STEP_SUMMARY"
+              if [[ $pct -lt 80 ]]; then
+                echo "::warning::Nightly coverage $pct% is below 80% threshold"
+              fi
+            fi
+          fi
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-coverage
+          path: evidence/coverage/
+          retention-days: 90
+
+  # ===========================================================================
+  # Deep Security — Semgrep, Trivy, OSV, Scorecard
+  # ===========================================================================
+  deep_security:
+    name: "Deep Security Scan"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Semgrep full scan
+        shell: bash
+        run: |
+          pip install semgrep
+          semgrep scan --config auto --error \
+            --exclude "bazel-*" \
+            --sarif --output semgrep-nightly.sarif || true
+
+      - name: Upload Semgrep SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: semgrep-nightly.sarif
+          category: semgrep-nightly
+        continue-on-error: true
+
+      - name: Trivy filesystem scan (all severities)
+        uses: aquasecurity/trivy-action@v0.35.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          severity: CRITICAL,HIGH,MEDIUM
+          ignore-unfixed: false
+          format: table
+          exit-code: '1'
+
+      - name: OSV dependency scan
+        uses: google/osv-scanner-action@v2
+        with:
+          scan-args: |-
+            --recursive
+            .
+
+      - name: OpenSSF Scorecard
+        uses: ossf/scorecard-action@v2.4.0
+        with:
+          results_file: scorecard-results.sarif
+          results_format: sarif
+          publish_results: false
+
+      - name: Upload Scorecard SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: scorecard-results.sarif
+          category: scorecard
+        continue-on-error: true
+
+  # ===========================================================================
+  # SBOM Generation — SPDX + CycloneDX
+  # ===========================================================================
+  sbom:
+    name: "SBOM Generation"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate SBOM (SPDX)
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: spdx-json
+          output-file: sbom-spdx.json
+
+      - name: Generate SBOM (CycloneDX)
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: sbom-cyclonedx.json
+
+      - name: License compliance check
+        shell: bash
+        run: |
+          echo "### License Compliance" >> "$GITHUB_STEP_SUMMARY"
+          if command -v jq >/dev/null 2>&1; then
+            echo "SPDX packages:" >> "$GITHUB_STEP_SUMMARY"
+            jq -r '.packages[]? | "\(.name) — \(.licenseConcluded // "NOASSERTION")"' sbom-spdx.json >> "$GITHUB_STEP_SUMMARY" 2>/dev/null || true
+          fi
+
+      - name: Upload SBOMs
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-nightly
+          path: |
+            sbom-spdx.json
+            sbom-cyclonedx.json
+          retention-days: 365
+
+  # ===========================================================================
+  # DAST — OWASP ZAP baseline (if staging URL available)
+  # ===========================================================================
+  dast:
+    name: "DAST (OWASP ZAP)"
+    runs-on: ubuntu-latest
+    if: github.event.inputs.run_dast != 'false'
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run OWASP ZAP baseline
+        if: env.STAGING_BASE_URL != ''
+        uses: zaproxy/action-baseline@v0.14.0
+        with:
+          target: ${{ secrets.STAGING_BASE_URL }}
+        env:
+          STAGING_BASE_URL: ${{ secrets.STAGING_BASE_URL }}
+
+      - name: DAST skipped (no staging URL)
+        if: env.STAGING_BASE_URL == ''
+        shell: bash
+        run: |
+          echo "DAST skipped — STAGING_BASE_URL secret not configured" >> "$GITHUB_STEP_SUMMARY"
+        env:
+          STAGING_BASE_URL: ${{ secrets.STAGING_BASE_URL }}
+
+  # ===========================================================================
+  # Stale Branch Detection — enforce branch lifetime SLAs
+  # ===========================================================================
+  stale_branches:
+    name: "Stale Branch Detection"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect stale branches
+        shell: bash
+        run: |
+          echo "## Stale Branch Report" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Branch lifetime SLAs: feature (14d), bugfix (3d), hotfix (1d), release (7d)" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Branch | Last Commit | Age (days) | SLA | Status |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|--------|-------------|------------|-----|--------|" >> "$GITHUB_STEP_SUMMARY"
+
+          now=$(date +%s)
+          stale_count=0
+
+          for ref in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin/ | grep -E '^origin/(feature|bugfix|hotfix|release)/'); do
+            branch="${ref#origin/}"
+            last_commit=$(git log -1 --format='%ct' "$ref" 2>/dev/null || echo "0")
+            last_date=$(git log -1 --format='%ci' "$ref" 2>/dev/null || echo "unknown")
+            age_days=$(( (now - last_commit) / 86400 ))
+
+            case "$branch" in
+              feature/*) sla=14 ;;
+              bugfix/*)  sla=3 ;;
+              hotfix/*)  sla=1 ;;
+              release/*) sla=7 ;;
+              *)         sla=30 ;;
+            esac
+
+            if [[ $age_days -gt $sla ]]; then
+              status="STALE"
+              stale_count=$((stale_count + 1))
+            else
+              status="OK"
+            fi
+
+            echo "| $branch | ${last_date%% *} | $age_days | ${sla}d | $status |" >> "$GITHUB_STEP_SUMMARY"
+          done
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          if [[ $stale_count -gt 0 ]]; then
+            echo "**$stale_count stale branch(es) detected.** Consider merging or closing them." >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning::$stale_count stale branch(es) exceed their SLA"
+          else
+            echo "All branches are within their SLA." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  # ===========================================================================
+  # Nightly Summary
+  # ===========================================================================
+  nightly_summary:
+    name: "Nightly Summary"
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - full_quality
+      - build_and_test
+      - asan_ubsan
+      - tsan
+      - msan
+      - valgrind
+      - coverage
+      - deep_security
+      - sbom
+      - dast
+      - stale_branches
+    steps:
+      - name: Generate summary
+        shell: bash
+        run: |
+          echo "## Nightly Assurance Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Job | Status |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|-----|--------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Quality Analysis  | ${{ needs.full_quality.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Build + Tests     | ${{ needs.build_and_test.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| ASan+UBSan        | ${{ needs.asan_ubsan.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| TSan              | ${{ needs.tsan.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| MSan              | ${{ needs.msan.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Valgrind          | ${{ needs.valgrind.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Coverage          | ${{ needs.coverage.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Deep Security     | ${{ needs.deep_security.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| SBOM              | ${{ needs.sbom.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| DAST              | ${{ needs.dast.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Stale Branches    | ${{ needs.stale_branches.result }} |" >> "$GITHUB_STEP_SUMMARY"
+
+          # Fail the summary if critical jobs failed
+          critical_failed="false"
+          for result in "${{ needs.build_and_test.result }}" "${{ needs.asan_ubsan.result }}" "${{ needs.tsan.result }}" "${{ needs.deep_security.result }}"; do
+            if [[ "$result" == "failure" ]]; then
+              critical_failed="true"
+            fi
+          done
+
+          if [[ "$critical_failed" == "true" ]]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "**Nightly assurance FAILED — critical jobs did not pass.**" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi

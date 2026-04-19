@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+   ===============================================================================
+   Log4CXX Configuration File - PRODUCTION ENVIRONMENT
+   ===============================================================================
+   Project: MSF EMS DevContainer
+   Environment: Production
+
+   Purpose: Optimized for performance, security, and operational monitoring
+
+   Features:
+   - Minimal console output (WARN+ only)
+   - Efficient file logging with WARN/ERROR levels
+   - Enabled remote logging (Socket and Syslog)
+   - Asynchronous appenders for high throughput
+   - Comprehensive security audit trail
+   - Extended log retention
+   - Production-grade error handling
+
+   IMPORTANT: Review and update remote host configurations before deployment!
+   ===============================================================================
+-->
+
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/"
+                     threshold="warn"
+                     debug="false">
+
+    <!-- ========================================================================
+         CONSOLE APPENDER - Minimal output for production
+         ======================================================================== -->
+    <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
+        <param name="Target" value="System.out"/>
+        <param name="Threshold" value="WARN"/>
+        <param name="Encoding" value="UTF-8"/>
+
+        <layout class="org.apache.log4j.PatternLayout">
+            <!-- Concise format for production -->
+            <param name="ConversionPattern"
+                   value="%d{ISO8601} [%-5p] %c{2} - %m%n"/>
+        </layout>
+
+        <filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="WARN"/>
+            <param name="LevelMax" value="FATAL"/>
+            <param name="AcceptOnMatch" value="true"/>
+        </filter>
+    </appender>
+
+    <!-- ========================================================================
+         ROLLING FILE APPENDER - Main production log
+         ======================================================================== -->
+    <appender name="ROLLING_FILE" class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="logs/production/application.log"/>
+        <param name="Append" value="true"/>
+        <param name="MaxFileSize" value="50MB"/>
+        <param name="MaxBackupIndex" value="30"/>
+        <param name="Threshold" value="INFO"/>
+        <param name="Encoding" value="UTF-8"/>
+
+        <layout class="org.apache.log4j.PatternLayout">
+            <!-- Omit file location in production for performance -->
+            <param name="ConversionPattern"
+                   value="%d{ISO8601} [%-5p] [%t] %c{2} - %m%n"/>
+        </layout>
+    </appender>
+
+    <!-- ========================================================================
+         DAILY ROLLING FILE APPENDER - Long-term archival
+         ======================================================================== -->
+    <appender name="DAILY_ROLLING_FILE" class="org.apache.log4j.DailyRollingFileAppender">
+        <param name="File" value="logs/production/application-daily.log"/>
+        <param name="Append" value="true"/>
+        <param name="Threshold" value="INFO"/>
+        <param name="Encoding" value="UTF-8"/>
+        <param name="DatePattern" value="'.'yyyy-MM-dd"/>
+
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                   value="%d{ISO8601} %-5p [%c] (%t) %m%n"/>
+        </layout>
+    </appender>
+
+    <!-- ========================================================================
+         ERROR LOG FILE - Critical production errors
+         ======================================================================== -->
+    <appender name="ERROR_FILE" class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="logs/production/errors.log"/>
+        <param name="Append" value="true"/>
+        <param name="MaxFileSize" value="20MB"/>
+        <param name="MaxBackupIndex" value="50"/>
+        <param name="Encoding" value="UTF-8"/>
+
+        <layout class="org.apache.log4j.PatternLayout">
+            <!-- Include location for production errors -->
+            <param name="ConversionPattern"
+                   value="%d{ISO8601} [%-5p] %c{3} %t%n  Location: %F:%L%n  Message: %m%n  %n"/>
+        </layout>
+
+        <filter class="org.apache.log4j.varia.LevelRangeFilter">
+            <param name="LevelMin" value="ERROR"/>
+            <param name="LevelMax" value="FATAL"/>
+            <param name="AcceptOnMatch" value="true"/>
+        </filter>
+        <filter class="org.apache.log4j.varia.DenyAllFilter"/>
+    </appender>
+
+    <!-- ========================================================================
+         ASYNC APPENDER - High-performance production logging
+         ======================================================================== -->
+    <appender name="ASYNC" class="org.apache.log4j.AsyncAppender">
+        <param name="BufferSize" value="1024"/>
+        <param name="Blocking" value="true"/>
+
+        <appender-ref ref="ROLLING_FILE"/>
+        <appender-ref ref="DAILY_ROLLING_FILE"/>
+    </appender>
+
+    <!-- ========================================================================
+         SECURITY AUDIT LOG - Compliance and security monitoring
+         ======================================================================== -->
+    <appender name="SECURITY_AUDIT" class="org.apache.log4j.DailyRollingFileAppender">
+        <param name="File" value="logs/production/security-audit.log"/>
+        <param name="Append" value="true"/>
+        <param name="DatePattern" value="'.'yyyy-MM-dd"/>
+        <param name="Encoding" value="UTF-8"/>
+
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                   value="%d{ISO8601} [SECURITY] %c - %m%n"/>
+        </layout>
+    </appender>
+
+    <!-- ========================================================================
+         SOCKET APPENDER - Centralized log aggregation
+         ======================================================================== -->
+    <appender name="SOCKET" class="org.apache.log4j.net.SocketAppender">
+        <!-- CONFIGURE: Update with your production log aggregation server -->
+        <param name="RemoteHost" value="loghost.production.example.com"/>
+        <param name="Port" value="4560"/>
+        <param name="ReconnectionDelay" value="30000"/>
+        <param name="Threshold" value="WARN"/>
+
+        <!-- Consider using failover configuration for high availability:
+             - Primary: loghost1.production.example.com
+             - Secondary: loghost2.production.example.com
+        -->
+    </appender>
+
+    <!-- ========================================================================
+         SYSLOG APPENDER - System-level logging integration
+         ======================================================================== -->
+    <appender name="SYSLOG" class="org.apache.log4j.net.SyslogAppender">
+        <!-- CONFIGURE: Update with your production syslog server -->
+        <param name="SyslogHost" value="syslog.production.example.com"/>
+        <param name="Facility" value="LOCAL7"/>
+        <param name="Threshold" value="ERROR"/>
+        <param name="FacilityPrinting" value="true"/>
+
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern"
+                   value="msf-ems-prod[%X{instance}]: [%-5p] %c{2} - %m"/>
+        </layout>
+    </appender>
+
+    <!-- ========================================================================
+         PERFORMANCE LOG - Production performance monitoring
+         ======================================================================== -->
+    <appender name="PERFORMANCE_FILE" class="org.apache.log4j.RollingFileAppender">
+        <param name="File" value="logs/production/performance.log"/>
+        <param name="Append" value="true"/>
+        <param name="MaxFileSize" value="50MB"/>
+        <param name="MaxBackupIndex" value="20"/>
+        <param name="Encoding" value="UTF-8"/>
+
+        <layout class="org.apache.log4j.PatternLayout">
+            <!-- CSV-friendly format for analysis -->
+            <param name="ConversionPattern"
+                   value="%d{ISO8601},%m%n"/>
+        </layout>
+    </appender>
+
+    <!-- ========================================================================
+         LOGGER CONFIGURATIONS - Production settings
+         ======================================================================== -->
+
+    <!-- Root package logger - WARN for production -->
+    <logger name="com.github.doevelopper.premisses">
+        <level value="WARN"/>
+    </logger>
+
+    <!-- Licensing module - INFO for license validation tracking -->
+    <logger name="com.github.doevelopper.premisses.licensing">
+        <level value="INFO"/>
+    </logger>
+
+    <!-- Launcher/Application module -->
+    <logger name="com.github.doevelopper.premisses.launcher">
+        <level value="INFO"/>
+    </logger>
+
+    <!-- Logging framework itself -->
+    <logger name="com.github.doevelopper.premisses.logging">
+        <level value="ERROR"/>
+    </logger>
+
+    <!-- Triada error handling - critical errors only -->
+    <logger name="com.github.doevelopper.premisses.triada">
+        <level value="ERROR"/>
+        <appender-ref ref="ERROR_FILE"/>
+    </logger>
+
+    <!-- Security/authentication related - full audit trail -->
+    <logger name="com.github.doevelopper.premisses.security" additivity="false">
+        <level value="INFO"/>
+        <appender-ref ref="SECURITY_AUDIT"/>
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="SYSLOG"/>
+    </logger>
+
+    <!-- Performance monitoring -->
+    <logger name="com.github.doevelopper.premisses.performance" additivity="false">
+        <level value="INFO"/>
+        <appender-ref ref="PERFORMANCE_FILE"/>
+    </logger>
+
+    <!-- Third-party libraries - errors only -->
+    <logger name="org.apache">
+        <level value="ERROR"/>
+    </logger>
+
+    <!-- ========================================================================
+         ROOT LOGGER - Production configuration
+         ======================================================================== -->
+    <root>
+        <priority value="WARN"/>
+
+        <!-- Core appenders -->
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNC"/>
+        <appender-ref ref="ERROR_FILE"/>
+
+        <!-- Remote appenders for production monitoring -->
+        <appender-ref ref="SOCKET"/>
+        <appender-ref ref="SYSLOG"/>
+    </root>
+
+    <!-- ========================================================================
+         PRODUCTION DEPLOYMENT CHECKLIST
+         ========================================================================
+
+         [ ] Update RemoteHost in SOCKET appender with actual log server
+         [ ] Update SyslogHost in SYSLOG appender with actual syslog server
+         [ ] Configure log file permissions (640 or 600)
+         [ ] Set up external log rotation (logrotate)
+         [ ] Configure log retention policy (30-90 days recommended)
+         [ ] Set up monitoring and alerting for ERROR/FATAL logs
+         [ ] Ensure sufficient disk space for logs
+         [ ] Configure log archival to long-term storage
+         [ ] Test failover for remote logging
+         [ ] Document incident response procedures
+         [ ] Set up log analysis and SIEM integration
+         [ ] Configure backup for audit logs
+         [ ] Implement log encryption if handling sensitive data
+         [ ] Review and comply with data retention regulations
+         [ ] Set up automated log analysis and anomaly detection
+
+         SECURITY CONSIDERATIONS:
+         - Logs may contain sensitive data - encrypt in transit and at rest
+         - Implement access controls on log files (chmod 640)
+         - Use separate log volumes to prevent disk exhaustion
+         - Enable tamper-proof logging for audit trails
+         - Regular security audits of log configurations
+         - Sanitize log messages to prevent log injection attacks
+
+         PERFORMANCE TUNING:
+         - Monitor async appender buffer usage
+         - Adjust MaxFileSize based on I/O capacity
+         - Consider dedicated log disk/volume
+         - Profile logging overhead in production
+         - Use log sampling for very high-volume scenarios
+
+         OPERATIONAL EXCELLENCE:
+         - Implement centralized log aggregation (ELK, Splunk, etc.)
+         - Set up dashboards for log metrics
+         - Create runbooks for common log investigations
+         - Establish log review cadence
+         - Document log formats for downstream consumers
+
+         ======================================================================== -->
+
+</log4j:configuration>
