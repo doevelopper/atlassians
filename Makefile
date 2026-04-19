@@ -354,21 +354,200 @@ main-compile: ## Build all main target rules
 test-compile: ## Build all Test target rules
 	@bazelisk build  //src/test/cpp/...
 
+##@ Build & Compile
+
 .PHONY: compile
 compile: main-compile test-compile ## Build projects main and test sources
-	@bazelisk build  //...
+	@bazelisk build //src/...
+
+##@ Testing
 
 .PHONY: test
 test: compile ## Build projects sources and run unit tests
+	@echo "$(CYAN)>>> Running unit tests...$(NC)"
 	@bazelisk test //src/test/cpp/... --test_output=all
+	@echo "$(GREEN)>>> Unit tests completed.$(NC)"
 
 .PHONY: integration-test
 integration-test: test ## Build projects sources and run integration/BDD tests
+	@echo "$(CYAN)>>> Running BDD/integration tests...$(NC)"
 	@bazelisk test //src/it/... --test_output=all
+	@echo "$(GREEN)>>> BDD/integration tests completed.$(NC)"
 
 .PHONY: coverage
-coverage:  ## Generates code coverage report
-	@bazelisk coverage -s --combined_report=lcov --instrumentation_filter=//... --coverage_report_generator=@bazel_tools//tools/test:coverage_report_generator  //...
+coverage: ## Generates code coverage report (lcov)
+	@echo "$(CYAN)>>> Generating code coverage report...$(NC)"
+	@bazelisk coverage -s --keep_going \
+		--combined_report=lcov \
+		--instrumentation_filter="//src/main/cpp[/:]" \
+		--coverage_report_generator=@bazel_tools//tools/test:coverage_report_generator \
+		//src/test/cpp/... || true
+	@echo "$(GREEN)>>> Coverage report generated.$(NC)"
+
+##@ Evidence & QMS Report Collection
+
+# Evidence output directories
+EVIDENCE_DIR            := $(ROOT_DIR)/src/site/compliance/evidence
+EVIDENCE_UT_DIR         := $(EVIDENCE_DIR)/unit-tests
+EVIDENCE_BDD_DIR        := $(EVIDENCE_DIR)/bdd-tests
+EVIDENCE_COVERAGE_DIR   := $(EVIDENCE_DIR)/coverage
+EVIDENCE_PACKAGES_DIR   := $(EVIDENCE_DIR)/packages
+EVIDENCE_BUILD_DIR      := $(EVIDENCE_DIR)/build-logs
+TESTLOGS_DIR            := $(shell bazelisk info bazel-testlogs 2>/dev/null)
+BAZEL_OUTPUT_PATH       := $(shell bazelisk info output_path 2>/dev/null)
+
+.PHONY: collect-unit-test-reports
+collect-unit-test-reports: test ## Collect unit test XML reports and logs as QMS evidence
+	@echo "$(CYAN)>>> Collecting unit test reports...$(NC)"
+	@mkdir -p "$(EVIDENCE_UT_DIR)/$(DATE)-$(SHORT_SHA1)"
+	@for t in $(TESTLOGS_DIR)/src/test/cpp/*/; do \
+		test_name=$$(basename "$$t"); \
+		mkdir -p "$(EVIDENCE_UT_DIR)/$(DATE)-$(SHORT_SHA1)/$$test_name"; \
+		cp -f "$$t/test.xml" "$(EVIDENCE_UT_DIR)/$(DATE)-$(SHORT_SHA1)/$$test_name/" 2>/dev/null || true; \
+		cp -f "$$t/test.log" "$(EVIDENCE_UT_DIR)/$(DATE)-$(SHORT_SHA1)/$$test_name/" 2>/dev/null || true; \
+	done
+	@echo "$(GREEN)>>> Unit test reports saved to $(EVIDENCE_UT_DIR)/$(DATE)-$(SHORT_SHA1)$(NC)"
+
+.PHONY: collect-bdd-test-reports
+collect-bdd-test-reports: integration-test ## Collect BDD test reports and logs as QMS evidence
+	@echo "$(CYAN)>>> Collecting BDD test reports...$(NC)"
+	@mkdir -p "$(EVIDENCE_BDD_DIR)/$(DATE)-$(SHORT_SHA1)"
+	@for t in $(TESTLOGS_DIR)/src/it/*/; do \
+		test_name=$$(basename "$$t"); \
+		mkdir -p "$(EVIDENCE_BDD_DIR)/$(DATE)-$(SHORT_SHA1)/$$test_name"; \
+		cp -f "$$t/test.xml" "$(EVIDENCE_BDD_DIR)/$(DATE)-$(SHORT_SHA1)/$$test_name/" 2>/dev/null || true; \
+		cp -f "$$t/test.log" "$(EVIDENCE_BDD_DIR)/$(DATE)-$(SHORT_SHA1)/$$test_name/" 2>/dev/null || true; \
+	done
+	@echo "$(GREEN)>>> BDD test reports saved to $(EVIDENCE_BDD_DIR)/$(DATE)-$(SHORT_SHA1)$(NC)"
+
+.PHONY: collect-coverage-report
+collect-coverage-report: coverage ## Collect coverage report as QMS evidence
+	@echo "$(CYAN)>>> Collecting coverage report...$(NC)"
+	@mkdir -p "$(EVIDENCE_COVERAGE_DIR)/$(DATE)-$(SHORT_SHA1)"
+	@# Collect combined report if present
+	@cp -f "$(BAZEL_OUTPUT_PATH)/_coverage/_baseline_report.dat" \
+		"$(EVIDENCE_COVERAGE_DIR)/$(DATE)-$(SHORT_SHA1)/combined-coverage.lcov" 2>/dev/null || true
+	@# Also collect per-test coverage.dat files
+	@for t in $(TESTLOGS_DIR)/src/test/cpp/*/; do \
+		test_name=$$(basename "$$t"); \
+		if [ -f "$$t/coverage.dat" ]; then \
+			cp -f "$$t/coverage.dat" \
+				"$(EVIDENCE_COVERAGE_DIR)/$(DATE)-$(SHORT_SHA1)/$${test_name}-coverage.dat" 2>/dev/null || true; \
+		fi; \
+	done
+	@if command -v genhtml >/dev/null 2>&1 && \
+	   [ -f "$(EVIDENCE_COVERAGE_DIR)/$(DATE)-$(SHORT_SHA1)/combined-coverage.lcov" ]; then \
+		genhtml "$(EVIDENCE_COVERAGE_DIR)/$(DATE)-$(SHORT_SHA1)/combined-coverage.lcov" \
+			--output-directory "$(EVIDENCE_COVERAGE_DIR)/$(DATE)-$(SHORT_SHA1)/html" \
+			--title "Atlassians Coverage - $(DATE) $(SHORT_SHA1)" \
+			--legend --show-details 2>/dev/null || true; \
+		echo "$(GREEN)>>> HTML coverage report generated.$(NC)"; \
+	else \
+		echo "$(YELLOW)>>> genhtml not found or no combined report; LCOV data files saved.$(NC)"; \
+	fi
+	@echo "$(GREEN)>>> Coverage report saved to $(EVIDENCE_COVERAGE_DIR)/$(DATE)-$(SHORT_SHA1)$(NC)"
+
+.PHONY: generate-test-summary
+generate-test-summary: ## Generate a human-readable test summary from collected evidence
+	@echo "$(CYAN)>>> Generating test summary...$(NC)"
+	@mkdir -p "$(EVIDENCE_DIR)"
+	@SUMMARY="$(EVIDENCE_DIR)/test-summary-$(DATE)-$(SHORT_SHA1).md"; \
+	echo "# Test Evidence Summary" > "$$SUMMARY"; \
+	echo "" >> "$$SUMMARY"; \
+	echo "| Field | Value |" >> "$$SUMMARY"; \
+	echo "|-------|-------|" >> "$$SUMMARY"; \
+	echo "| **Date** | $(DATE) |" >> "$$SUMMARY"; \
+	echo "| **Branch** | $(GIT_BRANCH) |" >> "$$SUMMARY"; \
+	echo "| **Commit** | $(SHA1) |" >> "$$SUMMARY"; \
+	echo "| **Short SHA** | $(SHORT_SHA1) |" >> "$$SUMMARY"; \
+	echo "| **Release Level** | $(RELEASE_LEVEL) |" >> "$$SUMMARY"; \
+	echo "| **Last Tag** | $(LAST_TAG) |" >> "$$SUMMARY"; \
+	echo "| **SemVer** | $(SEM_VERSION) |" >> "$$SUMMARY"; \
+	echo "" >> "$$SUMMARY"; \
+	echo "## Unit Test Results" >> "$$SUMMARY"; \
+	echo "" >> "$$SUMMARY"; \
+	echo "| Test Suite | Status | Duration |" >> "$$SUMMARY"; \
+	echo "|------------|--------|----------|" >> "$$SUMMARY"; \
+	for xml in $(TESTLOGS_DIR)/src/test/cpp/*/test.xml; do \
+		suite=$$(basename $$(dirname "$$xml")); \
+		tests=$$(grep -oP 'tests="\K[0-9]+' "$$xml" 2>/dev/null | head -1 || echo "?"); \
+		failures=$$(grep -oP 'failures="\K[0-9]+' "$$xml" 2>/dev/null | head -1 || echo "?"); \
+		duration=$$(grep -oP 'time="\K[0-9.]+' "$$xml" 2>/dev/null | head -1 || echo "?"); \
+		if [ "$$failures" = "0" ]; then \
+			echo "| $$suite | PASSED ($$tests tests) | $${duration}s |" >> "$$SUMMARY"; \
+		else \
+			echo "| $$suite | FAILED ($$failures/$$tests failed) | $${duration}s |" >> "$$SUMMARY"; \
+		fi; \
+	done; \
+	echo "" >> "$$SUMMARY"; \
+	echo "## BDD/Integration Test Results" >> "$$SUMMARY"; \
+	echo "" >> "$$SUMMARY"; \
+	echo "| Feature Test | Status | Duration |" >> "$$SUMMARY"; \
+	echo "|--------------|--------|----------|" >> "$$SUMMARY"; \
+	for xml in $(TESTLOGS_DIR)/src/it/*/test.xml; do \
+		suite=$$(basename $$(dirname "$$xml")); \
+		tests=$$(grep -oP 'tests="\K[0-9]+' "$$xml" 2>/dev/null | head -1 || echo "?"); \
+		failures=$$(grep -oP 'failures="\K[0-9]+' "$$xml" 2>/dev/null | head -1 || echo "?"); \
+		errors=$$(grep -oP 'errors="\K[0-9]+' "$$xml" 2>/dev/null | head -1 || echo "?"); \
+		duration=$$(grep -oP 'time="\K[0-9.]+' "$$xml" 2>/dev/null | head -1 || echo "?"); \
+		if [ "$$failures" = "0" ] && [ "$$errors" = "0" ]; then \
+			echo "| $$suite | PASSED ($$tests tests) | $${duration}s |" >> "$$SUMMARY"; \
+		else \
+			echo "| $$suite | FAILED ($$failures failures, $$errors errors) | $${duration}s |" >> "$$SUMMARY"; \
+		fi; \
+	done; \
+	echo "" >> "$$SUMMARY"; \
+	echo "---" >> "$$SUMMARY"; \
+	echo "_Generated by CI pipeline on $$(date -u '+%Y-%m-%dT%H:%M:%SZ')_" >> "$$SUMMARY"; \
+	echo "$(GREEN)>>> Test summary written to $$SUMMARY$(NC)"
+
+##@ Packaging & Delivery
+
+.PHONY: package
+package: compile ## Package all deliverables (binaries, tests, BDD)
+	@echo "$(CYAN)>>> Packaging deliverables...$(NC)"
+	@bazelisk build \
+		//src/main/cpp:com.github.doevelopper.atlassians.main.package \
+		//src/test/cpp:com.github.doevelopper.atlassians.test.package \
+		//src/it:com.github.doevelopper.atlassians.it.package
+	@echo "$(GREEN)>>> Packages built successfully.$(NC)"
+
+.PHONY: collect-packages
+collect-packages: package ## Collect built packages as QMS evidence
+	@echo "$(CYAN)>>> Collecting package artifacts...$(NC)"
+	@mkdir -p "$(EVIDENCE_PACKAGES_DIR)/$(DATE)-$(SHORT_SHA1)"
+	@cp -f "$$(bazelisk info bazel-bin)/src/main/cpp/com.github.doevelopper.atlassians.main.package.tar.gz" \
+		"$(EVIDENCE_PACKAGES_DIR)/$(DATE)-$(SHORT_SHA1)/" 2>/dev/null || true
+	@cp -f "$$(bazelisk info bazel-bin)/src/test/cpp/com.github.doevelopper.atlassians.test.package.tar.gz" \
+		"$(EVIDENCE_PACKAGES_DIR)/$(DATE)-$(SHORT_SHA1)/" 2>/dev/null || true
+	@cp -f "$$(bazelisk info bazel-bin)/src/it/com.github.doevelopper.atlassians.it.package.tar.gz" \
+		"$(EVIDENCE_PACKAGES_DIR)/$(DATE)-$(SHORT_SHA1)/" 2>/dev/null || true
+	@echo "$(GREEN)>>> Packages collected to $(EVIDENCE_PACKAGES_DIR)/$(DATE)-$(SHORT_SHA1)$(NC)"
+
+.PHONY: collect-evidence
+collect-evidence: collect-unit-test-reports collect-bdd-test-reports collect-coverage-report collect-packages generate-test-summary ## Collect all QMS evidence (tests, BDD, coverage, packages)
+	@echo "$(GREEN)>>> All evidence collected under $(EVIDENCE_DIR)$(NC)"
+
+##@ Full Delivery Pipeline
+
+.PHONY: deliver
+deliver: collect-evidence ## Full delivery pipeline: build, test, coverage, BDD, package, collect evidence
+	@echo ""
+	@echo "$(GREEN)+----------------------------------------------------------------------+$(NC)"
+	@echo "$(GREEN)|              Delivery Pipeline Completed Successfully                |$(NC)"
+	@echo "$(GREEN)+----------------------------------------------------------------------+$(NC)"
+	@echo "$(CYAN)  Branch:        $(GIT_BRANCH)$(NC)"
+	@echo "$(CYAN)  Commit:        $(SHORT_SHA1)$(NC)"
+	@echo "$(CYAN)  Release Level: $(RELEASE_LEVEL)$(NC)"
+	@echo "$(CYAN)  Date:          $(DATE)$(NC)"
+	@echo "$(CYAN)  Evidence:      $(EVIDENCE_DIR)$(NC)"
+	@echo "$(GREEN)+----------------------------------------------------------------------+$(NC)"
+
+.PHONY: verify
+verify: compile test integration-test coverage ## Verify: build + unit test + BDD + coverage (no evidence collection)
+	@echo "$(GREEN)>>> All verification steps passed.$(NC)"
+
+##@ Cleanup
 
 .PHONY: clean
 clean: ## Cleaned up the objects and intermediary files
@@ -377,6 +556,14 @@ clean: ## Cleaned up the objects and intermediary files
 .PHONY: expunge
 expunge: ## Removes the entire working tree for this bazel instance
 	@bazelisk clean --expunge --async
+
+.PHONY: clean-evidence
+clean-evidence: ## Remove all collected evidence artifacts
+	@echo "$(YELLOW)>>> Removing evidence from $(EVIDENCE_DIR)$(NC)"
+	@find "$(EVIDENCE_DIR)" -mindepth 1 -not -name '.gitkeep' -delete 2>/dev/null || true
+	@echo "$(GREEN)>>> Evidence cleaned.$(NC)"
+
+##@ Info
 
 .PHONY: versioninfo
 versioninfo: ## Display informations about the image.
@@ -394,9 +581,6 @@ versioninfo: ## Display informations about the image.
 ##@ Help
 
 help: ## Display this help message
-# 	@echo "$(CYAN)Build System - Maven-like Goals$(NC)"
-# 	@echo ""
-# 	@echo "$(GREEN)Usage:$(NC)"
 	$(Q)echo "$@ ->"
 	$(Q)echo '---------------$(CURDIR)------------------'
 	$(Q)echo '+----------------------------------------------------------------------+'

@@ -48,5 +48,13 @@ node_modules/
 
 *.venv/
 
+# QMS evidence artifacts (generated, not tracked)
+src/site/compliance/evidence/unit-tests/
+src/site/compliance/evidence/bdd-tests/
+src/site/compliance/evidence/coverage/
+src/site/compliance/evidence/packages/
+src/site/compliance/evidence/build-logs/
+src/site/compliance/evidence/test-summary-*.md
+
 
 vendor/bundle/
