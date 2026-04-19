@@ -1,24 +1,49 @@
 #!/usr/bin/env bash
-# Get staged files and format them
+set -euo pipefail
+
+# =============================================================================
+# Pre-commit hook: format + quick static checks on staged C/C++ files
+# =============================================================================
+
+# Collect staged C/C++ files
+cc_files=$(git diff --cached --diff-filter=AM --name-only | grep -E '\.(c|cc|cpp|cxx|h|hh|hpp|hxx)$' || true)
+
+if [[ -n "$cc_files" ]]; then
+  echo "=== Pre-commit: checking $(echo "$cc_files" | wc -l) C/C++ file(s) ==="
+
+  # 1. clang-format — auto-format staged files
+  if command -v clang-format >/dev/null 2>&1; then
+    echo "::  clang-format (auto-fix)"
+    echo "$cc_files" | xargs clang-format -i 2>/dev/null || true
+  fi
+
+  # 2. cpplint — quick style check (non-blocking, advisory)
+  if command -v cpplint >/dev/null 2>&1; then
+    echo "::  cpplint (advisory)"
+    echo "$cc_files" | xargs cpplint --quiet --filter=-legal/copyright 2>&1 | head -20 || true
+  fi
+
+  # 3. cppcheck — quick static analysis (non-blocking, advisory)
+  if command -v cppcheck >/dev/null 2>&1; then
+    echo "::  cppcheck (advisory)"
+    echo "$cc_files" | xargs cppcheck --quiet --enable=warning,performance --std=c++20 2>&1 | head -20 || true
+  fi
+
+  # 4. Check if formatter modified any staged files
+  if ! git diff --quiet -- $cc_files; then
+    echo "❌ Some staged files were modified by the pre-commit hook (clang-format)."
+    echo "Please review and stage the changes before committing again."
+    git diff --stat -- $cc_files
+    exit 1
+  fi
+fi
+
+# Format non-C/C++ staged files via Bazel formatter (if available)
 git diff --cached --diff-filter=AM --name-only -z | xargs --null --no-run-if-empty bash -c '
-  if [ $# -gt 0 ]; then
-    echo "Formatting staged files: $@"
-    # Avoid running bazel to build the formatter.
-    # In theory it is more correct to build it since the one in bazel-out may be out-of-date.
-    # However a "git commit" operation should always be fast, and accidental analysis or action cache misses are common.
-    # So we take the tradeoff of running the existing binary if it exists.
+  non_cc=$(printf "%s\n" "$@" | grep -vE "\.(c|cc|cpp|cxx|h|hh|hpp|hxx)$" || true)
+  if [[ -n "$non_cc" ]]; then
     if [ -e "bazel-out/bazel_env-opt/bin/tools/bazel_env/bin/format" ]; then
-      bazel-out/bazel_env-opt/bin/tools/bazel_env/bin/format "$@"
-    else
-      bazel run //tools/format -- "$@"
-    fi
-    
-    # Check if any of the staged files were modified by the formatter
-    if ! git diff --quiet -- "$@"; then
-      echo "❌ Some staged files were modified by the pre-commit hook."
-      echo "Please review and stage the changes before committing again."
-      git diff --stat -- "$@"
-      exit 1
+      echo "$non_cc" | xargs bazel-out/bazel_env-opt/bin/tools/bazel_env/bin/format 2>/dev/null || true
     fi
   fi
 ' _

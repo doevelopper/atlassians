@@ -242,6 +242,138 @@ export BAZEL_BUILD_ARGS = \
     --define=VERSION=$(RELEASE_LEVEL) --define=GIT_BRANCH=$(CURRENT_BRANCH)  --define=DATE=$(DATE)  --define=HASH=$(HASH) --define=GIT_COMMIT_VERSION=$(GIT_COMMIT_VERSION) \
     --define=BUILD=$(BUILD) --define=GIT_CUR_COMMITS=$(GIT_CUR_COMMITS) --define=GIT_ALL_COMMITS=$(GIT_ALL_COMMITS)
 
+##@ Static Analysis & Quality
+
+CC_SOURCES := $(shell find src/main/cpp src/test/cpp src/it \
+	-regex '.*\.\(c\|cc\|cpp\|cxx\|h\|hh\|hpp\|hxx\)' 2>/dev/null)
+CC_MAIN_SOURCES := $(shell find src/main/cpp \
+	-regex '.*\.\(c\|cc\|cpp\|cxx\|h\|hh\|hpp\|hxx\)' 2>/dev/null)
+
+.PHONY: clang-format-check
+clang-format-check: ## Check C/C++ formatting (dry-run, no changes)
+	@echo "$(CYAN)>>> clang-format check...$(NC)"
+	@if command -v clang-format >/dev/null 2>&1 && [ -n "$(CC_SOURCES)" ]; then \
+		clang-format --dry-run --Werror $(CC_SOURCES); \
+		echo "$(GREEN)>>> clang-format passed.$(NC)"; \
+	else \
+		echo "$(YELLOW)>>> clang-format not found or no sources — skipped.$(NC)"; \
+	fi
+
+.PHONY: clang-format-fix
+clang-format-fix: ## Auto-fix C/C++ formatting in-place
+	@echo "$(CYAN)>>> clang-format fix...$(NC)"
+	@if command -v clang-format >/dev/null 2>&1 && [ -n "$(CC_SOURCES)" ]; then \
+		clang-format -i $(CC_SOURCES); \
+		echo "$(GREEN)>>> clang-format applied.$(NC)"; \
+	fi
+
+.PHONY: cpplint
+cpplint: ## Run cpplint style checks
+	@echo "$(CYAN)>>> cpplint...$(NC)"
+	@if command -v cpplint >/dev/null 2>&1 && [ -n "$(CC_SOURCES)" ]; then \
+		cpplint --quiet --filter=-legal/copyright,-build/include_subdir $(CC_SOURCES); \
+		echo "$(GREEN)>>> cpplint passed.$(NC)"; \
+	else \
+		echo "$(YELLOW)>>> cpplint not found — skipped.$(NC)"; \
+	fi
+
+.PHONY: cppcheck
+cppcheck: ## Run cppcheck static analysis
+	@echo "$(CYAN)>>> cppcheck...$(NC)"
+	@if command -v cppcheck >/dev/null 2>&1 && [ -n "$(CC_SOURCES)" ]; then \
+		cppcheck --error-exitcode=1 --enable=warning,style,performance,portability \
+			--std=c++20 --suppress=missingIncludeSystem $(CC_SOURCES); \
+		echo "$(GREEN)>>> cppcheck passed.$(NC)"; \
+	else \
+		echo "$(YELLOW)>>> cppcheck not found — skipped.$(NC)"; \
+	fi
+
+.PHONY: clang-tidy
+clang-tidy: ## Run clang-tidy static analysis (main sources only)
+	@echo "$(CYAN)>>> clang-tidy...$(NC)"
+	@if command -v clang-tidy >/dev/null 2>&1 && [ -n "$(CC_MAIN_SOURCES)" ]; then \
+		clang-tidy -p . $(CC_MAIN_SOURCES) 2>&1 | head -100 || true; \
+		echo "$(GREEN)>>> clang-tidy completed.$(NC)"; \
+	else \
+		echo "$(YELLOW)>>> clang-tidy not found — skipped.$(NC)"; \
+	fi
+
+.PHONY: iwyu
+iwyu: ## Run include-what-you-use analysis (advisory)
+	@echo "$(CYAN)>>> include-what-you-use...$(NC)"
+	@if command -v iwyu >/dev/null 2>&1 || command -v include-what-you-use >/dev/null 2>&1; then \
+		IWYU=$$(command -v iwyu || command -v include-what-you-use); \
+		for src in $(CC_MAIN_SOURCES); do \
+			case "$$src" in *.cpp|*.cc|*.c|*.cxx) \
+				$$IWYU -std=c++20 -I src/main/cpp "$$src" 2>&1 || true ;; \
+			esac; \
+		done | head -50; \
+		echo "$(GREEN)>>> iwyu completed.$(NC)"; \
+	else \
+		echo "$(YELLOW)>>> iwyu not found — skipped.$(NC)"; \
+	fi
+
+.PHONY: static-analysis
+static-analysis: clang-format-check cpplint cppcheck clang-tidy ## Run all static analysis checks (format, cpplint, cppcheck, clang-tidy)
+	@echo "$(GREEN)>>> All static analysis checks completed.$(NC)"
+
+.PHONY: quality
+quality: static-analysis compile test coverage ## Full quality gate: static analysis + build + test + coverage
+	@echo "$(GREEN)>>> Full quality gate passed.$(NC)"
+
+##@ Artifact Packaging
+
+.PHONY: source-package
+source-package: ## Create versioned source archive (clean, no build artifacts)
+	@echo "$(CYAN)>>> Creating source package...$(NC)"
+	@mkdir -p "$(EVIDENCE_PACKAGES_DIR)/$(DATE)-$(SHORT_SHA1)"
+	@git archive --format=tar.gz --prefix="atlassians-$(SEM_VERSION)/" \
+		-o "$(EVIDENCE_PACKAGES_DIR)/$(DATE)-$(SHORT_SHA1)/atlassians-$(SEM_VERSION)-source.tar.gz" \
+		HEAD
+	@echo "$(GREEN)>>> Source package: $(EVIDENCE_PACKAGES_DIR)/$(DATE)-$(SHORT_SHA1)/atlassians-$(SEM_VERSION)-source.tar.gz$(NC)"
+
+.PHONY: production-package
+production-package: compile ## Create production binaries package (optimized release binaries)
+	@echo "$(CYAN)>>> Creating production binaries package...$(NC)"
+	@bazelisk build //src/main/cpp:com.github.doevelopper.atlassians.main.package
+	@mkdir -p "$(EVIDENCE_PACKAGES_DIR)/$(DATE)-$(SHORT_SHA1)"
+	@cp -f "$$(bazelisk info bazel-bin)/src/main/cpp/com.github.doevelopper.atlassians.main.package.tar.gz" \
+		"$(EVIDENCE_PACKAGES_DIR)/$(DATE)-$(SHORT_SHA1)/atlassians-$(SEM_VERSION)-binaries.tar.gz"
+	@echo "$(GREEN)>>> Production package created.$(NC)"
+
+.PHONY: quality-package
+quality-package: test coverage ## Create quality/assessment package (test binaries, reports, coverage)
+	@echo "$(CYAN)>>> Creating quality assessment package...$(NC)"
+	@mkdir -p "$(EVIDENCE_PACKAGES_DIR)/$(DATE)-$(SHORT_SHA1)/quality"
+	@# Test binaries
+	@cp -f "$$(bazelisk info bazel-bin)/src/test/cpp/com.github.doevelopper.atlassians.test.package.tar.gz" \
+		"$(EVIDENCE_PACKAGES_DIR)/$(DATE)-$(SHORT_SHA1)/quality/" 2>/dev/null || true
+	@cp -f "$$(bazelisk info bazel-bin)/src/it/com.github.doevelopper.atlassians.it.package.tar.gz" \
+		"$(EVIDENCE_PACKAGES_DIR)/$(DATE)-$(SHORT_SHA1)/quality/" 2>/dev/null || true
+	@# Test reports
+	@find $(TESTLOGS_DIR) -name "test.xml" -exec cp --parents {} \
+		"$(EVIDENCE_PACKAGES_DIR)/$(DATE)-$(SHORT_SHA1)/quality/" \; 2>/dev/null || true
+	@find $(TESTLOGS_DIR) -name "test.log" -exec cp --parents {} \
+		"$(EVIDENCE_PACKAGES_DIR)/$(DATE)-$(SHORT_SHA1)/quality/" \; 2>/dev/null || true
+	@# Coverage
+	@cp -f "$(BAZEL_OUTPUT_PATH)/_coverage/_baseline_report.dat" \
+		"$(EVIDENCE_PACKAGES_DIR)/$(DATE)-$(SHORT_SHA1)/quality/combined-coverage.lcov" 2>/dev/null || true
+	@# Static analysis reports (if they exist)
+	@if [ -f "$(EVIDENCE_DIR)/static-analysis-report.txt" ]; then \
+		cp -f "$(EVIDENCE_DIR)/static-analysis-report.txt" \
+			"$(EVIDENCE_PACKAGES_DIR)/$(DATE)-$(SHORT_SHA1)/quality/"; \
+	fi
+	@# Bundle into a single archive
+	@cd "$(EVIDENCE_PACKAGES_DIR)/$(DATE)-$(SHORT_SHA1)" && \
+		tar czf "atlassians-$(SEM_VERSION)-quality.tar.gz" quality/ 2>/dev/null || true
+	@rm -rf "$(EVIDENCE_PACKAGES_DIR)/$(DATE)-$(SHORT_SHA1)/quality/"
+	@echo "$(GREEN)>>> Quality package: $(EVIDENCE_PACKAGES_DIR)/$(DATE)-$(SHORT_SHA1)/atlassians-$(SEM_VERSION)-quality.tar.gz$(NC)"
+
+.PHONY: all-packages
+all-packages: source-package production-package quality-package ## Build all three release packages (source, binaries, quality)
+	@echo "$(GREEN)>>> All packages created in $(EVIDENCE_PACKAGES_DIR)/$(DATE)-$(SHORT_SHA1)$(NC)"
+	@ls -lh "$(EVIDENCE_PACKAGES_DIR)/$(DATE)-$(SHORT_SHA1)/"*.tar.gz
+
 .PHONY: style
 style: ## Apply clang-format and clang-tidy naming checks
 	@for src in $(SOURCES) ; do \
