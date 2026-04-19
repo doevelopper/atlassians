@@ -4,17 +4,23 @@
 # Runs expensive jobs that would slow down PRs:
 #   - TSan, MSan, Valgrind (memory/concurrency safety)
 #   - Full static analysis on all sources
-#   - Deep SAST (Semgrep), SCA, Scorecard
+#   - Deep SAST (Semgrep), SCA (Trivy, OSV), Scorecard
 #   - SBOM generation (SPDX + CycloneDX)
 #   - DAST baseline (if staging URL configured)
+#   - Stale branch detection (branch lifetime enforcement)
+#
 # Schedule: 2:17 AM UTC daily on main
+# Weekly deep dependency scan: Sundays 3:17 AM UTC
+#
+# Ref: 0001 §Branch Lifetime, §DevSecOps; 0002 §SLAs, §Merge Prerequisites
 # =============================================================================
 
 name: Nightly Assurance
 
 on:
   schedule:
-    - cron: '17 2 * * *'
+    - cron: '17 2 * * *'      # daily nightly
+    - cron: '17 3 * * 0'      # weekly deep dependency scan (Sundays)
   workflow_dispatch:
     inputs:
       run_msan:
@@ -29,10 +35,15 @@ on:
         description: 'Run DAST scan (requires STAGING_BASE_URL secret)'
         type: boolean
         default: true
+      skip_sanitizers:
+        description: 'Skip all sanitizer jobs (fast mode)'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
   security-events: write
+  pull-requests: read
 
 concurrency:
   group: nightly-${{ github.workflow }}
@@ -153,6 +164,7 @@ jobs:
   asan_ubsan:
     name: "ASan+UBSan"
     runs-on: ubuntu-latest
+    if: github.event.inputs.skip_sanitizers != 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -171,6 +183,8 @@ jobs:
             --copt=-fsanitize=address,undefined \
             --linkopt=-fsanitize=address,undefined \
             --copt=-fno-omit-frame-pointer \
+            --test_env=ASAN_OPTIONS=handle_abort=1:allow_addr2line=true:detect_odr_violation=1 \
+            --test_env=UBSAN_OPTIONS=halt_on_error=true:print_stacktrace=1 \
             --test_output=errors \
             //src/test/cpp/...
 
@@ -181,6 +195,8 @@ jobs:
             --copt=-fsanitize=address,undefined \
             --linkopt=-fsanitize=address,undefined \
             --copt=-fno-omit-frame-pointer \
+            --test_env=ASAN_OPTIONS=handle_abort=1:allow_addr2line=true:detect_odr_violation=1 \
+            --test_env=UBSAN_OPTIONS=halt_on_error=true:print_stacktrace=1 \
             --test_output=errors \
             //src/it/...
 
@@ -190,6 +206,7 @@ jobs:
   tsan:
     name: "TSan"
     runs-on: ubuntu-latest
+    if: github.event.inputs.skip_sanitizers != 'true'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -208,6 +225,7 @@ jobs:
             --copt=-fsanitize=thread \
             --linkopt=-fsanitize=thread \
             --copt=-fno-omit-frame-pointer \
+            --test_env=TSAN_OPTIONS=second_deadlock_stack=1 \
             --test_output=errors \
             //src/test/cpp/...
 
@@ -218,6 +236,7 @@ jobs:
             --copt=-fsanitize=thread \
             --linkopt=-fsanitize=thread \
             --copt=-fno-omit-frame-pointer \
+            --test_env=TSAN_OPTIONS=second_deadlock_stack=1 \
             --test_output=errors \
             //src/it/...
 
@@ -227,7 +246,9 @@ jobs:
   msan:
     name: "MSan (best-effort)"
     runs-on: ubuntu-latest
-    if: github.event.inputs.run_msan != 'false'
+    if: >-
+      github.event.inputs.run_msan != 'false' &&
+      github.event.inputs.skip_sanitizers != 'true'
     continue-on-error: true
     steps:
       - name: Checkout
@@ -257,7 +278,9 @@ jobs:
   valgrind:
     name: "Valgrind Memcheck"
     runs-on: ubuntu-latest
-    if: github.event.inputs.run_valgrind != 'false'
+    if: >-
+      github.event.inputs.run_valgrind != 'false' &&
+      github.event.inputs.skip_sanitizers != 'true'
     continue-on-error: true
     steps:
       - name: Checkout
@@ -325,7 +348,7 @@ jobs:
             --coverage_report_generator=@bazel_tools//tools/test:coverage_report_generator \
             //src/test/cpp/... || true
 
-      - name: Collect coverage
+      - name: Collect and check coverage
         shell: bash
         run: |
           mkdir -p evidence/coverage
@@ -335,6 +358,23 @@ jobs:
             d=$(dirname "$1"); n=$(basename "$d")
             cp "$1" "evidence/coverage/${n}-coverage.dat"
           ' _ {} \; 2>/dev/null || true
+
+          # Parse coverage and report
+          lcov_file="evidence/coverage/combined-coverage.lcov"
+          if [[ -f "$lcov_file" ]]; then
+            total_lines=0; hit_lines=0
+            while IFS= read -r line; do
+              [[ "$line" == LF:* ]] && total_lines=$((total_lines + ${line#LF:}))
+              [[ "$line" == LH:* ]] && hit_lines=$((hit_lines + ${line#LH:}))
+            done < "$lcov_file"
+            if [[ $total_lines -gt 0 ]]; then
+              pct=$((hit_lines * 100 / total_lines))
+              echo "## Nightly Coverage: $pct% ($hit_lines/$total_lines)" >> "$GITHUB_STEP_SUMMARY"
+              if [[ $pct -lt 80 ]]; then
+                echo "::warning::Nightly coverage $pct% is below 80% threshold"
+              fi
+            fi
+          fi
 
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
@@ -379,7 +419,7 @@ jobs:
           category: semgrep-nightly
         continue-on-error: true
 
-      - name: Trivy filesystem scan
+      - name: Trivy filesystem scan (all severities)
         uses: aquasecurity/trivy-action@0.28.0
         with:
           scan-type: fs
@@ -482,6 +522,63 @@ jobs:
           STAGING_BASE_URL: ${{ secrets.STAGING_BASE_URL }}
 
   # ===========================================================================
+  # Stale Branch Detection — enforce branch lifetime SLAs
+  # ===========================================================================
+  stale_branches:
+    name: "Stale Branch Detection"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect stale branches
+        shell: bash
+        run: |
+          echo "## Stale Branch Report" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Branch lifetime SLAs: feature (14d), bugfix (3d), hotfix (1d), release (7d)" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Branch | Last Commit | Age (days) | SLA | Status |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|--------|-------------|------------|-----|--------|" >> "$GITHUB_STEP_SUMMARY"
+
+          now=$(date +%s)
+          stale_count=0
+
+          for ref in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin/ | grep -E '^origin/(feature|bugfix|hotfix|release)/'); do
+            branch="${ref#origin/}"
+            last_commit=$(git log -1 --format='%ct' "$ref" 2>/dev/null || echo "0")
+            last_date=$(git log -1 --format='%ci' "$ref" 2>/dev/null || echo "unknown")
+            age_days=$(( (now - last_commit) / 86400 ))
+
+            case "$branch" in
+              feature/*) sla=14 ;;
+              bugfix/*)  sla=3 ;;
+              hotfix/*)  sla=1 ;;
+              release/*) sla=7 ;;
+              *)         sla=30 ;;
+            esac
+
+            if [[ $age_days -gt $sla ]]; then
+              status="STALE"
+              stale_count=$((stale_count + 1))
+            else
+              status="OK"
+            fi
+
+            echo "| $branch | ${last_date%% *} | $age_days | ${sla}d | $status |" >> "$GITHUB_STEP_SUMMARY"
+          done
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          if [[ $stale_count -gt 0 ]]; then
+            echo "**$stale_count stale branch(es) detected.** Consider merging or closing them." >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning::$stale_count stale branch(es) exceed their SLA"
+          else
+            echo "All branches are within their SLA." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+  # ===========================================================================
   # Nightly Summary
   # ===========================================================================
   nightly_summary:
@@ -499,6 +596,7 @@ jobs:
       - deep_security
       - sbom
       - dast
+      - stale_branches
     steps:
       - name: Generate summary
         shell: bash
@@ -517,6 +615,7 @@ jobs:
           echo "| Deep Security     | ${{ needs.deep_security.result }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| SBOM              | ${{ needs.sbom.result }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| DAST              | ${{ needs.dast.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Stale Branches    | ${{ needs.stale_branches.result }} |" >> "$GITHUB_STEP_SUMMARY"
 
           # Fail the summary if critical jobs failed
           critical_failed="false"

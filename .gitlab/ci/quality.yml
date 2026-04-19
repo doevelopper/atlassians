@@ -1,0 +1,101 @@
+# =============================================================================
+# Quality Stage — format, lint, static analysis, governance
+# =============================================================================
+
+# ── MR Governance (conventional commits, PR size) ────────────────────────────
+mr_governance:
+  stage: quality
+  image: alpine:3.20
+  before_script:
+    - apk add --no-cache git bash
+  script:
+    - |
+      echo "=== Conventional Commit Check ==="
+      title="${CI_MERGE_REQUEST_TITLE:-$CI_COMMIT_TITLE}"
+      if [[ ! "$title" =~ ${CC_PATTERN} ]]; then
+        echo "ERROR: Title must follow Conventional Commits format."
+        echo "Expected: type(scope): description"
+        echo "Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert"
+        echo "Got: $title"
+        exit 1
+      fi
+      echo "Title is valid: $title"
+  rules:
+    - if: '$PIPELINE_TYPE == "mr_gate"'
+    - when: never
+
+# ── Diff-only quality (branch push — fast) ──────────────────────────────────
+quality:diff:
+  stage: quality
+  script:
+    - |
+      apt-get update -qq
+      apt-get install -y -qq clang-format cppcheck python3-pip git
+      python3 -m pip install --quiet cpplint
+
+      # Get changed C/C++ files
+      files=$(git diff --name-only HEAD~1...HEAD -- '*.c' '*.cc' '*.cpp' '*.cxx' '*.h' '*.hh' '*.hpp' '*.hxx' 2>/dev/null || true)
+      if [[ -z "$files" ]]; then
+        echo "No changed C/C++ files — skipping"
+        exit 0
+      fi
+
+      echo "=== clang-format (diff only) ==="
+      clang-format --dry-run --Werror $files
+
+      echo "=== cpplint (diff only) ==="
+      cpplint --quiet --filter=-legal/copyright $files
+
+      echo "=== cppcheck (diff only) ==="
+      cppcheck --error-exitcode=1 --enable=warning,style,performance,portability --std=c++20 $files
+  rules:
+    - if: '$PIPELINE_TYPE == "branch_push"'
+    - when: never
+
+# ── Full quality (MR, post-merge, release, nightly) ─────────────────────────
+quality:full:
+  stage: quality
+  script:
+    - |
+      apt-get update -qq
+      apt-get install -y -qq clang-format cppcheck python3-pip git
+      python3 -m pip install --quiet cpplint
+
+      files=$(git ls-files -- '*.c' '*.cc' '*.cpp' '*.cxx' '*.h' '*.hh' '*.hpp' '*.hxx')
+      if [[ -z "$files" ]]; then
+        echo "No C/C++ files found"
+        exit 0
+      fi
+
+      echo "=== clang-format ==="
+      clang-format --dry-run --Werror $files
+
+      echo "=== cpplint ==="
+      cpplint --quiet --filter=-legal/copyright $files
+
+      echo "=== cppcheck ==="
+      cppcheck --error-exitcode=1 --enable=warning,style,performance,portability --std=c++20 $files
+  rules:
+    - if: '$PIPELINE_TYPE == "mr_gate"'
+    - if: '$PIPELINE_TYPE == "post_merge"'
+    - if: '$PIPELINE_TYPE == "release"'
+    - if: '$PIPELINE_TYPE == "nightly"'
+    - if: '$PIPELINE_TYPE == "manual" && $RUN_FULL_PIPELINE == "true"'
+    - when: never
+
+# ── IWYU — Include-What-You-Use (nightly, advisory) ─────────────────────────
+quality:iwyu:
+  stage: quality
+  allow_failure: true
+  script:
+    - |
+      apt-get update -qq
+      apt-get install -y -qq include-what-you-use git
+      files=$(git ls-files -- '*.c' '*.cc' '*.cpp' '*.cxx')
+      [[ -z "$files" ]] && exit 0
+      for f in $files; do
+        include-what-you-use "$f" -Xiwyu --mapping_file=/dev/null -- -std=c++20 -I. -Isrc 2>&1 || true
+      done
+  rules:
+    - if: '$PIPELINE_TYPE == "nightly"'
+    - when: never

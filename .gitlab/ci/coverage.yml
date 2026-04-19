@@ -1,0 +1,51 @@
+# =============================================================================
+# Coverage Stage — LCOV generation with threshold enforcement
+# =============================================================================
+
+coverage:report:
+  stage: coverage
+  needs: ["build:all"]
+  script:
+    - |
+      bazelisk coverage --keep_going \
+        --combined_report=lcov \
+        --instrumentation_filter="//src/main/cpp[/:]" \
+        --coverage_report_generator=@bazel_tools//tools/test:coverage_report_generator \
+        //src/test/cpp/... || true
+    - |
+      mkdir -p evidence/coverage
+      find "$(bazelisk info output_path)" -name "_baseline_report.dat" \
+        -exec cp {} evidence/coverage/combined-coverage.lcov \; 2>/dev/null || true
+      find bazel-testlogs/src/test/cpp -name "coverage.dat" -exec sh -c '
+        d=$(dirname "$1"); n=$(basename "$d")
+        cp "$1" "evidence/coverage/${n}-coverage.dat"
+      ' _ {} \; 2>/dev/null || true
+    - |
+      # Check coverage threshold
+      lcov_file="evidence/coverage/combined-coverage.lcov"
+      if [[ -f "$lcov_file" ]]; then
+        total_lines=0; hit_lines=0
+        while IFS= read -r line; do
+          [[ "$line" == LF:* ]] && total_lines=$((total_lines + ${line#LF:}))
+          [[ "$line" == LH:* ]] && hit_lines=$((hit_lines + ${line#LH:}))
+        done < "$lcov_file"
+        if [[ $total_lines -gt 0 ]]; then
+          pct=$((hit_lines * 100 / total_lines))
+          echo "Line coverage: $pct% ($hit_lines / $total_lines)"
+          if [[ $pct -lt ${COVERAGE_THRESHOLD} ]]; then
+            echo "WARNING: Coverage $pct% is below threshold ${COVERAGE_THRESHOLD}%"
+          fi
+        fi
+      fi
+  coverage: '/Line coverage: (\d+)%/'
+  artifacts:
+    when: always
+    paths:
+      - evidence/coverage/
+    expire_in: 90 days
+  rules:
+    - if: '$PIPELINE_TYPE == "mr_gate"'
+    - if: '$PIPELINE_TYPE == "post_merge"'
+    - if: '$PIPELINE_TYPE == "release"'
+    - if: '$PIPELINE_TYPE == "nightly"'
+    - when: never

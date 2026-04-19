@@ -1,0 +1,130 @@
+# =============================================================================
+# Security Stage — SAST, SCA, secrets, dependency review, license compliance
+# =============================================================================
+
+# ── Semgrep SAST ─────────────────────────────────────────────────────────────
+security:semgrep:
+  stage: security
+  image: python:3.12-slim
+  before_script:
+    - pip install --quiet semgrep
+  script:
+    - |
+      semgrep scan --config auto --error \
+        --exclude "bazel-*" \
+        --sarif --output gl-sast-report.sarif || true
+      # Also produce GitLab-native SAST format
+      semgrep scan --config auto \
+        --exclude "bazel-*" \
+        --json --output gl-sast-report.json || true
+  artifacts:
+    when: always
+    paths:
+      - gl-sast-report.sarif
+      - gl-sast-report.json
+    reports:
+      sast: gl-sast-report.json
+    expire_in: 90 days
+  rules:
+    - if: '$PIPELINE_TYPE == "branch_push"'
+    - if: '$PIPELINE_TYPE == "mr_gate"'
+    - if: '$PIPELINE_TYPE == "post_merge"'
+    - if: '$PIPELINE_TYPE == "release"'
+    - if: '$PIPELINE_TYPE == "nightly"'
+
+# ── Trivy SCA ────────────────────────────────────────────────────────────────
+security:trivy:
+  stage: security
+  image:
+    name: aquasec/trivy:latest
+    entrypoint: [""]
+  before_script: []
+  script:
+    - |
+      trivy fs --severity CRITICAL,HIGH \
+        --ignore-unfixed \
+        --format table \
+        --exit-code 1 \
+        .
+    - |
+      # GitLab dependency scanning format
+      trivy fs --severity CRITICAL,HIGH,MEDIUM \
+        --format json \
+        --output gl-dependency-scanning-report.json \
+        . || true
+  artifacts:
+    when: always
+    paths:
+      - gl-dependency-scanning-report.json
+    reports:
+      dependency_scanning: gl-dependency-scanning-report.json
+    expire_in: 90 days
+  rules:
+    - if: '$PIPELINE_TYPE == "mr_gate"'
+    - if: '$PIPELINE_TYPE == "post_merge"'
+    - if: '$PIPELINE_TYPE == "release"'
+    - if: '$PIPELINE_TYPE == "nightly"'
+
+# ── Secret Detection ─────────────────────────────────────────────────────────
+security:secrets:
+  stage: security
+  image: python:3.12-slim
+  before_script:
+    - pip install --quiet gitleaks-py 2>/dev/null || true
+    - |
+      apt-get update -qq && apt-get install -y -qq git curl
+      curl -fsSL https://github.com/gitleaks/gitleaks/releases/download/v8.21.2/gitleaks_8.21.2_linux_x64.tar.gz \
+        | tar xzf - -C /usr/local/bin gitleaks
+  script:
+    - |
+      gitleaks detect --source . --verbose --report-format json --report-path gl-secret-detection-report.json || exit_code=$?
+      if [[ "${exit_code:-0}" -eq 1 ]]; then
+        echo "ERROR: Secrets detected in repository!"
+        exit 1
+      fi
+  artifacts:
+    when: always
+    paths:
+      - gl-secret-detection-report.json
+    reports:
+      secret_detection: gl-secret-detection-report.json
+    expire_in: 90 days
+  rules:
+    - if: '$PIPELINE_TYPE == "mr_gate"'
+    - if: '$PIPELINE_TYPE == "post_merge"'
+    - if: '$PIPELINE_TYPE == "release"'
+    - if: '$PIPELINE_TYPE == "nightly"'
+
+# ── OSV Dependency Scan (nightly deep scan) ──────────────────────────────────
+security:osv:
+  stage: security
+  image: ghcr.io/google/osv-scanner:latest
+  before_script: []
+  script:
+    - osv-scanner --recursive .
+  allow_failure: true
+  rules:
+    - if: '$PIPELINE_TYPE == "nightly"'
+    - when: never
+
+# ── License Compliance ───────────────────────────────────────────────────────
+security:license:
+  stage: security
+  image: python:3.12-slim
+  before_script:
+    - pip install --quiet pip-licenses 2>/dev/null || true
+  script:
+    - |
+      echo "=== License Compliance Check ==="
+      # Check for copyleft licenses in dependency manifests
+      if command -v pip-licenses >/dev/null 2>&1; then
+        pip-licenses --format=table --with-urls || true
+      fi
+      # Advisory — full license analysis happens in SBOM stage
+      echo "Detailed license analysis available in SBOM artifacts"
+  allow_failure: true
+  rules:
+    - if: '$PIPELINE_TYPE == "mr_gate"'
+    - if: '$PIPELINE_TYPE == "post_merge"'
+    - if: '$PIPELINE_TYPE == "release"'
+    - when: never

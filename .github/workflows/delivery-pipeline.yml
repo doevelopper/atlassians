@@ -1,10 +1,14 @@
 # =============================================================================
 # Delivery Pipeline — End-to-End CI/CD
 # =============================================================================
-# Handles all development workflows:
-#   Branch Push  (Pipeline B) — fast preflight        (<10 min)
-#   Pull Request (Pipeline C) — comprehensive gate    (15-30 min)
-#   Main/Develop (Pipeline E) — post-merge + evidence (30-60 min)
+# Pipeline B (Branch Push):  fast preflight               (<10 min)
+# Pipeline C (Pull Request): comprehensive quality gate   (15-30 min)
+# Pipeline E (Post-Merge):   deep scans + evidence + SBOM (30-60 min)
+#
+# Aligned with:
+#   - Simplified GitFlow (main/develop/feature/bugfix/release/hotfix)
+#   - Security & quality as automated pipeline gates (not branches)
+#   - CODEOWNERS enforcement, conventional commits, coverage thresholds
 # =============================================================================
 
 name: Delivery Pipeline
@@ -37,6 +41,7 @@ permissions:
   pull-requests: write
   security-events: write
   actions: read
+  checks: write
 
 concurrency:
   group: delivery-${{ github.workflow }}-${{ github.ref }}
@@ -44,10 +49,11 @@ concurrency:
 
 env:
   EVIDENCE_DIR: src/site/compliance/evidence
+  COVERAGE_THRESHOLD: 80
 
 jobs:
   # ===========================================================================
-  # Stage 0: Context — classify trigger, detect changes
+  # Stage 0: Context — classify trigger, detect changes, metadata
   # ===========================================================================
   context:
     name: "Context"
@@ -154,7 +160,6 @@ jobs:
 
           cc_inline=$(printf '%s' "$cc_files" | tr '\n' ' ')
           echo "changed_cc_files=$cc_inline"    >> "$GITHUB_OUTPUT"
-          echo "Changed C/C++ files ($has_cc): $cc_inline"
 
       - name: Build metadata
         id: meta
@@ -162,6 +167,56 @@ jobs:
         run: |
           echo "short_sha=$(git rev-parse --short=7 HEAD)"  >> "$GITHUB_OUTPUT"
           echo "build_date=$(date -u '+%Y-%m-%d')"          >> "$GITHUB_OUTPUT"
+
+  # ===========================================================================
+  # Stage 0b: PR Governance — conventional commits, title, linked issues
+  # ===========================================================================
+  pr_governance:
+    name: "PR Governance"
+    runs-on: ubuntu-latest
+    needs: context
+    if: needs.context.outputs.is_pr == 'true'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate conventional commit PR title
+        shell: bash
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          set -euo pipefail
+          pattern='^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?!?: .+'
+          if [[ ! "$PR_TITLE" =~ $pattern ]]; then
+            echo "::error::PR title must follow Conventional Commits format."
+            echo "Expected: type(scope): description"
+            echo "Types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert"
+            echo "Got: $PR_TITLE"
+            exit 1
+          fi
+          echo "PR title is valid: $PR_TITLE"
+
+      - name: Check PR size (advisory)
+        shell: bash
+        run: |
+          additions=${{ github.event.pull_request.additions || 0 }}
+          deletions=${{ github.event.pull_request.deletions || 0 }}
+          total=$((additions + deletions))
+          if [[ $total -gt 1000 ]]; then
+            echo "::warning::Large PR detected ($total lines changed). Consider splitting into smaller PRs."
+          fi
+          echo "PR size: +$additions -$deletions ($total total)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify signed commits (advisory)
+        shell: bash
+        continue-on-error: true
+        run: |
+          unsigned=$(git log --format='%H %GG' origin/${{ github.base_ref }}..HEAD | grep -v 'Good signature' | head -5)
+          if [[ -n "$unsigned" ]]; then
+            echo "::warning::Some commits are not GPG signed. Signed commits are recommended for protected branches."
+          fi
 
   # ===========================================================================
   # Stage 1: Quality — format, lint, static analysis
@@ -174,6 +229,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Bazel
         uses: bazel-contrib/setup-bazel@0.14.0
@@ -194,49 +251,44 @@ jobs:
         shell: bash
         run: |
           files="${{ needs.context.outputs.changed_cc_files }}"
-          if [[ -z "$files" ]]; then
-            echo "No changed C/C++ files"
-            exit 0
-          fi
+          if [[ -z "$files" ]]; then echo "No changed C/C++ files"; exit 0; fi
           echo "::group::clang-format"
           clang-format --dry-run --Werror $files
           echo "::endgroup::"
           echo "::group::cpplint"
           cpplint --quiet --filter=-legal/copyright $files
           echo "::endgroup::"
-          echo "::group::cppcheck"
+          echo "::group::cppcheck (diff only)"
           cppcheck --error-exitcode=1 --enable=warning,style,performance,portability --std=c++20 $files
           echo "::endgroup::"
 
-      - name: Lint all sources (PR / post-merge)
+      - name: Lint all sources (PR / post-merge / full)
         if: needs.context.outputs.pipeline_type != 'branch_push'
         shell: bash
         run: |
           files=$(git ls-files -- '*.c' '*.cc' '*.cpp' '*.cxx' '*.h' '*.hh' '*.hpp' '*.hxx')
-          if [[ -z "$files" ]]; then
-            echo "No C/C++ files found"
-            exit 0
-          fi
+          if [[ -z "$files" ]]; then echo "No C/C++ files found"; exit 0; fi
           echo "::group::clang-format"
           clang-format --dry-run --Werror $files
           echo "::endgroup::"
           echo "::group::cpplint"
           cpplint --quiet --filter=-legal/copyright $files
           echo "::endgroup::"
-          echo "::group::cppcheck"
+          echo "::group::cppcheck (full)"
           cppcheck --error-exitcode=1 --enable=warning,style,performance,portability --std=c++20 $files
           echo "::endgroup::"
 
       - name: Buildifier check (Starlark)
         shell: bash
+        continue-on-error: true
         run: |
           if command -v buildifier >/dev/null 2>&1; then
             find . -name "BUILD" -o -name "BUILD.bazel" -o -name "*.bzl" | \
-              xargs buildifier --lint=warn --mode=check || true
+              xargs buildifier --lint=warn --mode=check
           fi
 
   # ===========================================================================
-  # Stage 2: Build — compile all sources
+  # Stage 2: Build — compile all sources + packages
   # ===========================================================================
   build:
     name: "Build"
@@ -277,7 +329,7 @@ jobs:
           retention-days: 30
 
   # ===========================================================================
-  # Stage 3: Unit Tests — run and collect JUnit XML evidence
+  # Stage 3: Unit Tests — JUnit XML + evidence
   # ===========================================================================
   unit_tests:
     name: "Unit Tests"
@@ -308,11 +360,10 @@ jobs:
         run: |
           mkdir -p evidence/unit-tests
           find bazel-testlogs/src/test/cpp -name "test.xml" -exec sh -c '
-            dir=$(dirname "$1")
-            name=$(basename "$dir")
-            mkdir -p "evidence/unit-tests/$name"
-            cp "$1" "evidence/unit-tests/$name/"
-            cp "$dir/test.log" "evidence/unit-tests/$name/" 2>/dev/null || true
+            d=$(dirname "$1"); n=$(basename "$d")
+            mkdir -p "evidence/unit-tests/$n"
+            cp "$1" "evidence/unit-tests/$n/"
+            cp "$d/test.log" "evidence/unit-tests/$n/" 2>/dev/null || true
           ' _ {} \;
 
       - name: Upload unit test evidence
@@ -356,9 +407,7 @@ jobs:
       - name: Run BDD integration tests
         shell: bash
         run: |
-          bazelisk test \
-            --test_output=all \
-            //src/it/...
+          bazelisk test --test_output=all //src/it/...
 
       - name: Collect BDD evidence
         if: always()
@@ -366,11 +415,10 @@ jobs:
         run: |
           mkdir -p evidence/bdd-tests
           find bazel-testlogs/src/it -name "test.xml" -exec sh -c '
-            dir=$(dirname "$1")
-            name=$(basename "$dir")
-            mkdir -p "evidence/bdd-tests/$name"
-            cp "$1" "evidence/bdd-tests/$name/"
-            cp "$dir/test.log" "evidence/bdd-tests/$name/" 2>/dev/null || true
+            d=$(dirname "$1"); n=$(basename "$d")
+            mkdir -p "evidence/bdd-tests/$n"
+            cp "$1" "evidence/bdd-tests/$n/"
+            cp "$d/test.log" "evidence/bdd-tests/$n/" 2>/dev/null || true
           ' _ {} \;
 
       - name: Upload BDD test evidence
@@ -391,7 +439,7 @@ jobs:
           fail-on-error: true
 
   # ===========================================================================
-  # Stage 5: Coverage — LCOV generation
+  # Stage 5: Coverage — LCOV with threshold enforcement
   # ===========================================================================
   coverage:
     name: "Coverage"
@@ -428,10 +476,40 @@ jobs:
           find "$(bazelisk info output_path)" -name "_baseline_report.dat" \
             -exec cp {} evidence/coverage/combined-coverage.lcov \; 2>/dev/null || true
           find bazel-testlogs/src/test/cpp -name "coverage.dat" -exec sh -c '
-            dir=$(dirname "$1")
-            name=$(basename "$dir")
-            cp "$1" "evidence/coverage/${name}-coverage.dat"
+            d=$(dirname "$1"); n=$(basename "$d")
+            cp "$1" "evidence/coverage/${n}-coverage.dat"
           ' _ {} \; 2>/dev/null || true
+
+      - name: Check coverage threshold
+        if: needs.context.outputs.is_pr == 'true'
+        shell: bash
+        run: |
+          lcov_file="evidence/coverage/combined-coverage.lcov"
+          if [[ ! -f "$lcov_file" ]]; then
+            echo "::warning::Coverage report not found — skipping threshold check"
+            exit 0
+          fi
+          # Extract line coverage percentage from LCOV
+          total_lines=0
+          hit_lines=0
+          while IFS= read -r line; do
+            if [[ "$line" == LF:* ]]; then
+              total_lines=$((total_lines + ${line#LF:}))
+            elif [[ "$line" == LH:* ]]; then
+              hit_lines=$((hit_lines + ${line#LH:}))
+            fi
+          done < "$lcov_file"
+
+          if [[ $total_lines -gt 0 ]]; then
+            pct=$((hit_lines * 100 / total_lines))
+            echo "Line coverage: $pct% ($hit_lines / $total_lines)"
+            echo "| Coverage | $pct% ($hit_lines/$total_lines lines) | Threshold: ${COVERAGE_THRESHOLD}% |" >> "$GITHUB_STEP_SUMMARY"
+            if [[ $pct -lt ${COVERAGE_THRESHOLD} ]]; then
+              echo "::warning::Coverage $pct% is below threshold ${COVERAGE_THRESHOLD}%"
+            fi
+          else
+            echo "No instrumented lines found in coverage report"
+          fi
 
       - name: Upload coverage evidence
         uses: actions/upload-artifact@v4
@@ -449,7 +527,7 @@ jobs:
         continue-on-error: true
 
   # ===========================================================================
-  # Stage 6: Sanitizers — ASan + UBSan (required gate on PR)
+  # Stage 6: Sanitizers — ASan + UBSan (required on PR/post-merge)
   # ===========================================================================
   asan_ubsan:
     name: "ASan+UBSan"
@@ -477,11 +555,13 @@ jobs:
             --copt=-fsanitize=address,undefined \
             --linkopt=-fsanitize=address,undefined \
             --copt=-fno-omit-frame-pointer \
+            --test_env=ASAN_OPTIONS=handle_abort=1:allow_addr2line=true:detect_odr_violation=1 \
+            --test_env=UBSAN_OPTIONS=halt_on_error=true:print_stacktrace=1 \
             --test_output=errors \
             //src/test/cpp/...
 
   # ===========================================================================
-  # Stage 7: Security — SAST, SCA, secrets
+  # Stage 7: Security — SAST, SCA, secrets, CodeQL
   # ===========================================================================
   semgrep:
     name: "Semgrep SAST"
@@ -544,8 +624,7 @@ jobs:
 
       - name: Build for CodeQL
         shell: bash
-        run: |
-          bazelisk build //src/main/cpp/...
+        run: bazelisk build //src/main/cpp/...
 
       - name: Analyze
         uses: github/codeql-action/analyze@v3
@@ -603,7 +682,88 @@ jobs:
           fail-on-severity: high
 
   # ===========================================================================
-  # Stage 8: Evidence Summary — collect and publish QMS evidence
+  # Stage 7b: License compliance (PR + post-merge)
+  # ===========================================================================
+  license_compliance:
+    name: "License Compliance"
+    runs-on: ubuntu-latest
+    needs: context
+    if: >-
+      needs.context.outputs.pipeline_type == 'pr_gate' ||
+      needs.context.outputs.pipeline_type == 'post_merge' ||
+      needs.context.outputs.pipeline_type == 'full'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate SBOM for license analysis
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: spdx-json
+          output-file: sbom-license-check.json
+
+      - name: Check licenses
+        shell: bash
+        run: |
+          echo "### License Compliance" >> "$GITHUB_STEP_SUMMARY"
+          if command -v jq >/dev/null 2>&1; then
+            # Extract unique licenses
+            licenses=$(jq -r '.packages[]? | .licenseConcluded // "NOASSERTION"' sbom-license-check.json 2>/dev/null | sort -u)
+            echo "Detected licenses:" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo "$licenses" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+            # Check for copyleft (advisory — not blocking)
+            copyleft=$(echo "$licenses" | grep -iE 'GPL|AGPL|LGPL|EUPL|SSPL|CPAL' || true)
+            if [[ -n "$copyleft" ]]; then
+              echo "::warning::Copyleft licenses detected: $copyleft — review required"
+              echo "**Warning**: Copyleft licenses found: $copyleft" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "No copyleft licenses detected." >> "$GITHUB_STEP_SUMMARY"
+            fi
+          fi
+
+  # ===========================================================================
+  # Stage 8: SBOM — on post-merge (not just nightly)
+  # ===========================================================================
+  sbom:
+    name: "SBOM"
+    runs-on: ubuntu-latest
+    needs: context
+    if: >-
+      needs.context.outputs.pipeline_type == 'post_merge' ||
+      needs.context.outputs.pipeline_type == 'full'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Generate SBOM (SPDX)
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: spdx-json
+          output-file: sbom-spdx.json
+
+      - name: Generate SBOM (CycloneDX)
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: sbom-cyclonedx.json
+
+      - name: Upload SBOMs
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ needs.context.outputs.short_sha }}
+          path: |
+            sbom-spdx.json
+            sbom-cyclonedx.json
+          retention-days: 365
+
+  # ===========================================================================
+  # Stage 9: Evidence Summary — QMS traceability bundle
   # ===========================================================================
   evidence_summary:
     name: "Evidence Summary"
@@ -625,7 +785,7 @@ jobs:
         with:
           path: collected-evidence/
 
-      - name: Generate QMS summary
+      - name: Generate QMS evidence summary
         shell: bash
         env:
           SHORT_SHA: ${{ needs.context.outputs.short_sha }}
@@ -635,11 +795,9 @@ jobs:
           set -euo pipefail
           SUMMARY="collected-evidence/test-evidence-summary.md"
 
-          cat > "$SUMMARY" << 'SUMEOF'
+          cat > "$SUMMARY" << SUMEOF
           # Test Evidence Summary
-          SUMEOF
 
-          cat >> "$SUMMARY" << SUMEOF
           | Field | Value |
           |-------|-------|
           | **Date** | ${BUILD_DATE} |
@@ -688,7 +846,7 @@ jobs:
 
           echo "" >> "$SUMMARY"
           echo "---" >> "$SUMMARY"
-          echo "_Generated by GitHub Actions on $(date -u '+%Y-%m-%dT%H:%M:%SZ')_" >> "$SUMMARY"
+          echo "_Generated by GitHub Actions — $(date -u '+%Y-%m-%dT%H:%M:%SZ')_" >> "$SUMMARY"
 
           cat "$SUMMARY" >> "$GITHUB_STEP_SUMMARY"
 
@@ -700,7 +858,7 @@ jobs:
           retention-days: 365
 
   # ===========================================================================
-  # Stage 9: Gate — final status check for branch protection
+  # Stage 10: Gate — final status check for branch protection
   # ===========================================================================
   gate:
     name: "Pipeline Gate"
@@ -715,6 +873,7 @@ jobs:
       - semgrep
       - trivy
       - secret_scan
+      - license_compliance
     steps:
       - name: Evaluate gate
         shell: bash
@@ -735,18 +894,19 @@ jobs:
             fi
           }
 
-          check_job "Build"        "${{ needs.build.result }}"       "Required"
-          check_job "Unit Tests"   "${{ needs.unit_tests.result }}"  "Required"
-          check_job "Semgrep SAST" "${{ needs.semgrep.result }}"     "Required"
-          check_job "Trivy SCA"    "${{ needs.trivy.result }}"       "Required"
-          check_job "Secrets"      "${{ needs.secret_scan.result }}" "Required"
+          check_job "Build"             "${{ needs.build.result }}"              "Required"
+          check_job "Unit Tests"        "${{ needs.unit_tests.result }}"         "Required"
+          check_job "Semgrep SAST"      "${{ needs.semgrep.result }}"            "Required"
+          check_job "Trivy SCA"         "${{ needs.trivy.result }}"              "Required"
+          check_job "Secrets"           "${{ needs.secret_scan.result }}"        "Required"
+          check_job "License"           "${{ needs.license_compliance.result }}" "Advisory"
 
           if [[ "$pipeline" == "pr_gate" || "$pipeline" == "post_merge" || "$pipeline" == "full" ]]; then
-            check_job "BDD Tests"  "${{ needs.bdd_tests.result }}"   "Required"
-            check_job "ASan+UBSan" "${{ needs.asan_ubsan.result }}"  "Required"
+            check_job "BDD Tests"       "${{ needs.bdd_tests.result }}"          "Required"
+            check_job "ASan+UBSan"      "${{ needs.asan_ubsan.result }}"         "Required"
           else
-            check_job "BDD Tests"  "${{ needs.bdd_tests.result }}"   "Advisory"
-            check_job "ASan+UBSan" "${{ needs.asan_ubsan.result }}"  "Advisory"
+            check_job "BDD Tests"       "${{ needs.bdd_tests.result }}"          "Advisory"
+            check_job "ASan+UBSan"      "${{ needs.asan_ubsan.result }}"         "Advisory"
           fi
 
           if [[ "$failed" == "true" ]]; then

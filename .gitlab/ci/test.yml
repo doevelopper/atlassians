@@ -1,0 +1,158 @@
+# =============================================================================
+# Test Stage — unit tests, BDD, sanitizers (ASan/UBSan/TSan/MSan), Valgrind
+# =============================================================================
+
+# ── Unit Tests ───────────────────────────────────────────────────────────────
+test:unit:
+  stage: test
+  needs: ["build:all"]
+  script:
+    - |
+      bazelisk test \
+        --test_output=all \
+        --test_arg=--gtest_output=xml \
+        //src/test/cpp/...
+  after_script:
+    - |
+      mkdir -p evidence/unit-tests
+      find bazel-testlogs/src/test/cpp -name "test.xml" -exec sh -c '
+        d=$(dirname "$1"); n=$(basename "$d")
+        mkdir -p "evidence/unit-tests/$n"
+        cp "$1" "evidence/unit-tests/$n/"
+        cp "$d/test.log" "evidence/unit-tests/$n/" 2>/dev/null || true
+      ' _ {} \; 2>/dev/null || true
+  artifacts:
+    when: always
+    paths:
+      - evidence/unit-tests/
+    reports:
+      junit: "bazel-testlogs/src/test/cpp/**/test.xml"
+    expire_in: 90 days
+  rules:
+    - if: '$PIPELINE_TYPE == "branch_push"'
+    - if: '$PIPELINE_TYPE == "mr_gate"'
+    - if: '$PIPELINE_TYPE == "post_merge"'
+    - if: '$PIPELINE_TYPE == "release"'
+    - if: '$PIPELINE_TYPE == "nightly"'
+    - if: '$PIPELINE_TYPE == "manual"'
+
+# ── BDD / Integration Tests ─────────────────────────────────────────────────
+test:bdd:
+  stage: test
+  needs: ["build:all"]
+  script:
+    - bazelisk test --test_output=all //src/it/...
+  after_script:
+    - |
+      mkdir -p evidence/bdd-tests
+      find bazel-testlogs/src/it -name "test.xml" -exec sh -c '
+        d=$(dirname "$1"); n=$(basename "$d")
+        mkdir -p "evidence/bdd-tests/$n"
+        cp "$1" "evidence/bdd-tests/$n/"
+        cp "$d/test.log" "evidence/bdd-tests/$n/" 2>/dev/null || true
+      ' _ {} \; 2>/dev/null || true
+  artifacts:
+    when: always
+    paths:
+      - evidence/bdd-tests/
+    reports:
+      junit: "bazel-testlogs/src/it/**/test.xml"
+    expire_in: 90 days
+  rules:
+    # Skip on branch push for speed; run on MR+
+    - if: '$PIPELINE_TYPE == "mr_gate"'
+    - if: '$PIPELINE_TYPE == "post_merge"'
+    - if: '$PIPELINE_TYPE == "release"'
+    - if: '$PIPELINE_TYPE == "nightly"'
+    - if: '$PIPELINE_TYPE == "manual" && $RUN_FULL_PIPELINE == "true"'
+    - when: never
+
+# ── ASan + UBSan ─────────────────────────────────────────────────────────────
+test:asan-ubsan:
+  stage: test
+  needs: ["build:all"]
+  script:
+    - |
+      bazelisk test \
+        --copt=-fsanitize=address,undefined \
+        --linkopt=-fsanitize=address,undefined \
+        --copt=-fno-omit-frame-pointer \
+        --test_env=ASAN_OPTIONS=handle_abort=1:allow_addr2line=true:detect_odr_violation=1 \
+        --test_env=UBSAN_OPTIONS=halt_on_error=true:print_stacktrace=1 \
+        --test_output=errors \
+        //src/test/cpp/...
+  rules:
+    - if: '$PIPELINE_TYPE == "mr_gate"'
+    - if: '$PIPELINE_TYPE == "post_merge"'
+    - if: '$PIPELINE_TYPE == "release"'
+    - if: '$PIPELINE_TYPE == "nightly"'
+    - when: never
+
+# ── TSan — Thread Sanitizer ─────────────────────────────────────────────────
+test:tsan:
+  stage: test
+  needs: ["build:all"]
+  script:
+    - |
+      bazelisk test \
+        --copt=-fsanitize=thread \
+        --linkopt=-fsanitize=thread \
+        --copt=-fno-omit-frame-pointer \
+        --test_env=TSAN_OPTIONS=second_deadlock_stack=1 \
+        --test_output=errors \
+        //src/test/cpp/...
+
+      bazelisk test \
+        --copt=-fsanitize=thread \
+        --linkopt=-fsanitize=thread \
+        --copt=-fno-omit-frame-pointer \
+        --test_env=TSAN_OPTIONS=second_deadlock_stack=1 \
+        --test_output=errors \
+        //src/it/...
+  rules:
+    - if: '$PIPELINE_TYPE == "nightly" && $ENABLE_TSAN == "true"'
+    - when: never
+
+# ── MSan — Memory Sanitizer (best-effort) ───────────────────────────────────
+test:msan:
+  stage: test
+  needs: ["build:all"]
+  allow_failure: true
+  script:
+    - |
+      bazelisk test \
+        --copt=-fsanitize=memory \
+        --linkopt=-fsanitize=memory \
+        --copt=-fno-omit-frame-pointer \
+        --copt=-fsanitize-memory-track-origins \
+        --test_output=errors \
+        //src/test/cpp/...
+  rules:
+    - if: '$PIPELINE_TYPE == "nightly" && $ENABLE_MSAN == "true"'
+    - when: never
+
+# ── Valgrind — memcheck ─────────────────────────────────────────────────────
+test:valgrind:
+  stage: test
+  needs: ["build:all"]
+  allow_failure: true
+  script:
+    - |
+      apt-get update -qq && apt-get install -y -qq valgrind
+      bazelisk build //src/test/cpp/...
+
+      bins=$(find bazel-bin/src/test/cpp -type f -perm -111 2>/dev/null | head -n 20 || true)
+      if [[ -z "$bins" ]]; then
+        echo "No executable test binaries discovered"
+        exit 0
+      fi
+      rc=0
+      for bin in $bins; do
+        echo "=== Valgrind: $bin ==="
+        valgrind --error-exitcode=42 --leak-check=full --show-leak-kinds=definite,possible \
+          "$bin" --gtest_brief=1 2>&1 || rc=$?
+      done
+      exit $rc
+  rules:
+    - if: '$PIPELINE_TYPE == "nightly" && $ENABLE_VALGRIND == "true"'
+    - when: never

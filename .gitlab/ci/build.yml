@@ -1,0 +1,45 @@
+# =============================================================================
+# Build Stage — compile all targets + create packages
+# =============================================================================
+
+build:all:
+  stage: build
+  script:
+    - bazelisk build //src/main/cpp/... //src/test/cpp/... //src/it/...
+  artifacts:
+    paths:
+      - bazel-bin/
+    expire_in: 1 day
+  rules:
+    - if: '$PIPELINE_TYPE == "branch_push"'
+    - if: '$PIPELINE_TYPE == "mr_gate"'
+    - if: '$PIPELINE_TYPE == "post_merge"'
+    - if: '$PIPELINE_TYPE == "release"'
+    - if: '$PIPELINE_TYPE == "nightly"'
+    - if: '$PIPELINE_TYPE == "manual"'
+
+build:packages:
+  stage: build
+  needs: ["build:all"]
+  script:
+    - |
+      bazelisk build \
+        //src/main/cpp:com.github.doevelopper.atlassians.main.package \
+        //src/test/cpp:com.github.doevelopper.atlassians.test.package \
+        //src/it:com.github.doevelopper.atlassians.it.package
+
+      mkdir -p release-artifacts
+      cp bazel-bin/src/main/cpp/*.tar.gz release-artifacts/ 2>/dev/null || true
+      cp bazel-bin/src/test/cpp/*.tar.gz release-artifacts/ 2>/dev/null || true
+      cp bazel-bin/src/it/*.tar.gz release-artifacts/ 2>/dev/null || true
+  artifacts:
+    paths:
+      - release-artifacts/
+    expire_in: 30 days
+  rules:
+    - if: '$PIPELINE_TYPE == "mr_gate"'
+    - if: '$PIPELINE_TYPE == "post_merge"'
+    - if: '$PIPELINE_TYPE == "release"'
+    - if: '$PIPELINE_TYPE == "nightly"'
+    - if: '$PIPELINE_TYPE == "manual" && $RUN_FULL_PIPELINE == "true"'
+    - when: never

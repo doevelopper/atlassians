@@ -1,0 +1,87 @@
+# =============================================================================
+# GitLab CI/CD — Root Configuration
+# =============================================================================
+# Modular pipeline matching GitHub Actions delivery pipeline structure.
+# Implements pipeline types from 0002-CICD_GUIDE:
+#   B — Branch push:      fast preflight            (<10 min)
+#   C — Merge request:    comprehensive gate        (15–30 min)
+#   E — Post-merge:       deep scans + evidence     (30–60 min)
+#   F — Release tag:      full qualification        (30–60 min)
+#   G — Nightly:          heavy tests + deep sec    (1–3 h)
+#   H — Manual:           on-demand operations
+#
+# Directory layout:
+#   .gitlab-ci.yml          ← this file (root orchestrator)
+#   .gitlab/ci/             ← stage definitions (quality, build, test, …)
+#   .gitlab/workflows/      ← pipeline-type rules
+#
+# Ref: 0001 §Simplified GitFlow, §DevSecOps; 0002 §RACI, §SLAs
+# =============================================================================
+
+include:
+  # ── Stage definitions ──────────────────────────────────────────────────────
+  - local: '.gitlab/ci/quality.yml'
+  - local: '.gitlab/ci/build.yml'
+  - local: '.gitlab/ci/test.yml'
+  - local: '.gitlab/ci/security.yml'
+  - local: '.gitlab/ci/coverage.yml'
+  - local: '.gitlab/ci/sbom.yml'
+  - local: '.gitlab/ci/release.yml'
+  # ── Workflow rules ─────────────────────────────────────────────────────────
+  - local: '.gitlab/workflows/rules.yml'
+
+stages:
+  - .pre
+  - quality
+  - build
+  - test
+  - security
+  - coverage
+  - sbom
+  - evidence
+  - release
+  - .post
+
+variables:
+  # ── Build system ───────────────────────────────────────────────────────────
+  BAZELISK_VERSION: "1.25.0"
+  BAZEL_CACHE_DIR: "${CI_PROJECT_DIR}/.bazel-cache"
+  GIT_DEPTH: 50
+
+  # ── Feature flags (per 0002-CICD_GUIDE §Feature Flags) ────────────────────
+  ENABLE_TSAN: "true"
+  ENABLE_MSAN: "false"          # requires instrumented stdlib
+  ENABLE_VALGRIND: "true"
+  ENABLE_DAST: "false"
+  RUN_FULL_PIPELINE: "false"
+  RUN_BENCHMARKS: "false"
+
+  # ── Coverage ───────────────────────────────────────────────────────────────
+  COVERAGE_THRESHOLD: "80"
+
+  # ── Conventional commit pattern ────────────────────────────────────────────
+  CC_PATTERN: '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\(.+\))?!?: .+'
+
+default:
+  image: ubuntu:24.04
+  interruptible: true
+  retry:
+    max: 1
+    when:
+      - runner_system_failure
+      - stuck_or_timeout_failure
+  cache:
+    key: "${CI_COMMIT_REF_SLUG}-bazel"
+    paths:
+      - .bazel-cache/
+    policy: pull-push
+
+  before_script:
+    - |
+      # Install Bazelisk if not cached
+      if ! command -v bazelisk >/dev/null 2>&1; then
+        apt-get update -qq && apt-get install -y -qq curl git
+        curl -fsSL "https://github.com/bazelbuild/bazelisk/releases/download/v${BAZELISK_VERSION}/bazelisk-linux-amd64" \
+          -o /usr/local/bin/bazelisk
+        chmod +x /usr/local/bin/bazelisk
+      fi

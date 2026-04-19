@@ -1,0 +1,33 @@
+# =============================================================================
+# SBOM Stage — SPDX + CycloneDX generation
+# =============================================================================
+
+sbom:generate:
+  stage: sbom
+  image: python:3.12-slim
+  before_script:
+    - pip install --quiet cyclonedx-bom 2>/dev/null || true
+    - |
+      apt-get update -qq && apt-get install -y -qq curl
+      # Install syft for SBOM generation
+      curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+  script:
+    - |
+      echo "=== SBOM Generation ==="
+      syft dir:. -o spdx-json=sbom-spdx.json 2>/dev/null || true
+      syft dir:. -o cyclonedx-json=sbom-cyclonedx.json 2>/dev/null || true
+
+      echo "=== License Summary ==="
+      if command -v jq >/dev/null 2>&1 || (apt-get install -y -qq jq 2>/dev/null); then
+        jq -r '.packages[]? | "\(.name) — \(.licenseConcluded // "NOASSERTION")"' sbom-spdx.json 2>/dev/null | head -50 || true
+      fi
+  artifacts:
+    paths:
+      - sbom-spdx.json
+      - sbom-cyclonedx.json
+    expire_in: 365 days
+  rules:
+    - if: '$PIPELINE_TYPE == "post_merge"'
+    - if: '$PIPELINE_TYPE == "release"'
+    - if: '$PIPELINE_TYPE == "nightly"'
+    - when: never

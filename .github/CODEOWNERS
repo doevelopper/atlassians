@@ -1,0 +1,60 @@
+# =============================================================================
+# CODEOWNERS — Automated Review Assignment
+# =============================================================================
+# Ref: 0001 §CODEOWNERS enforcement; 0002 §RACI matrix
+#
+# These owners are automatically requested for review when a pull request
+# touches matching files. At least 1 approval from a CODEOWNER is required
+# for merges to protected branches (main, develop, release/*).
+#
+# Ownership tiers:
+#   @architecture-owners — cross-cutting architectural decisions
+#   @platform-owners     — build system, toolchains, CI/CD
+#   @security-owners     — security-sensitive code, configs, dependencies
+#   @subsystem-owners    — domain-specific source code
+# =============================================================================
+
+# ─── Default owners (catch-all) ───────────────────────────────────────────────
+*                                           @doevelopper
+
+# ─── Architecture / Cross-cutting ─────────────────────────────────────────────
+MODULE.bazel                                @doevelopper
+MODULE.aspect                               @doevelopper
+REPO.bazel                                  @doevelopper
+
+# ─── Build System & Toolchains ────────────────────────────────────────────────
+BUILD                                       @doevelopper
+**/BUILD                                    @doevelopper
+**/BUILD.bazel                              @doevelopper
+**/*.bzl                                    @doevelopper
+tools/                                      @doevelopper
+Makefile                                    @doevelopper
+
+# ─── CI/CD Pipelines ─────────────────────────────────────────────────────────
+.github/                                    @doevelopper
+.gitlab-ci.yml                              @doevelopper
+.gitlab/                                    @doevelopper
+
+# ─── Source Code — Main Application ───────────────────────────────────────────
+src/main/cpp/                               @doevelopper
+
+# ─── Source Code — Tests ──────────────────────────────────────────────────────
+src/test/                                   @doevelopper
+src/it/                                     @doevelopper
+
+# ─── Configuration ────────────────────────────────────────────────────────────
+src/main/config/                            @doevelopper
+src/it/config/                              @doevelopper
+src/test/config/                            @doevelopper
+
+# ─── Security-sensitive files ─────────────────────────────────────────────────
+.github/dependabot.yml                      @doevelopper
+requirements/                               @doevelopper
+package.json                                @doevelopper
+pnpm-lock.yaml                              @doevelopper
+go.mod                                      @doevelopper
+Cargo.toml                                  @doevelopper
+Gemfile                                     @doevelopper
+
+# ─── QMS / Compliance / Documentation ────────────────────────────────────────
+src/site/                                   @doevelopper

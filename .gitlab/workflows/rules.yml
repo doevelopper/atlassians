@@ -1,0 +1,54 @@
+# =============================================================================
+# Workflow Rules — Pipeline type classification
+# =============================================================================
+# Maps GitLab CI events to pipeline types:
+#   B — Branch push     (feature/*, bugfix/*)
+#   C — Merge request   (MR to main/develop/release/hotfix)
+#   E — Post-merge      (push to main/develop)
+#   F — Release tag     (v*.*.*)
+#   G — Nightly         (schedule)
+#   H — Manual          (web trigger)
+# =============================================================================
+
+workflow:
+  rules:
+    # G — Scheduled pipelines (nightly)
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+      variables:
+        PIPELINE_TYPE: "nightly"
+      when: always
+
+    # H — Manual trigger
+    - if: '$CI_PIPELINE_SOURCE == "web" || $CI_PIPELINE_SOURCE == "trigger"'
+      variables:
+        PIPELINE_TYPE: "manual"
+      when: always
+
+    # F — Release tag
+    - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+/'
+      variables:
+        PIPELINE_TYPE: "release"
+      when: always
+
+    # C — Merge request pipeline
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      variables:
+        PIPELINE_TYPE: "mr_gate"
+      when: always
+
+    # E — Post-merge to protected branches
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "develop"'
+      variables:
+        PIPELINE_TYPE: "post_merge"
+      when: always
+
+    # B — Branch push (feature, bugfix, hotfix, release, support)
+    - if: '$CI_COMMIT_BRANCH =~ /^(feature|bugfix|hotfix|release|support)\//'
+      variables:
+        PIPELINE_TYPE: "branch_push"
+      when: always
+
+    # Fallback — run as branch push
+    - when: always
+      variables:
+        PIPELINE_TYPE: "branch_push"
