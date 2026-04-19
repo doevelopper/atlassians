@@ -9,8 +9,10 @@
 #   - DAST baseline (if staging URL configured)
 #   - Stale branch detection (branch lifetime enforcement)
 #
-# Schedule: 2:17 AM UTC daily on main
+# Schedule: 2:17 AM UTC daily on default branch (main)
 # Weekly deep dependency scan: Sundays 3:17 AM UTC
+# Note: Scheduled workflows always run on the repository's default branch.
+# The delivery pipeline covers develop/feature branches on every push.
 #
 # Ref: 0001 §Branch Lifetime, §DevSecOps; 0002 §SLAs, §Merge Prerequisites
 # =============================================================================

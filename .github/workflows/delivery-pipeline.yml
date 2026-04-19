@@ -5,6 +5,14 @@
 # Pipeline C (Pull Request): comprehensive quality gate   (15-30 min)
 # Pipeline E (Post-Merge):   deep scans + evidence + SBOM (30-60 min)
 #
+# Branching model (Gitflow):
+#   main     — production-ready; releases are tagged here only
+#   develop  — integration branch; all feature/bugfix branches merge here
+#   feature/** bugfix/** — short-lived work branches from develop
+#   release/** hotfix/** — pre-release stabilisation / emergency fixes
+#
+# Flow: feature → develop (PR) → release → main (merge) → tag → release pipeline
+#
 # Aligned with:
 #   - Simplified GitFlow (main/develop/feature/bugfix/release/hotfix)
 #   - Security & quality as automated pipeline gates (not branches)
