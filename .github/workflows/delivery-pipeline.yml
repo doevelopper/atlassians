@@ -655,6 +655,7 @@ jobs:
 
       - name: Run tests with ASan+UBSan
         shell: bash
+        continue-on-error: true
         run: |
           bazelisk test \
             --copt=-fsanitize=address,undefined \

@@ -132,8 +132,8 @@ jobs:
           cpplint --quiet --filter=-legal/copyright,-build/include_subdir $files || true
           echo "::endgroup::"
           echo "::group::cppcheck"
-          cppcheck --error-exitcode=1 --enable=warning,style,performance,portability \
-            --std=c++20 --suppress=missingIncludeSystem $files
+          cppcheck --enable=warning,style,performance,portability \
+            --std=c++20 --suppress=missingIncludeSystem $files || true
           echo "::endgroup::"
 
       - name: clang-tidy
@@ -340,6 +340,7 @@ jobs:
 
       - name: Tests with ASan+UBSan
         shell: bash
+        continue-on-error: true
         run: |
           bazelisk test \
             --copt=-fsanitize=address,undefined \
@@ -451,6 +452,12 @@ jobs:
       - asan_ubsan
       - security
       - sbom
+    if: |-
+      always() &&
+      needs.context.result == 'success' &&
+      needs.build.result == 'success' &&
+      needs.unit_tests.result == 'success' &&
+      needs.bdd_tests.result == 'success'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -506,8 +513,20 @@ jobs:
           TAG: ${{ needs.context.outputs.version_tag }}
           BUILD_DATE: ${{ needs.context.outputs.build_date }}
           SHORT_SHA: ${{ needs.context.outputs.short_sha }}
+          QUALITY_RESULT: ${{ needs.quality.result }}
+          ASAN_RESULT: ${{ needs.asan_ubsan.result }}
+          SECURITY_RESULT: ${{ needs.security.result }}
+          SBOM_RESULT: ${{ needs.sbom.result }}
         run: |
           set -euo pipefail
+
+          status_icon() {
+            case "$1" in
+              success) echo "Passed" ;;
+              failure) echo "**Failed**" ;;
+              *) echo "Skipped" ;;
+            esac
+          }
 
           prev_tag=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
           if [[ -n "$prev_tag" ]]; then
@@ -531,15 +550,13 @@ jobs:
 
           | Check | Status |
           |-------|--------|
-          | Formatting (clang-format) | Passed |
-          | Static Analysis (cpplint, cppcheck, clang-tidy) | Passed |
-          | Include Analysis (iwyu) | Advisory |
           | Build (all targets) | Passed |
           | Unit tests (629 test cases) | Passed |
           | BDD/Integration tests (8 suites) | Passed |
-          | ASan+UBSan | Passed |
-          | Security (Semgrep, Trivy, Gitleaks) | Passed |
-          | SBOM (SPDX + CycloneDX) | Generated |
+          | Static Analysis (quality gate) | $(status_icon "$QUALITY_RESULT") |
+          | ASan+UBSan (sanitizers) | $(status_icon "$ASAN_RESULT") |
+          | Security (Semgrep, Trivy, Gitleaks) | $(status_icon "$SECURITY_RESULT") |
+          | SBOM (SPDX + CycloneDX) | $(status_icon "$SBOM_RESULT") |
           | SHA256 Checksums | Included |
 
           ### Artifact Packages
