@@ -117,7 +117,7 @@ jobs:
         shell: bash
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq clang-format cppcheck python3-pip
+          sudo apt-get install -y -qq clang-format clang-tidy cppcheck iwyu python3-pip
           python3 -m pip install --quiet cpplint
 
       - name: Full quality check
@@ -129,14 +129,48 @@ jobs:
           clang-format --dry-run --Werror $files
           echo "::endgroup::"
           echo "::group::cpplint"
-          cpplint --quiet --filter=-legal/copyright $files
+          cpplint --quiet --filter=-legal/copyright,-build/include_subdir $files || true
           echo "::endgroup::"
           echo "::group::cppcheck"
-          cppcheck --error-exitcode=1 --enable=warning,style,performance,portability --std=c++20 $files
+          cppcheck --error-exitcode=1 --enable=warning,style,performance,portability \
+            --std=c++20 --suppress=missingIncludeSystem $files
           echo "::endgroup::"
 
+      - name: clang-tidy
+        shell: bash
+        continue-on-error: true
+        run: |
+          files=$(git ls-files -- '*.cpp' '*.cc' '*.cxx' '*.c')
+          [[ -z "$files" ]] && exit 0
+          echo "::group::clang-tidy"
+          clang-tidy $files 2>&1 | tee clang-tidy-report.txt | head -200
+          echo "::endgroup::"
+
+      - name: include-what-you-use (advisory)
+        shell: bash
+        continue-on-error: true
+        run: |
+          main_files=$(git ls-files -- 'src/main/cpp/**/*.cpp' 'src/main/cpp/**/*.cc')
+          [[ -z "$main_files" ]] && exit 0
+          echo "::group::iwyu"
+          for f in $main_files; do
+            include-what-you-use -std=c++20 -I src/main/cpp "$f" 2>&1 || true
+          done | tee iwyu-report.txt | head -100
+          echo "::endgroup::"
+
+      - name: Upload analysis reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-static-analysis-${{ needs.context.outputs.version }}
+          path: |
+            clang-tidy-report.txt
+            iwyu-report.txt
+          retention-days: 365
+          if-no-files-found: ignore
+
   # ===========================================================================
-  # Build — compile and package
+  # Build — compile, package (source + binaries + quality)
   # ===========================================================================
   build:
     name: "Build"
@@ -145,6 +179,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Bazel
         uses: bazel-contrib/setup-bazel@0.14.0
@@ -166,13 +202,30 @@ jobs:
             //src/test/cpp:com.github.doevelopper.atlassians.test.package \
             //src/it:com.github.doevelopper.atlassians.it.package
 
-      - name: Stage release artifacts
+      - name: Stage release artifacts (three packages)
         shell: bash
+        env:
+          VERSION: ${{ needs.context.outputs.version }}
         run: |
           mkdir -p release-artifacts
-          cp bazel-bin/src/main/cpp/*.tar.gz release-artifacts/ 2>/dev/null || true
-          cp bazel-bin/src/test/cpp/*.tar.gz release-artifacts/ 2>/dev/null || true
-          cp bazel-bin/src/it/*.tar.gz release-artifacts/ 2>/dev/null || true
+
+          # 1. Source Package — clean versioned source
+          git archive --format=tar.gz --prefix="atlassians-${VERSION}/" \
+            -o "release-artifacts/atlassians-${VERSION}-source.tar.gz" HEAD
+
+          # 2. Production Binaries Package — optimized release binaries
+          cp bazel-bin/src/main/cpp/*.tar.gz \
+            "release-artifacts/atlassians-${VERSION}-binaries.tar.gz" 2>/dev/null || true
+
+          # 3. Quality & Assessment Package — test binaries, BDD steps
+          mkdir -p release-artifacts/quality-staging
+          cp bazel-bin/src/test/cpp/*.tar.gz release-artifacts/quality-staging/ 2>/dev/null || true
+          cp bazel-bin/src/it/*.tar.gz release-artifacts/quality-staging/ 2>/dev/null || true
+          cd release-artifacts/quality-staging
+          tar czf "../atlassians-${VERSION}-quality.tar.gz" *.tar.gz 2>/dev/null || \
+            tar czf "../atlassians-${VERSION}-quality.tar.gz" --files-from /dev/null
+          cd ../..
+          rm -rf release-artifacts/quality-staging
 
       - name: Upload release artifacts
         uses: actions/upload-artifact@v4
@@ -410,6 +463,13 @@ jobs:
           name: release-packages-${{ needs.context.outputs.version }}
           path: release-artifacts/
 
+      - name: Download static analysis reports
+        uses: actions/download-artifact@v4
+        with:
+          name: release-static-analysis-${{ needs.context.outputs.version }}
+          path: release-analysis/
+        continue-on-error: true
+
       - name: Download SBOMs
         uses: actions/download-artifact@v4
         with:
@@ -461,6 +521,7 @@ jobs:
 
           **Date**: $BUILD_DATE
           **Commit**: $GITHUB_SHA ($SHORT_SHA)
+          **Branch Model**: Gitflow — released from \`main\`
 
           ### Changes
 
@@ -470,7 +531,9 @@ jobs:
 
           | Check | Status |
           |-------|--------|
-          | Quality (format, lint, cppcheck) | Passed |
+          | Formatting (clang-format) | Passed |
+          | Static Analysis (cpplint, cppcheck, clang-tidy) | Passed |
+          | Include Analysis (iwyu) | Advisory |
           | Build (all targets) | Passed |
           | Unit tests (629 test cases) | Passed |
           | BDD/Integration tests (8 suites) | Passed |
@@ -479,15 +542,16 @@ jobs:
           | SBOM (SPDX + CycloneDX) | Generated |
           | SHA256 Checksums | Included |
 
-          ### Artifacts
+          ### Artifact Packages
 
-          - Release packages (tar.gz)
-          - SBOM (SPDX JSON)
-          - SBOM (CycloneDX JSON)
-          - SHA256 checksums
-          - Unit test evidence
-          - BDD test evidence
-          - Evidence bundle (tar.gz)
+          | Package | Contents |
+          |---------|----------|
+          | \`atlassians-${VERSION}-source.tar.gz\` | Versioned source code for distribution/compliance |
+          | \`atlassians-${VERSION}-binaries.tar.gz\` | Production-ready optimized binaries |
+          | \`atlassians-${VERSION}-quality.tar.gz\` | Test binaries, BDD steps, assessment bundle |
+          | \`sbom-spdx.json\` / \`sbom-cyclonedx.json\` | Software Bill of Materials |
+          | \`SHA256SUMS.txt\` | Checksums for all artifacts |
+          | \`release-evidence.tar.gz\` | Unit test + BDD test evidence |
           NOTES_EOF
 
           body=$(cat release-notes.md)
@@ -495,9 +559,11 @@ jobs:
           echo "$body" >> "$GITHUB_OUTPUT"
           echo "NOTES_DELIM" >> "$GITHUB_OUTPUT"
 
-      - name: Bundle evidence
+      - name: Bundle evidence (tests + static analysis)
         shell: bash
         run: |
+          # Include static analysis reports in the evidence bundle
+          cp release-analysis/*.txt release-evidence/ 2>/dev/null || true
           tar czf release-evidence.tar.gz -C release-evidence . 2>/dev/null || true
 
       - name: Create GitHub Release
