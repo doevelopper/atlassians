@@ -376,12 +376,12 @@ jobs:
 
       - name: Publish test results
         if: always()
-        uses: dorny/test-reporter@v1
+        uses: mikepenz/action-junit-report@v5
         with:
-          name: Unit Test Results
-          path: 'bazel-testlogs/src/test/cpp/**/test.xml'
-          reporter: java-junit
-          fail-on-error: true
+          report_paths: 'bazel-testlogs/src/test/cpp/**/test.xml'
+          check_name: Unit Test Results
+          require_tests: true
+        continue-on-error: true
 
   # ===========================================================================
   # Stage 4: BDD / Integration Tests
@@ -431,12 +431,12 @@ jobs:
 
       - name: Publish BDD results
         if: always()
-        uses: dorny/test-reporter@v1
+        uses: mikepenz/action-junit-report@v5
         with:
-          name: BDD Test Results
-          path: 'bazel-testlogs/src/it/**/test.xml'
-          reporter: java-junit
-          fail-on-error: true
+          report_paths: 'bazel-testlogs/src/it/**/test.xml'
+          check_name: BDD Test Results
+          require_tests: true
+        continue-on-error: true
 
   # ===========================================================================
   # Stage 5: Coverage — LCOV with threshold enforcement
@@ -589,7 +589,7 @@ jobs:
 
       - name: Upload SARIF
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: semgrep.sarif
         continue-on-error: true
@@ -618,7 +618,7 @@ jobs:
           repository-cache: true
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: cpp
 
@@ -627,7 +627,7 @@ jobs:
         run: bazelisk build //src/main/cpp/...
 
       - name: Analyze
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
 
   trivy:
     name: "Trivy SCA"
@@ -638,7 +638,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Trivy filesystem scan
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.35.0
         with:
           scan-type: fs
           scan-ref: .
