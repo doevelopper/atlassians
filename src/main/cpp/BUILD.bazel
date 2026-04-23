@@ -4,6 +4,7 @@ load(
     "cc_library"
 )
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("//tools/oci:cpp_image.bzl", "cc_image")
 
 # Common build settings
 COMMON_DEFINES = [
@@ -721,4 +722,11 @@ pkg_tar(
     extension = "tar.gz",
     package_dir = "/opt/atlassians/bin",
     visibility = ["//visibility:public"],
+)
+
+cc_image(
+    name = "com.github.doevelopper.atlassians.main.image",
+    package = ":com.github.doevelopper.atlassians.main.package",
+    entrypoint = ["/opt/atlassians/bin/com.github.doevelopper.atlassians.main.bin"],
+    repo_tags = ["atlassians-runtime:latest"],
 )

@@ -385,6 +385,94 @@ jobs:
           path: evidence/coverage/
           retention-days: 90
 
+  # ==========================================================================
+  # Flaky Test Detection — repeated test runs for candidate discovery
+  # ==========================================================================
+  flaky_tests:
+    name: "Flaky Test Detection"
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bazel
+        uses: bazel-contrib/setup-bazel@0.14.0
+        with:
+          bazelisk-cache: true
+          disk-cache: nightly-flaky
+          repository-cache: true
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Run repeated tests for flake detection
+        shell: bash
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          bazelisk test \
+            --runs_per_test=3 \
+            --runs_per_test_detects_flakes \
+            --test_output=errors \
+            //src/test/cpp/... //src/it/... 2>&1 | tee flaky-test-output.txt
+
+      - name: Generate flake candidate report
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p evidence/flaky-tests
+
+          python3 <<'PY'
+          import json
+          import os
+          import re
+
+          log_path = "flaky-test-output.txt"
+          text = ""
+          if os.path.isfile(log_path):
+              with open(log_path, "r", encoding="utf-8", errors="replace") as handle:
+                  text = handle.read()
+
+          candidates = sorted(set(re.findall(r"(?:FLAKY|FAILED):\s+(//[^\s]+)", text)))
+          summary = {
+              "schema_version": "1.0",
+              "candidate_targets": candidates,
+              "candidate_count": len(candidates),
+              "history_available": False,
+              "note": "This nightly report captures per-run flaky candidates. Rolling flake history still requires persisting these artifacts to an external metrics store.",
+          }
+
+          with open("evidence/flaky-tests/flaky-tests.json", "w", encoding="utf-8") as handle:
+              json.dump(summary, handle, indent=2)
+              handle.write("\n")
+
+          with open("evidence/flaky-tests/flaky-tests-summary.md", "w", encoding="utf-8") as handle:
+              handle.write("# Flaky Test Detection\n\n")
+              handle.write(f"Candidate targets: {len(candidates)}\n\n")
+              if candidates:
+                  for target in candidates:
+                      handle.write(f"- {target}\n")
+              else:
+                  handle.write("No flaky candidates detected in this run.\n")
+          PY
+
+          cat evidence/flaky-tests/flaky-tests-summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload flake detection artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-flaky-tests
+          path: |
+            evidence/flaky-tests/
+            flaky-test-output.txt
+          retention-days: 90
+          if-no-files-found: ignore
+
   # ===========================================================================
   # Deep Security — Semgrep, Trivy, OSV, Scorecard
   # ===========================================================================
@@ -595,6 +683,7 @@ jobs:
       - msan
       - valgrind
       - coverage
+      - flaky_tests
       - deep_security
       - sbom
       - dast
@@ -614,6 +703,7 @@ jobs:
           echo "| MSan              | ${{ needs.msan.result }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Valgrind          | ${{ needs.valgrind.result }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Coverage          | ${{ needs.coverage.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Flaky Tests       | ${{ needs.flaky_tests.result }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Deep Security     | ${{ needs.deep_security.result }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| SBOM              | ${{ needs.sbom.result }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| DAST              | ${{ needs.dast.result }} |" >> "$GITHUB_STEP_SUMMARY"

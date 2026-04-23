@@ -355,7 +355,10 @@ jobs:
       - name: Build all sources
         shell: bash
         run: |
-          bazelisk build //src/main/cpp/... //src/test/cpp/... //src/it/...
+          mkdir -p evidence/build
+          bazelisk build \
+            --profile=evidence/build/bazel-build-profile.json.gz \
+            //src/main/cpp/... //src/test/cpp/... //src/it/...
 
       - name: Build packages
         shell: bash
@@ -432,6 +435,14 @@ jobs:
             bazel-bin/src/test/cpp/*.tar.gz
             bazel-bin/src/it/*.tar.gz
           retention-days: 30
+
+      - name: Upload build evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-evidence-${{ needs.context.outputs.short_sha }}
+          path: evidence/build/
+          retention-days: 30
+          if-no-files-found: ignore
 
   # ===========================================================================
   # Stage 3: Unit Tests — JUnit XML + evidence
@@ -591,8 +602,8 @@ jobs:
         run: |
           lcov_file="evidence/coverage/combined-coverage.lcov"
           if [[ ! -f "$lcov_file" ]]; then
-            echo "::warning::Coverage report not found — skipping threshold check"
-            exit 0
+            echo "::error::Coverage report not found — cannot enforce threshold"
+            exit 1
           fi
           # Extract line coverage percentage from LCOV
           total_lines=0
@@ -610,10 +621,12 @@ jobs:
             echo "Line coverage: $pct% ($hit_lines / $total_lines)"
             echo "| Coverage | $pct% ($hit_lines/$total_lines lines) | Threshold: ${COVERAGE_THRESHOLD}% |" >> "$GITHUB_STEP_SUMMARY"
             if [[ $pct -lt ${COVERAGE_THRESHOLD} ]]; then
-              echo "::warning::Coverage $pct% is below threshold ${COVERAGE_THRESHOLD}%"
+              echo "::error::Coverage $pct% is below threshold ${COVERAGE_THRESHOLD}%"
+              exit 1
             fi
           else
-            echo "No instrumented lines found in coverage report"
+            echo "::error::No instrumented lines found in coverage report"
+            exit 1
           fi
 
       - name: Upload coverage evidence
@@ -630,6 +643,360 @@ jobs:
           lcov-file: evidence/coverage/combined-coverage.lcov
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
+
+  # ==========================================================================
+  # Stage 5b: Metrics — machine-readable quality snapshot
+  # ==========================================================================
+  metrics:
+    name: "Metrics"
+    runs-on: ubuntu-latest
+    needs: [context, build, unit_tests, bdd_tests, coverage]
+    if: >-
+      needs.context.outputs.pipeline_type == 'pr_gate' ||
+      needs.context.outputs.pipeline_type == 'post_merge' ||
+      needs.context.outputs.pipeline_type == 'full'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download workflow artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: collected-metrics/
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install metrics analyzers
+        shell: bash
+        run: |
+          python3 -m pip install --quiet lizard
+
+      - name: Analyze code complexity
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p metrics
+
+          python3 <<'PY'
+          import glob
+          import json
+          import lizard
+
+          patterns = [
+              "src/main/cpp/**/*.c",
+              "src/main/cpp/**/*.cc",
+              "src/main/cpp/**/*.cpp",
+              "src/main/cpp/**/*.cxx",
+              "src/main/cpp/**/*.h",
+              "src/main/cpp/**/*.hh",
+              "src/main/cpp/**/*.hpp",
+              "src/main/cpp/**/*.hxx",
+              "src/test/cpp/**/*.c",
+              "src/test/cpp/**/*.cc",
+              "src/test/cpp/**/*.cpp",
+              "src/test/cpp/**/*.cxx",
+              "src/test/cpp/**/*.h",
+              "src/test/cpp/**/*.hh",
+              "src/test/cpp/**/*.hpp",
+              "src/test/cpp/**/*.hxx",
+              "src/it/**/*.cpp",
+              "src/it/**/*.hpp",
+          ]
+          files = sorted({path for pattern in patterns for path in glob.glob(pattern, recursive=True)})
+
+          threshold = 15
+          functions = []
+          for path in files:
+              try:
+                  analysis = lizard.analyze_file(path)
+              except Exception:
+                  continue
+              for fn in analysis.function_list:
+                  functions.append(
+                      {
+                          "file": path,
+                          "name": fn.name,
+                          "long_name": fn.long_name,
+                          "start_line": fn.start_line,
+                          "nloc": fn.nloc,
+                          "token_count": fn.token_count,
+                          "parameter_count": fn.parameter_count,
+                          "cyclomatic_complexity": fn.cyclomatic_complexity,
+                      }
+                  )
+
+          functions.sort(key=lambda item: item["cyclomatic_complexity"], reverse=True)
+          total_ccn = sum(item["cyclomatic_complexity"] for item in functions)
+          max_ccn = functions[0]["cyclomatic_complexity"] if functions else 0
+          summary = {
+              "report_found": True,
+              "threshold": threshold,
+              "file_count": len(files),
+              "function_count": len(functions),
+              "average_cyclomatic_complexity": round(total_ccn / len(functions), 2) if functions else 0,
+              "max_cyclomatic_complexity": max_ccn,
+              "functions_over_threshold": [item for item in functions if item["cyclomatic_complexity"] > threshold][:25],
+              "top_complex_functions": functions[:25],
+          }
+
+          with open("metrics/lizard-report.json", "w", encoding="utf-8") as handle:
+              json.dump(summary, handle, indent=2)
+              handle.write("\n")
+          PY
+
+      - name: Analyze duplication (best-effort)
+        shell: bash
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          mkdir -p metrics/jscpd
+          npx --yes jscpd \
+            --silent \
+            --min-lines 5 \
+            --min-tokens 50 \
+            --reporters json \
+            --output metrics/jscpd \
+            src/main/cpp src/test/cpp src/it
+
+      - name: Generate metrics contract
+        shell: bash
+        env:
+          SHORT_SHA: ${{ needs.context.outputs.short_sha }}
+          BUILD_DATE: ${{ needs.context.outputs.build_date }}
+          BRANCH_NAME: ${{ github.ref_name }}
+          PIPELINE_TYPE: ${{ needs.context.outputs.pipeline_type }}
+          COVERAGE_THRESHOLD: ${{ env.COVERAGE_THRESHOLD }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          set -euo pipefail
+          mkdir -p metrics
+
+          python3 <<'PY'
+          import glob
+          import json
+          import os
+          import xml.etree.ElementTree as ET
+
+          base = "collected-metrics"
+          metrics_dir = "metrics"
+          os.makedirs(metrics_dir, exist_ok=True)
+
+          def parse_int(value):
+              try:
+                  return int(value)
+              except (TypeError, ValueError):
+                  return 0
+
+          def summarize_junit(pattern):
+              summary = {
+                  "suite_files": 0,
+                  "tests": 0,
+                  "failures": 0,
+                  "errors": 0,
+                  "skipped": 0,
+              }
+              for path in glob.glob(pattern, recursive=True):
+                  try:
+                      root = ET.parse(path).getroot()
+                  except ET.ParseError:
+                      continue
+
+                  suites = []
+                  if root.tag == "testsuites":
+                      suites = [child for child in root if child.tag == "testsuite"]
+                  elif root.tag == "testsuite":
+                      suites = [root]
+
+                  for suite in suites:
+                      summary["suite_files"] += 1
+                      summary["tests"] += parse_int(suite.attrib.get("tests"))
+                      summary["failures"] += parse_int(suite.attrib.get("failures"))
+                      summary["errors"] += parse_int(suite.attrib.get("errors"))
+                      summary["skipped"] += parse_int(suite.attrib.get("skipped"))
+
+              return summary
+
+          def summarize_lcov(pattern):
+              matches = glob.glob(pattern, recursive=True)
+              if not matches:
+                  return {
+                      "report_found": False,
+                      "hit_lines": 0,
+                      "total_lines": 0,
+                      "line_coverage_percent": None,
+                  }
+
+              hit_lines = 0
+              total_lines = 0
+              with open(matches[0], "r", encoding="utf-8") as handle:
+                  for raw_line in handle:
+                      line = raw_line.strip()
+                      if line.startswith("LF:"):
+                          total_lines += parse_int(line[3:])
+                      elif line.startswith("LH:"):
+                          hit_lines += parse_int(line[3:])
+
+              percent = round((hit_lines * 100.0 / total_lines), 2) if total_lines else None
+              return {
+                  "report_found": True,
+                  "hit_lines": hit_lines,
+                  "total_lines": total_lines,
+                  "line_coverage_percent": percent,
+              }
+
+          def file_inventory(pattern):
+              entries = []
+              for path in sorted(glob.glob(pattern, recursive=True)):
+                  if os.path.isfile(path):
+                      entries.append(
+                          {
+                              "name": os.path.basename(path),
+                              "relative_path": path,
+                              "size_bytes": os.path.getsize(path),
+                          }
+                      )
+              return entries
+
+          def load_json(path):
+              if path and os.path.isfile(path):
+                  with open(path, "r", encoding="utf-8") as handle:
+                      return json.load(handle)
+              return None
+
+          def recursive_find_numeric(payload, candidate_keys):
+              if isinstance(payload, dict):
+                  for key, value in payload.items():
+                      if key in candidate_keys and isinstance(value, (int, float)):
+                          return value
+                      found = recursive_find_numeric(value, candidate_keys)
+                      if found is not None:
+                          return found
+              elif isinstance(payload, list):
+                  for item in payload:
+                      found = recursive_find_numeric(item, candidate_keys)
+                      if found is not None:
+                          return found
+              return None
+
+          unit = summarize_junit(os.path.join(base, "unit-test-evidence-*", "**", "test.xml"))
+          bdd = summarize_junit(os.path.join(base, "bdd-test-evidence-*", "**", "test.xml"))
+          coverage = summarize_lcov(os.path.join(base, "coverage-evidence-*", "**", "combined-coverage.lcov"))
+
+          complexity = load_json("metrics/lizard-report.json") or {
+              "report_found": False,
+              "threshold": 15,
+              "file_count": 0,
+              "function_count": 0,
+              "average_cyclomatic_complexity": 0,
+              "max_cyclomatic_complexity": 0,
+              "functions_over_threshold": [],
+              "top_complex_functions": [],
+          }
+
+          duplication_paths = sorted(glob.glob("metrics/jscpd/**/*.json", recursive=True))
+          duplication_report = load_json(duplication_paths[0]) if duplication_paths else None
+          duplication = {
+              "report_found": duplication_report is not None,
+              "report_path": duplication_paths[0] if duplication_paths else None,
+              "duplication_percent": recursive_find_numeric(duplication_report, {"percentage", "percent"}),
+              "duplicated_lines": recursive_find_numeric(duplication_report, {"duplicatedLines", "lines", "clonesLines"}),
+              "clone_count": recursive_find_numeric(duplication_report, {"clones", "duplicates", "cloneCount"}),
+          }
+
+          flaky_signal = {
+              "history_available": False,
+              "candidate_tests": [],
+              "note": "Current delivery pipeline captures per-run test evidence only. Rolling flakiness history should be sourced from nightly repeated-test artifacts or an external metrics store.",
+          }
+
+          build_profiles = file_inventory(os.path.join(base, "build-evidence-*", "**", "bazel-build-profile.json.gz"))
+          source_packages = file_inventory(os.path.join(base, "source-package-*", "**", "*-source.tar.gz"))
+          binary_packages = file_inventory(os.path.join(base, "binaries-package-*", "**", "*-binaries.tar.gz"))
+          quality_packages = file_inventory(os.path.join(base, "quality-package-*", "**", "*.tar.gz"))
+
+          metrics = {
+              "schema_version": "1.0",
+              "repository": os.environ["REPOSITORY"],
+              "run": {
+                  "id": os.environ["RUN_ID"],
+                  "number": os.environ["RUN_NUMBER"],
+                  "commit": os.environ["SHORT_SHA"],
+                  "branch": os.environ["BRANCH_NAME"],
+                  "build_date": os.environ["BUILD_DATE"],
+                  "pipeline_type": os.environ["PIPELINE_TYPE"],
+              },
+              "quality": {
+                  "unit_tests": unit,
+                  "bdd_tests": bdd,
+                  "coverage": {
+                      **coverage,
+                      "threshold_percent": parse_int(os.environ["COVERAGE_THRESHOLD"]),
+                  },
+                  "complexity": complexity,
+                  "duplication": duplication,
+                  "flakiness": flaky_signal,
+              },
+              "build": {
+                  "build_profiles": build_profiles,
+                  "source_packages": source_packages,
+                  "binary_packages": binary_packages,
+                  "quality_packages": quality_packages,
+                  "total_packaged_bytes": sum(item["size_bytes"] for item in source_packages + binary_packages + quality_packages),
+              },
+          }
+
+          with open(os.path.join(metrics_dir, "metrics.json"), "w", encoding="utf-8") as handle:
+              json.dump(metrics, handle, indent=2)
+              handle.write("\n")
+
+          coverage_percent = metrics["quality"]["coverage"]["line_coverage_percent"]
+          coverage_display = f"{coverage_percent}%" if coverage_percent is not None else "n/a"
+          duplication_percent = metrics["quality"]["duplication"]["duplication_percent"]
+          duplication_display = f"{duplication_percent}%" if duplication_percent is not None else "n/a"
+
+          summary = f"""# Metrics Summary
+
+          | Metric | Value |
+          |--------|-------|
+          | Pipeline | {metrics['run']['pipeline_type']} |
+          | Branch | {metrics['run']['branch']} |
+          | Commit | {metrics['run']['commit']} |
+          | Unit tests | {unit['tests']} total / {unit['failures']} failed / {unit['errors']} errors |
+          | BDD tests | {bdd['tests']} total / {bdd['failures']} failed / {bdd['errors']} errors |
+          | Line coverage | {coverage_display} |
+          | Coverage threshold | {metrics['quality']['coverage']['threshold_percent']}% |
+          | Avg complexity | {metrics['quality']['complexity']['average_cyclomatic_complexity']} |
+          | Max complexity | {metrics['quality']['complexity']['max_cyclomatic_complexity']} |
+          | Functions over threshold | {len(metrics['quality']['complexity']['functions_over_threshold'])} |
+          | Duplication | {duplication_display} |
+          | Source packages | {len(source_packages)} |
+          | Binary packages | {len(binary_packages)} |
+          | Quality package files | {len(quality_packages)} |
+          | Build profiles | {len(build_profiles)} |
+          """
+
+          with open(os.path.join(metrics_dir, "metrics-summary.md"), "w", encoding="utf-8") as handle:
+              handle.write(summary)
+          PY
+
+          cat metrics/metrics-summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload metrics artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: metrics-${{ needs.context.outputs.short_sha }}
+          path: metrics/
+          retention-days: 90
 
   # ===========================================================================
   # Stage 6: Sanitizers — ASan + UBSan (required on PR/post-merge)
@@ -880,6 +1247,7 @@ jobs:
       - unit_tests
       - bdd_tests
       - coverage
+      - metrics
     if: >-
       always() &&
       (needs.context.outputs.pipeline_type == 'post_merge' || needs.context.outputs.pipeline_type == 'full')
