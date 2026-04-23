@@ -112,6 +112,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - name: Install quality tools
         shell: bash
@@ -123,8 +125,17 @@ jobs:
       - name: Full quality check
         shell: bash
         run: |
-          files=$(git ls-files -- '*.c' '*.cc' '*.cpp' '*.cxx' '*.h' '*.hh' '*.hpp' '*.hxx')
-          [[ -z "$files" ]] && exit 0
+          if git rev-parse --verify HEAD^ >/dev/null 2>&1; then
+            files=$(git diff --name-only HEAD^ HEAD -- '*.c' '*.cc' '*.cpp' '*.cxx' '*.h' '*.hh' '*.hpp' '*.hxx')
+          else
+            files=$(git ls-files -- '*.c' '*.cc' '*.cpp' '*.cxx' '*.h' '*.hh' '*.hpp' '*.hxx')
+          fi
+
+          if [[ -z "$files" ]]; then
+            echo "No C/C++ files changed in this release."
+            exit 0
+          fi
+
           echo "::group::clang-format"
           clang-format --dry-run --Werror $files
           echo "::endgroup::"
