@@ -109,12 +109,12 @@ Track a small set of metrics that directly support merge decisions and release r
 ### Repo-specific implementation notes
 
 - Keep `COVERAGE_THRESHOLD=80` as the current baseline because it already exists in the delivery workflow, but ratchet it by package rather than freezing a repository-wide threshold forever.
-- The delivery pipeline now emits a `metrics.json` contract plus a human-readable metrics summary artifact. Extend that job over time so it also collects:
-  - coverage summary from `bazel coverage`
-  - complexity from `lizard`
-  - duplication from `jscpd`
-  - flaky-test candidate list from rerun data
+- The delivery pipeline now emits a `metrics.json` contract plus a human-readable metrics summary artifact containing coverage, complexity, duplication, and package/build evidence.
+- Nightly assurance now emits a machine-readable flaky-test candidate artifact from repeated test runs; persist that artifact outside workflow retention if you want rolling flake history.
+- Extend the metrics layer over time so it also collects:
+  - rolling flake history from nightly artifacts
   - build timings from Bazel profile or BES
+  - cache hit rates and critical-path regressions
 - Store weekly snapshots under generated release evidence or a dedicated metrics artifact, not in version-controlled source.
 
 ## 3. Release Artifact Packaging and Distribution
@@ -124,12 +124,14 @@ Track a small set of metrics that directly support merge decisions and release r
 This repository already has the foundation of a release pipeline:
 
 - Bazel `pkg_tar` targets for production, test, and integration bundles.
+- Bazel `rules_oci` packaging for the main runtime image.
 - GitHub Release publication with checksums.
+- GHCR publication for the runtime OCI image.
 - SPDX and CycloneDX SBOM generation.
 - Build provenance attestation via `actions/attest-build-provenance`.
 - A machine-readable `release-manifest.json` attached to release assets.
 
-The remaining enterprise-grade gap is distribution standardization, OCI publication, and external registry promotion policy.
+The remaining enterprise-grade gap is external registry standardization, OCI signing/referrers, and promotion policy across registries.
 
 ### Recommended artifact catalog
 
@@ -145,7 +147,7 @@ The remaining enterprise-grade gap is distribution standardization, OCI publicat
 ### Bazel packaging guidance
 
 - Keep `rules_pkg` for tarball generation.
-- Add `rules_oci` for containerized runtime deliverables, using Bazel outputs as the only packaging input.
+- Use `rules_oci` for containerized runtime deliverables, using Bazel outputs as the only packaging input.
 - Do not rebuild artifacts during promotion. Promote by immutable digest or uploaded artifact identifier only.
 - Use stamping only for version metadata, never for uncontrolled environmental data.
 - Add a single release macro that produces a predictable output contract across languages.
@@ -169,7 +171,7 @@ The remaining enterprise-grade gap is distribution standardization, OCI publicat
 ### Immediate repo actions
 
 - Finish external registry publication by configuring the optional Artifactory mirror or an equivalent enterprise artifact repository.
-- Add an OCI packaging target for the primary runtime path using `rules_oci`.
+- Add OCI signing and, if your registry supports them, SBOM/provenance OCI referrers.
 - Add retention and immutability rules in the target registries.
 
 ## 4. DevSecOps and Supply Chain Security
@@ -316,7 +318,7 @@ Use SemVer for framework artifacts.
 ### Phase 2: Close packaging and distribution gaps
 
 - Publish tarball assets to the enterprise artifact manager.
-- Add OCI packaging and signing.
+- Add OCI signing, registry mirroring, and referrer publication.
 - Emit a signed release manifest.
 
 ### Phase 3: Add trend visibility

@@ -566,6 +566,7 @@ jobs:
           | \`atlassians-${VERSION}-source.tar.gz\` | Versioned source code for distribution/compliance |
           | \`atlassians-${VERSION}-binaries.tar.gz\` | Production-ready optimized binaries |
           | \`atlassians-${VERSION}-quality.tar.gz\` | Test binaries, BDD steps, assessment bundle |
+          | `ghcr.io/<owner>/<repo>-runtime:${VERSION}` | OCI runtime image built from the Bazel package |
           | \`sbom-spdx.json\` / \`sbom-cyclonedx.json\` | Software Bill of Materials |
           | \`SHA256SUMS.txt\` | Checksums for all artifacts |
           | \`release-manifest.json\` | Machine-readable release inventory and distribution contract |
@@ -584,6 +585,65 @@ jobs:
           cp release-analysis/*.txt release-evidence/ 2>/dev/null || true
           tar czf release-evidence.tar.gz -C release-evidence . 2>/dev/null || true
 
+      - name: Setup Bazel for OCI publication
+        uses: bazel-contrib/setup-bazel@0.14.0
+        with:
+          bazelisk-cache: true
+          disk-cache: release-oci
+          repository-cache: true
+
+      - name: Load OCI runtime image
+        shell: bash
+        run: |
+          bazelisk run //src/main/cpp:com.github.doevelopper.atlassians.main.image.load
+
+      - name: Scan OCI runtime image
+        uses: aquasecurity/trivy-action@v0.35.0
+        with:
+          scan-type: image
+          image-ref: atlassians-runtime:latest
+          format: table
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
+          exit-code: '1'
+
+      - name: Derive OCI repository
+        id: oci_repo
+        shell: bash
+        run: |
+          owner=$(echo "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')
+          repo=$(echo "${GITHUB_REPOSITORY#*/}" | tr '[:upper:]' '[:lower:]')
+          image="ghcr.io/${owner}/${repo}-runtime"
+          echo "image=$image" >> "$GITHUB_OUTPUT"
+
+      - name: Login to GHCR
+        shell: bash
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Publish OCI runtime image
+        id: publish_oci
+        shell: bash
+        env:
+          IMAGE: ${{ steps.oci_repo.outputs.image }}
+          VERSION: ${{ needs.context.outputs.version }}
+          IS_PRERELEASE: ${{ needs.context.outputs.is_prerelease }}
+        run: |
+          set -euo pipefail
+
+          docker tag atlassians-runtime:latest "${IMAGE}:${VERSION}"
+          docker push "${IMAGE}:${VERSION}"
+
+          if [[ "${IS_PRERELEASE}" != "true" ]]; then
+            docker tag atlassians-runtime:latest "${IMAGE}:latest"
+            docker push "${IMAGE}:latest"
+          fi
+
+          digest=$(docker inspect --format='{{index .RepoDigests 0}}' "${IMAGE}:${VERSION}" 2>/dev/null || true)
+          echo "image=${IMAGE}" >> "$GITHUB_OUTPUT"
+          echo "version_tag=${IMAGE}:${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "digest=${digest}" >> "$GITHUB_OUTPUT"
+
       - name: Generate release manifest
         shell: bash
         env:
@@ -596,6 +656,8 @@ jobs:
           SERVER_URL: ${{ github.server_url }}
           ARTIFACTORY_BASE_URL: ${{ vars.ARTIFACTORY_BASE_URL }}
           ARTIFACTORY_REPOSITORY: ${{ vars.ARTIFACTORY_REPOSITORY }}
+          GHCR_IMAGE: ${{ steps.publish_oci.outputs.version_tag }}
+          GHCR_DIGEST: ${{ steps.publish_oci.outputs.digest }}
         run: |
           set -euo pipefail
 
@@ -649,6 +711,8 @@ jobs:
             "distribution": {
               "github_release": f"{os.environ['SERVER_URL']}/{os.environ['REPOSITORY']}/releases/tag/{os.environ['TAG']}",
               "artifactory_base": artifactory_base or None,
+              "ghcr_image": os.environ.get("GHCR_IMAGE") or None,
+              "ghcr_digest": os.environ.get("GHCR_DIGEST") or None,
             },
             "provenance": {
               "attestation": "actions/attest-build-provenance@v2",
@@ -729,11 +793,13 @@ jobs:
         env:
           VERSION: ${{ needs.context.outputs.version }}
           TAG: ${{ needs.context.outputs.version_tag }}
+          OCI_IMAGE: ${{ steps.publish_oci.outputs.version_tag }}
         run: |
           echo "## Release Published" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "**Version**: $VERSION" >> "$GITHUB_STEP_SUMMARY"
           echo "**Tag**: $TAG" >> "$GITHUB_STEP_SUMMARY"
           echo "**URL**: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/$TAG" >> "$GITHUB_STEP_SUMMARY"
+          echo "**OCI Image**: ${OCI_IMAGE}" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "Artifacts include SHA256 checksums, a release manifest, and SLSA provenance attestation." >> "$GITHUB_STEP_SUMMARY"
