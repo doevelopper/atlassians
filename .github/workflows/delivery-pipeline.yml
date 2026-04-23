@@ -79,7 +79,7 @@ jobs:
       build_date: ${{ steps.meta.outputs.build_date }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -186,7 +186,7 @@ jobs:
     if: needs.context.outputs.is_pr == 'true'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -236,12 +236,12 @@ jobs:
     if: needs.context.outputs.has_cc_changes == 'true' || needs.context.outputs.has_build_changes == 'true'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Setup Bazel
-        uses: bazel-contrib/setup-bazel@0.14.0
+        uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}-quality
@@ -314,7 +314,7 @@ jobs:
 
       - name: Upload analysis reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: static-analysis-${{ needs.context.outputs.short_sha }}
           path: |
@@ -341,12 +341,12 @@ jobs:
     needs: context
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Setup Bazel
-        uses: bazel-contrib/setup-bazel@0.14.0
+        uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}-build
@@ -378,7 +378,7 @@ jobs:
             -o "release-staging/atlassians-${version}-source.tar.gz" HEAD
 
       - name: Upload source package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: source-package-${{ needs.context.outputs.short_sha }}
           path: release-staging/*-source.tar.gz
@@ -402,7 +402,7 @@ jobs:
           needs.context.outputs.pipeline_type == 'post_merge' ||
           needs.context.outputs.pipeline_type == 'pr_gate' ||
           needs.context.outputs.pipeline_type == 'full'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: binaries-package-${{ needs.context.outputs.short_sha }}
           path: release-staging/*-binaries.tar.gz
@@ -418,7 +418,7 @@ jobs:
           cp bazel-bin/src/it/*.tar.gz release-staging/quality-bundle/ 2>/dev/null || true
 
       - name: Upload quality package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: quality-package-${{ needs.context.outputs.short_sha }}
           path: |
@@ -427,7 +427,7 @@ jobs:
 
       # === Legacy combined package (backward compat) ===
       - name: Upload combined packages
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: packages-${{ needs.context.outputs.short_sha }}
           path: |
@@ -437,7 +437,7 @@ jobs:
           retention-days: 30
 
       - name: Upload build evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: build-evidence-${{ needs.context.outputs.short_sha }}
           path: evidence/build/
@@ -453,10 +453,10 @@ jobs:
     needs: [context, build]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Bazel
-        uses: bazel-contrib/setup-bazel@0.14.0
+        uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}-build
@@ -484,7 +484,7 @@ jobs:
 
       - name: Upload unit test evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: unit-test-evidence-${{ needs.context.outputs.short_sha }}
           path: evidence/unit-tests/
@@ -492,7 +492,7 @@ jobs:
 
       - name: Publish test results
         if: always()
-        uses: mikepenz/action-junit-report@v5
+        uses: mikepenz/action-junit-report@v6
         with:
           report_paths: 'bazel-testlogs/src/test/cpp/**/test.xml'
           check_name: Unit Test Results
@@ -511,10 +511,10 @@ jobs:
       needs.context.outputs.is_protected == 'true'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Bazel
-        uses: bazel-contrib/setup-bazel@0.14.0
+        uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}-build
@@ -539,7 +539,7 @@ jobs:
 
       - name: Upload BDD test evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: bdd-test-evidence-${{ needs.context.outputs.short_sha }}
           path: evidence/bdd-tests/
@@ -547,7 +547,7 @@ jobs:
 
       - name: Publish BDD results
         if: always()
-        uses: mikepenz/action-junit-report@v5
+        uses: mikepenz/action-junit-report@v6
         with:
           report_paths: 'bazel-testlogs/src/it/**/test.xml'
           check_name: BDD Test Results
@@ -567,10 +567,10 @@ jobs:
       needs.context.outputs.pipeline_type == 'full'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Bazel
-        uses: bazel-contrib/setup-bazel@0.14.0
+        uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}-build
@@ -630,7 +630,7 @@ jobs:
           fi
 
       - name: Upload coverage evidence
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-evidence-${{ needs.context.outputs.short_sha }}
           path: evidence/coverage/
@@ -657,20 +657,20 @@ jobs:
       needs.context.outputs.pipeline_type == 'full'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Download workflow artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: collected-metrics/
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.x'
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
 
@@ -992,7 +992,7 @@ jobs:
           cat metrics/metrics-summary.md >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload metrics artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: metrics-${{ needs.context.outputs.short_sha }}
           path: metrics/
@@ -1011,10 +1011,10 @@ jobs:
       needs.context.outputs.pipeline_type == 'full'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Bazel
-        uses: bazel-contrib/setup-bazel@0.14.0
+        uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}-asan
@@ -1045,10 +1045,10 @@ jobs:
       security-events: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.x'
 
@@ -1081,10 +1081,10 @@ jobs:
       security-events: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Bazel
-        uses: bazel-contrib/setup-bazel@0.14.0
+        uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-cache: true
           disk-cache: ${{ github.workflow }}-build
@@ -1108,10 +1108,10 @@ jobs:
     needs: context
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Trivy filesystem scan
-        uses: aquasecurity/trivy-action@v0.35.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: .
@@ -1128,7 +1128,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -1147,7 +1147,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Dependency Review
         uses: actions/dependency-review-action@v4
@@ -1167,7 +1167,7 @@ jobs:
       needs.context.outputs.pipeline_type == 'full'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Generate SBOM for license analysis
         uses: anchore/sbom-action@v0
@@ -1210,7 +1210,7 @@ jobs:
       needs.context.outputs.pipeline_type == 'full'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Generate SBOM (SPDX)
         uses: anchore/sbom-action@v0
@@ -1227,7 +1227,7 @@ jobs:
           output-file: sbom-cyclonedx.json
 
       - name: Upload SBOMs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: sbom-${{ needs.context.outputs.short_sha }}
           path: |
@@ -1253,10 +1253,10 @@ jobs:
       (needs.context.outputs.pipeline_type == 'post_merge' || needs.context.outputs.pipeline_type == 'full')
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Download all evidence
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: collected-evidence/
 
@@ -1326,7 +1326,7 @@ jobs:
           cat "$SUMMARY" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload QMS evidence bundle
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: qms-evidence-${{ needs.context.outputs.build_date }}-${{ needs.context.outputs.short_sha }}
           path: collected-evidence/

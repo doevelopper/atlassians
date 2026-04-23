@@ -50,7 +50,7 @@ jobs:
       build_date: ${{ steps.version.outputs.build_date }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -111,7 +111,7 @@ jobs:
     needs: context
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 2
 
@@ -171,7 +171,7 @@ jobs:
 
       - name: Upload analysis reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-static-analysis-${{ needs.context.outputs.version }}
           path: |
@@ -189,12 +189,12 @@ jobs:
     needs: context
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Setup Bazel
-        uses: bazel-contrib/setup-bazel@0.14.0
+        uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-cache: true
           disk-cache: release-build
@@ -239,7 +239,7 @@ jobs:
           rm -rf release-artifacts/quality-staging
 
       - name: Upload release artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-packages-${{ needs.context.outputs.version }}
           path: release-artifacts/
@@ -254,10 +254,10 @@ jobs:
     needs: [context, build]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Bazel
-        uses: bazel-contrib/setup-bazel@0.14.0
+        uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-cache: true
           disk-cache: release-build
@@ -285,7 +285,7 @@ jobs:
 
       - name: Upload
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-unit-test-evidence-${{ needs.context.outputs.version }}
           path: evidence/unit-tests/
@@ -297,10 +297,10 @@ jobs:
     needs: [context, build]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Bazel
-        uses: bazel-contrib/setup-bazel@0.14.0
+        uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-cache: true
           disk-cache: release-build
@@ -325,7 +325,7 @@ jobs:
 
       - name: Upload
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-bdd-test-evidence-${{ needs.context.outputs.version }}
           path: evidence/bdd-tests/
@@ -340,10 +340,10 @@ jobs:
     needs: [context, build]
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Bazel
-        uses: bazel-contrib/setup-bazel@0.14.0
+        uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-cache: true
           disk-cache: release-asan
@@ -374,12 +374,12 @@ jobs:
       security-events: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Setup Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.x'
 
@@ -400,7 +400,7 @@ jobs:
         continue-on-error: true
 
       - name: Trivy SCA
-        uses: aquasecurity/trivy-action@v0.35.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: .
@@ -423,7 +423,7 @@ jobs:
     needs: context
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Generate SBOM (SPDX)
         uses: anchore/sbom-action@v0
@@ -440,7 +440,7 @@ jobs:
           output-file: sbom-cyclonedx.json
 
       - name: Upload SBOMs
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-sbom-${{ needs.context.outputs.version }}
           path: |
@@ -471,38 +471,38 @@ jobs:
       needs.bdd_tests.result == 'success'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
       - name: Download release packages
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: release-packages-${{ needs.context.outputs.version }}
           path: release-artifacts/
 
       - name: Download static analysis reports
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: release-static-analysis-${{ needs.context.outputs.version }}
           path: release-analysis/
         continue-on-error: true
 
       - name: Download SBOMs
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: release-sbom-${{ needs.context.outputs.version }}
           path: release-sbom/
 
       - name: Download unit test evidence
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: release-unit-test-evidence-${{ needs.context.outputs.version }}
           path: release-evidence/unit-tests/
         continue-on-error: true
 
       - name: Download BDD evidence
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: release-bdd-test-evidence-${{ needs.context.outputs.version }}
           path: release-evidence/bdd-tests/
@@ -597,7 +597,7 @@ jobs:
           tar czf release-evidence.tar.gz -C release-evidence . 2>/dev/null || true
 
       - name: Setup Bazel for OCI publication
-        uses: bazel-contrib/setup-bazel@0.14.0
+        uses: bazel-contrib/setup-bazel@0.19.0
         with:
           bazelisk-cache: true
           disk-cache: release-oci
@@ -609,7 +609,7 @@ jobs:
           bazelisk run //src/main/cpp:com.github.doevelopper.atlassians.main.image.load
 
       - name: Scan OCI runtime image
-        uses: aquasecurity/trivy-action@v0.35.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: image
           image-ref: atlassians-runtime:latest
@@ -743,7 +743,7 @@ jobs:
           sha256sum release-artifacts/release-manifest.json >> release-artifacts/SHA256SUMS.txt
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ needs.context.outputs.version_tag }}
           name: Release ${{ needs.context.outputs.version }}
@@ -794,7 +794,7 @@ jobs:
 
       - name: Attest release artifacts (provenance)
         if: needs.context.outputs.is_prerelease != 'true'
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: 'release-artifacts/*.tar.gz'
         continue-on-error: true
