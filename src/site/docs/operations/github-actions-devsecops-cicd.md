@@ -2,6 +2,8 @@
 
 This blueprint operationalizes branch-based CI/CD controls for this repository using GitHub Actions, Bazel, and security scanning.
 
+For the full enterprise operating model covering branching governance, metrics, release distribution, onboarding, and versioning, see [Enterprise Delivery Operating Model](enterprise-delivery-operating-model.md).
+
 ## Branching Model to Pipeline Stages
 
 | Branch Type | Trigger | Goal | Required Gates |

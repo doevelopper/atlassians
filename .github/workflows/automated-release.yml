@@ -566,8 +566,10 @@ jobs:
           | \`atlassians-${VERSION}-source.tar.gz\` | Versioned source code for distribution/compliance |
           | \`atlassians-${VERSION}-binaries.tar.gz\` | Production-ready optimized binaries |
           | \`atlassians-${VERSION}-quality.tar.gz\` | Test binaries, BDD steps, assessment bundle |
+          | `ghcr.io/<owner>/<repo>-runtime:${VERSION}` | OCI runtime image built from the Bazel package |
           | \`sbom-spdx.json\` / \`sbom-cyclonedx.json\` | Software Bill of Materials |
           | \`SHA256SUMS.txt\` | Checksums for all artifacts |
+          | \`release-manifest.json\` | Machine-readable release inventory and distribution contract |
           | \`release-evidence.tar.gz\` | Unit test + BDD test evidence |
           NOTES_EOF
 
@@ -583,6 +585,152 @@ jobs:
           cp release-analysis/*.txt release-evidence/ 2>/dev/null || true
           tar czf release-evidence.tar.gz -C release-evidence . 2>/dev/null || true
 
+      - name: Setup Bazel for OCI publication
+        uses: bazel-contrib/setup-bazel@0.14.0
+        with:
+          bazelisk-cache: true
+          disk-cache: release-oci
+          repository-cache: true
+
+      - name: Load OCI runtime image
+        shell: bash
+        run: |
+          bazelisk run //src/main/cpp:com.github.doevelopper.atlassians.main.image.load
+
+      - name: Scan OCI runtime image
+        uses: aquasecurity/trivy-action@v0.35.0
+        with:
+          scan-type: image
+          image-ref: atlassians-runtime:latest
+          format: table
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
+          exit-code: '1'
+
+      - name: Derive OCI repository
+        id: oci_repo
+        shell: bash
+        run: |
+          owner=$(echo "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')
+          repo=$(echo "${GITHUB_REPOSITORY#*/}" | tr '[:upper:]' '[:lower:]')
+          image="ghcr.io/${owner}/${repo}-runtime"
+          echo "image=$image" >> "$GITHUB_OUTPUT"
+
+      - name: Login to GHCR
+        shell: bash
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Publish OCI runtime image
+        id: publish_oci
+        shell: bash
+        env:
+          IMAGE: ${{ steps.oci_repo.outputs.image }}
+          VERSION: ${{ needs.context.outputs.version }}
+          IS_PRERELEASE: ${{ needs.context.outputs.is_prerelease }}
+        run: |
+          set -euo pipefail
+
+          docker tag atlassians-runtime:latest "${IMAGE}:${VERSION}"
+          docker push "${IMAGE}:${VERSION}"
+
+          if [[ "${IS_PRERELEASE}" != "true" ]]; then
+            docker tag atlassians-runtime:latest "${IMAGE}:latest"
+            docker push "${IMAGE}:latest"
+          fi
+
+          digest=$(docker inspect --format='{{index .RepoDigests 0}}' "${IMAGE}:${VERSION}" 2>/dev/null || true)
+          echo "image=${IMAGE}" >> "$GITHUB_OUTPUT"
+          echo "version_tag=${IMAGE}:${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "digest=${digest}" >> "$GITHUB_OUTPUT"
+
+      - name: Generate release manifest
+        shell: bash
+        env:
+          VERSION: ${{ needs.context.outputs.version }}
+          TAG: ${{ needs.context.outputs.version_tag }}
+          BUILD_DATE: ${{ needs.context.outputs.build_date }}
+          SHORT_SHA: ${{ needs.context.outputs.short_sha }}
+          IS_PRERELEASE: ${{ needs.context.outputs.is_prerelease }}
+          REPOSITORY: ${{ github.repository }}
+          SERVER_URL: ${{ github.server_url }}
+          ARTIFACTORY_BASE_URL: ${{ vars.ARTIFACTORY_BASE_URL }}
+          ARTIFACTORY_REPOSITORY: ${{ vars.ARTIFACTORY_REPOSITORY }}
+          GHCR_IMAGE: ${{ steps.publish_oci.outputs.version_tag }}
+          GHCR_DIGEST: ${{ steps.publish_oci.outputs.digest }}
+        run: |
+          set -euo pipefail
+
+          python3 <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          release_dir = Path("release-artifacts")
+          sbom_dir = Path("release-sbom")
+          evidence_path = Path("release-evidence.tar.gz")
+
+          def sha256(path: Path) -> str:
+            digest = hashlib.sha256()
+            with path.open("rb") as handle:
+              for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(chunk)
+            return digest.hexdigest()
+
+          def describe(path: Path, category: str) -> dict:
+            return {
+              "name": path.name,
+              "category": category,
+              "sha256": sha256(path),
+              "size_bytes": path.stat().st_size,
+            }
+
+          artifacts = [describe(path, "package") for path in sorted(release_dir.glob("*.tar.gz"))]
+          sboms = [describe(path, "sbom") for path in sorted(sbom_dir.glob("*.json"))]
+          evidence = describe(evidence_path, "evidence") if evidence_path.exists() else None
+
+          artifactory_base = ""
+          if os.environ.get("ARTIFACTORY_BASE_URL") and os.environ.get("ARTIFACTORY_REPOSITORY"):
+            artifactory_base = (
+              f"{os.environ['ARTIFACTORY_BASE_URL'].rstrip('/')}/"
+              f"{os.environ['ARTIFACTORY_REPOSITORY'].strip('/')}/"
+              f"atlassians/{os.environ['VERSION']}"
+            )
+
+          manifest = {
+            "schema_version": "1.0",
+            "release": {
+              "version": os.environ["VERSION"],
+              "tag": os.environ["TAG"],
+              "commit": os.environ["GITHUB_SHA"],
+              "short_sha": os.environ["SHORT_SHA"],
+              "build_date": os.environ["BUILD_DATE"],
+              "prerelease": os.environ["IS_PRERELEASE"] == "true",
+            },
+            "distribution": {
+              "github_release": f"{os.environ['SERVER_URL']}/{os.environ['REPOSITORY']}/releases/tag/{os.environ['TAG']}",
+              "artifactory_base": artifactory_base or None,
+              "ghcr_image": os.environ.get("GHCR_IMAGE") or None,
+              "ghcr_digest": os.environ.get("GHCR_DIGEST") or None,
+            },
+            "provenance": {
+              "attestation": "actions/attest-build-provenance@v2",
+              "oidc_enabled": True,
+            },
+            "artifacts": artifacts,
+            "sbom": sboms,
+            "evidence": evidence,
+          }
+
+          with (release_dir / "release-manifest.json").open("w", encoding="utf-8") as handle:
+            json.dump(manifest, handle, indent=2)
+            handle.write("\n")
+          PY
+
+          sha256sum release-evidence.tar.gz >> release-artifacts/SHA256SUMS.txt
+          sha256sum release-artifacts/release-manifest.json >> release-artifacts/SHA256SUMS.txt
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -593,12 +741,45 @@ jobs:
           prerelease: ${{ needs.context.outputs.is_prerelease == 'true' }}
           files: |
             release-artifacts/*.tar.gz
+            release-artifacts/release-manifest.json
             release-artifacts/SHA256SUMS.txt
             release-sbom/sbom-spdx.json
             release-sbom/sbom-cyclonedx.json
             release-evidence.tar.gz
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Mirror release assets to Artifactory (optional)
+        shell: bash
+        env:
+          VERSION: ${{ needs.context.outputs.version }}
+          ARTIFACTORY_BASE_URL: ${{ vars.ARTIFACTORY_BASE_URL }}
+          ARTIFACTORY_REPOSITORY: ${{ vars.ARTIFACTORY_REPOSITORY }}
+          ARTIFACTORY_TOKEN: ${{ secrets.ARTIFACTORY_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${ARTIFACTORY_BASE_URL}" || -z "${ARTIFACTORY_REPOSITORY}" || -z "${ARTIFACTORY_TOKEN}" ]]; then
+            echo "Artifactory mirror not configured; skipping external publication." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          target_base="${ARTIFACTORY_BASE_URL%/}/${ARTIFACTORY_REPOSITORY#/}/atlassians/${VERSION}"
+
+          for file in \
+            release-artifacts/*.tar.gz \
+            release-artifacts/release-manifest.json \
+            release-artifacts/SHA256SUMS.txt \
+            release-sbom/*.json \
+            release-evidence.tar.gz; do
+            [[ -f "$file" ]] || continue
+            curl --fail --silent --show-error \
+              -H "X-JFrog-Art-Api: ${ARTIFACTORY_TOKEN}" \
+              -T "$file" \
+              "${target_base}/$(basename "$file")"
+          done
+
+          echo "Mirrored release assets to ${target_base}" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Attest release artifacts (provenance)
         if: needs.context.outputs.is_prerelease != 'true'
@@ -612,11 +793,13 @@ jobs:
         env:
           VERSION: ${{ needs.context.outputs.version }}
           TAG: ${{ needs.context.outputs.version_tag }}
+          OCI_IMAGE: ${{ steps.publish_oci.outputs.version_tag }}
         run: |
           echo "## Release Published" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "**Version**: $VERSION" >> "$GITHUB_STEP_SUMMARY"
           echo "**Tag**: $TAG" >> "$GITHUB_STEP_SUMMARY"
           echo "**URL**: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/$TAG" >> "$GITHUB_STEP_SUMMARY"
+          echo "**OCI Image**: ${OCI_IMAGE}" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "Artifacts include SHA256 checksums and SLSA provenance attestation." >> "$GITHUB_STEP_SUMMARY"
+          echo "Artifacts include SHA256 checksums, a release manifest, and SLSA provenance attestation." >> "$GITHUB_STEP_SUMMARY"
